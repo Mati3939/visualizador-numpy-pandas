@@ -173,7 +173,7 @@ svg .gridline{stroke:var(--grid);}
 
 /* ============ Portada (menú-DataFrame) ============ */
 .card{scroll-margin-top:5.4rem;}
-.menu-df .dfc{font-size:1rem; padding:.55rem .95rem;}
+.menu-df .dfc{font-size:1rem; padding:.55rem .95rem; min-width:6.8rem; text-align:center;}
 .menu-df .dfc.h{cursor:pointer; border-bottom:3px solid var(--hcol,var(--s1));}
 .menu-df .dfc:not(.i):not(.nan):hover{
   box-shadow:inset 0 0 0 2px var(--hcol,var(--s1));
@@ -294,6 +294,25 @@ class DfTable{
     this.root=el('div',{class:'df'});
     this.wrap.append(this.root); mount.append(this.wrap);
     this.render();
+    /* si el texto de alguna celda cambia (fillna, pd.cut, …), realinear columnas */
+    this._mo=new MutationObserver(()=>{
+      if(this._raf)return;
+      this._raf=requestAnimationFrame(()=>{this._raf=0; this._align();});
+    });
+    this._mo.observe(this.root,{childList:true,characterData:true,subtree:true});
+    RELAYOUT.push(()=>this._align());
+  }
+  /* columnas uniformes tipo planilla: todas las filas comparten el ancho máximo de cada columna */
+  _align(){
+    if(!this.root.isConnected||this.root.offsetParent===null)return;
+    const rows=[...this.root.children];
+    if(!rows.length)return;
+    const n=this.o.columns.length+1;
+    rows.forEach(r=>r.style.gridTemplateColumns=`repeat(${n}, max-content)`);
+    const w=Array(n).fill(0);
+    rows.forEach(r=>[...r.children].forEach((c,i)=>{w[i]=Math.max(w[i],c.getBoundingClientRect().width);}));
+    const tpl=w.map(x=>Math.ceil(x)+'px').join(' ');
+    rows.forEach(r=>r.style.gridTemplateColumns=tpl);
   }
   render(){
     const {columns,index,rows}=this.o;
@@ -302,7 +321,7 @@ class DfTable{
     const hr=el('div',{class:'dfrow',style:`grid-template-columns:${tpl}`},
       el('div',{class:'dfc i'},''), columns.map(c=>el('div',{class:'dfc h'},c)));
     this.root.append(hr);
-    this.rowEls=[]; this.cellEls=[];
+    this.rowEls=[]; this.cellEls=[]; this._raf=0;
     rows.forEach((row,ri)=>{
       const cells=row.map(v=>{
         const d=el('div',{class:'dfc'+(v===null?' nan':'')}, v===null?'NaN':fmt(v));
@@ -313,6 +332,7 @@ class DfTable{
       this.root.append(r); this.rowEls.push(r); this.cellEls.push(cells); r._idx=idx;
     });
     this.headEls=[...hr.children].slice(1);
+    this._align();
   }
   cell(r,c){return this.cellEls[r][c];}
   clearMarks(){
@@ -399,7 +419,9 @@ function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
   const m=MODULES.find(x=>x.id===id);
-  if(!m._built){ m.build(m._sec); m._built=true; RELAYOUT.forEach(f=>f()); }
+  if(!m._built){ m.build(m._sec); m._built=true; }
+  /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
+  RELAYOUT.forEach(f=>f());
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
   if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
   window.scrollTo({top:0});
