@@ -135,7 +135,8 @@ registerModule({
           const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
           const c=t.cell(ri,ci);
           c.style.background=`var(${RAMP[k]})`;
-          if(k>=3)c.style.color='#fff';
+          /* la rampa es fija en ambos temas: la tinta también debe serlo */
+          c.style.color=k>=3?'#fff':'#0b0b0b';
           c.style.fontWeight='600';
         }));
         code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;

@@ -46,7 +46,11 @@ class CellGrid{
     for(const d of defs){
       seen.add(d.id);
       let c=this.cells.get(d.id);
-      if(!c){ c=el('div',{class:'cell'}); this.stage.append(c); this.cells.set(d.id,c); }
+      if(!c){
+        c=el('div',{class:'cell'});
+        c._new=true; // se posiciona sin transición: no debe "volar" desde (0,0)
+        this.stage.append(c); this.cells.set(d.id,c);
+      }
       c.textContent=d.text;
       c.className='cell '+(d.cls||'');
       c._pos=[d.r,d.c,d.w||1];
@@ -63,8 +67,10 @@ class CellGrid{
     const {size,gap}=cellMetrics(); let mr=0, mc=0;
     for(const c of this.cells.values()){
       const [r,cc,w]=c._pos;
+      if(c._new){ c.style.transition='none'; }
       c.style.width=(size*w+gap*(w-1))+'px'; c.style.height=size+'px';
       c.style.transform=`translate(${cc*(size+gap)}px,${r*(size+gap)}px)`;
+      if(c._new){ c._new=false; void c.offsetWidth; requestAnimationFrame(()=>{c.style.transition='';}); }
       mr=Math.max(mr,r+1); mc=Math.max(mc,cc+w);
     }
     this.stage.style.height=(mr*(size+gap)-gap)+'px';

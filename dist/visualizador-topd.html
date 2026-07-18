@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualizador TOPD — NumPy y Pandas</title>
+<style>
+/* ============ Paleta y temas ============ */
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#008300; --s3:#e87ba4; --s4:#eda100; --s5:#1baf7a; --s6:#eb6834; --s7:#4a3aa7; --s8:#e34948;
+  --seq100:#cde2fb; --seq200:#9ec5f4; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95; --seq700:#0d366b;
+  --cell:46px; --cellgap:6px;
+  font-size:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s3:#d55181; --s4:#c98500; --s5:#199e70; --s6:#d95926; --s7:#9085e9; --s8:#e66767;
+  }
+}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --s1:#3987e5; --s3:#d55181; --s4:#c98500; --s5:#199e70; --s6:#d95926; --s7:#9085e9; --s8:#e66767;
+}
+:root.presenta{ font-size:20px; --cell:64px; --cellgap:8px; }
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  line-height:1.5;
+}
+/* ============ Encabezado y navegación ============ */
+header{
+  position:sticky; top:0; z-index:50; background:var(--surface);
+  border-bottom:1px solid var(--border); padding:.55rem 1rem;
+  display:flex; flex-wrap:wrap; gap:.4rem .9rem; align-items:center;
+}
+header h1{font-size:1.05rem; margin:0; white-space:nowrap;}
+header h1 small{color:var(--muted); font-weight:500;}
+nav{display:flex; flex-wrap:wrap; gap:.3rem; flex:1;}
+nav button{
+  border:1px solid transparent; background:transparent; color:var(--ink2);
+  font:inherit; font-size:.85rem; padding:.28rem .6rem; border-radius:999px; cursor:pointer;
+}
+nav button:hover{background:color-mix(in srgb, var(--ink) 6%, transparent);}
+nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); color:var(--ink); border-color:color-mix(in srgb, var(--s1) 45%, transparent); font-weight:600;}
+.hdrbtns{display:flex; gap:.3rem;}
+.hdrbtns button{
+  border:1px solid var(--border); background:var(--surface); color:var(--ink2);
+  font:inherit; font-size:.8rem; padding:.28rem .6rem; border-radius:8px; cursor:pointer;
+}
+.hdrbtns button:hover{color:var(--ink);}
+
+main{max-width:1150px; margin:0 auto; padding:1rem 1.2rem 4rem;}
+.module{display:none;}
+.module.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
+.module>h2{margin:.9rem 0 .1rem; font-size:1.45rem;}
+.week{display:inline-block; font-size:.72rem; font-weight:600; color:var(--ink2);
+  background:color-mix(in srgb, var(--s7) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--s7) 35%, transparent);
+  border-radius:999px; padding:.1rem .55rem; vertical-align:middle; margin-left:.5rem;}
+.lead{color:var(--ink2); margin:.2rem 0 1rem; max-width:70ch;}
+
+/* ============ Tarjetas y controles ============ */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.2rem 1.2rem; margin:1rem 0;}
+.card>h3{margin:.1rem 0 .3rem; font-size:1.1rem;}
+.card>h3 code{font-size:.95em;}
+.controls{display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; margin:.6rem 0;}
+.controls label{font-size:.85rem; color:var(--ink2);}
+.btn{
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+  font:inherit; font-size:.85rem; padding:.32rem .7rem; border-radius:8px; cursor:pointer;
+  transition:background .15s;
+}
+.btn:hover{background:color-mix(in srgb, var(--ink) 6%, var(--surface));}
+.btn.on{background:color-mix(in srgb, var(--s1) 18%, var(--surface)); border-color:var(--s1); font-weight:600;}
+.btn.primary{background:var(--s1); border-color:var(--s1); color:#fff; font-weight:600;}
+.btn.primary:hover{background:color-mix(in srgb, var(--s1) 85%, var(--ink));}
+select,input[type=number],input[type=text]{
+  font:inherit; font-size:.85rem; padding:.28rem .45rem; border-radius:8px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+}
+input[type=range]{accent-color:var(--s1); vertical-align:middle;}
+.code{
+  font-family:ui-monospace,Consolas,"Cascadia Mono",monospace; font-size:.85rem;
+  background:color-mix(in srgb, var(--ink) 5%, var(--surface));
+  border:1px solid var(--border);
+  border-radius:9px; padding:.65rem .9rem; overflow-x:auto; white-space:pre; margin:.6rem 0;
+  line-height:1.55;
+}
+.code b{color:var(--s1); font-weight:700;}
+.note{color:var(--ink2); font-size:.88rem; max-width:75ch;}
+.note b{color:var(--ink);}
+.msg{font-size:.9rem; font-weight:600; min-height:1.4em; margin:.4rem 0;}
+.msg.err{color:var(--s8);}
+.msg.okc{color:var(--s2);}
+.chip{display:inline-block; font-size:.8rem; font-weight:600; padding:.12rem .55rem;
+  border-radius:999px; border:1px solid var(--border); margin:.1rem;}
+.legend{display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center; font-size:.8rem; color:var(--ink2); margin:.4rem 0;}
+.legend .sw{display:inline-block; width:.85em; height:.85em; border-radius:4px; vertical-align:-2px; margin-right:.3em; border:1px solid var(--border);}
+
+/* ============ Celdas (arrays NumPy) ============ */
+.stage{position:relative; margin:.9rem 0; transition:height .5s ease, width .5s ease;}
+.cell{
+  position:absolute; left:0; top:0; display:flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--s1) 12%, var(--surface));
+  border:1px solid color-mix(in srgb, var(--s1) 40%, var(--border));
+  border-radius:8px; font-weight:600; font-variant-numeric:tabular-nums; font-size:.92rem;
+  transition:transform .55s cubic-bezier(.4,0,.2,1), background .3s, opacity .4s, border-color .3s, box-shadow .3s;
+}
+.cell.hd{background:transparent; border-color:transparent; color:var(--muted); font-size:.75rem; font-weight:600;}
+.cell.hl{background:color-mix(in srgb, var(--s4) 38%, var(--surface)); border-color:var(--s4); box-shadow:0 0 0 2px color-mix(in srgb, var(--s4) 45%, transparent);}
+.cell.ok{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); border-color:var(--s2);}
+.cell.res{background:color-mix(in srgb, var(--s7) 16%, var(--surface)); border-color:var(--s7);}
+.cell.off{opacity:.22;}
+.cell.ghost{opacity:.6; border-style:dashed;}
+.cell.hide{opacity:0; pointer-events:none;}
+.cell.boolT{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); border-color:var(--s2); font-size:.72rem;}
+.cell.boolF{background:color-mix(in srgb, var(--ink) 4%, var(--surface)); border-color:var(--border); color:var(--muted); font-size:.72rem;}
+.stage.shake{animation:shake .4s;}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* ============ Tablas (DataFrames) ============ */
+.dfwrap{overflow-x:auto; padding:2px; margin:.6rem 0;}
+.df{display:inline-flex; flex-direction:column; gap:2px;}
+.dfrow{display:grid; gap:2px; transition:opacity .45s, transform .5s;}
+.dfrow.roff{opacity:.16;}
+.dfc{
+  padding:.32rem .6rem; border-radius:6px; font-size:.88rem; font-variant-numeric:tabular-nums;
+  background:color-mix(in srgb, var(--ink) 3.5%, var(--surface));
+  transition:background .3s, opacity .4s, box-shadow .3s; white-space:nowrap;
+}
+.dfc.h{font-weight:700; background:color-mix(in srgb, var(--s1) 15%, var(--surface));}
+.dfc.i{color:var(--muted); font-weight:600; background:color-mix(in srgb, var(--ink) 7%, var(--surface));}
+.dfc.hl{box-shadow:inset 0 0 0 2px var(--s4); background:color-mix(in srgb, var(--s4) 30%, var(--surface));}
+.dfc.sel{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s2);}
+.dfc.nan{
+  background:repeating-linear-gradient(45deg, transparent 0 4px, color-mix(in srgb, var(--muted) 22%, transparent) 4px 8px),
+             color-mix(in srgb, var(--ink) 3%, var(--surface));
+  color:var(--muted); font-style:italic;
+}
+.dfc.fill{background:color-mix(in srgb, var(--s5) 26%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s5); font-style:normal; color:var(--ink);}
+.dfc.dupe{background:color-mix(in srgb, var(--s6) 26%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s6);}
+.dfc.out8{background:color-mix(in srgb, var(--s8) 24%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s8);}
+.dfc.miss{background:color-mix(in srgb, var(--ink) 60%, var(--surface)); color:transparent;}
+.dfc.missnan{background:color-mix(in srgb, var(--ink) 3%, var(--surface)); color:transparent; box-shadow:inset 0 0 0 1px var(--grid);}
+.dfc.g0{background:color-mix(in srgb, var(--s1) 22%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s1) 60%, transparent);}
+.dfc.g1{background:color-mix(in srgb, var(--s2) 20%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s2) 55%, transparent);}
+.dfc.g2{background:color-mix(in srgb, var(--s3) 26%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s3) 60%, transparent);}
+.dfc.g3{background:color-mix(in srgb, var(--s4) 30%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s4) 60%, transparent);}
+
+/* ============ Stepper ============ */
+.stepper{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin:.6rem 0;}
+.stepper .cnt{font-size:.8rem; color:var(--muted); min-width:5.2em; text-align:center;}
+.stepdesc{font-size:.92rem; color:var(--ink2); min-height:2.6em; margin:.3rem 0;}
+.stepdesc b{color:var(--ink);}
+
+/* ============ SVG ============ */
+svg text{fill:var(--muted); font-family:inherit; font-size:11px;}
+svg .axisline{stroke:var(--axis);}
+svg .gridline{stroke:var(--grid);}
+.flexcols{display:flex; flex-wrap:wrap; gap:1.4rem; align-items:flex-start;}
+.flexcols>div{min-width:0;}
+
+footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
+kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Visualizador TOPD <small>· NumPy y Pandas</small></h1>
+  <nav id="nav"></nav>
+  <div class="hdrbtns">
+    <button id="btnPres" title="Modo presentación: agranda todo para proyectar">🖥️ Presentar</button>
+    <button id="btnTheme" title="Cambiar tema">🌗 Auto</button>
+  </div>
+</header>
+<main id="main"></main>
+<footer>
+  Hecho para las ayudantías del Taller de Obtención y Preparación de Datos ·
+  <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>7</kbd> cambian de módulo ·
+  «Presentar» agranda todo para el proyector.
+</footer>
+<script>
+'use strict';
+/* =====================================================================
+   Núcleo del Visualizador TOPD
+   API para módulos:
+     registerModule({id, title, week, lead, build(section)})
+     el(tag, attrs, ...hijos)  $(sel)  fmt(x)  sleep(ms)
+     CellGrid(mount)           — rejilla de celdas animadas (arrays NumPy)
+     DfTable(mount, opts)      — tabla estilo DataFrame (divs animables)
+     Stepper(mount, steps, reset) — animación paso a paso (← → en teclado)
+     flipRows(container, mutate)  — anima reordenación de filas
+     codeBox(mount)  btnGroup(mount, items, onpick)
+   Convenciones CSS: ver css/app.css (.cell .hl .ok .res .off …, .dfc .nan …)
+   ===================================================================== */
+const $=(s,r=document)=>r.querySelector(s);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function el(tag,attrs={},...kids){
+  const n=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==='class')n.className=v;
+    else if(k==='html')n.innerHTML=v;
+    else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);
+    else if(k==='style')n.style.cssText=v;
+    else n.setAttribute(k,v);
+  }
+  for(const k of kids.flat(9)){ if(k==null)continue; n.append(k.nodeType?k:document.createTextNode(k)); }
+  return n;
+}
+const fmt=x=>(typeof x==='number'&&!Number.isInteger(x))?x.toFixed(1).replace('.',','):String(x);
+const RELAYOUT=[];
+function cellMetrics(){
+  const cs=getComputedStyle(document.documentElement);
+  return {size:parseFloat(cs.getPropertyValue('--cell')), gap:parseFloat(cs.getPropertyValue('--cellgap'))};
+}
+
+/* Rejilla de celdas con posiciones (fila, col) animadas por transform */
+class CellGrid{
+  constructor(mount){
+    this.stage=el('div',{class:'stage'});
+    mount.append(this.stage);
+    this.cells=new Map();
+    RELAYOUT.push(()=>this.layout());
+  }
+  /* defs: [{id, text, r, c, cls, w}] — w = ancho en unidades de celda */
+  setCells(defs){
+    const seen=new Set();
+    for(const d of defs){
+      seen.add(d.id);
+      let c=this.cells.get(d.id);
+      if(!c){
+        c=el('div',{class:'cell'});
+        c._new=true; // se posiciona sin transición: no debe "volar" desde (0,0)
+        this.stage.append(c); this.cells.set(d.id,c);
+      }
+      c.textContent=d.text;
+      c.className='cell '+(d.cls||'');
+      c._pos=[d.r,d.c,d.w||1];
+    }
+    for(const [id,c] of [...this.cells]){ if(!seen.has(id)){ c.remove(); this.cells.delete(id); } }
+    this.layout();
+  }
+  patch(id,{text,cls}={}){
+    const c=this.cells.get(id); if(!c)return;
+    if(text!==undefined)c.textContent=text;
+    if(cls!==undefined)c.className='cell '+cls;
+  }
+  layout(){
+    const {size,gap}=cellMetrics(); let mr=0, mc=0;
+    for(const c of this.cells.values()){
+      const [r,cc,w]=c._pos;
+      if(c._new){ c.style.transition='none'; }
+      c.style.width=(size*w+gap*(w-1))+'px'; c.style.height=size+'px';
+      c.style.transform=`translate(${cc*(size+gap)}px,${r*(size+gap)}px)`;
+      if(c._new){ c._new=false; void c.offsetWidth; requestAnimationFrame(()=>{c.style.transition='';}); }
+      mr=Math.max(mr,r+1); mc=Math.max(mc,cc+w);
+    }
+    this.stage.style.height=(mr*(size+gap)-gap)+'px';
+    this.stage.style.width=(mc*(size+gap)-gap)+'px';
+  }
+  shake(){ this.stage.classList.remove('shake'); void this.stage.offsetWidth; this.stage.classList.add('shake'); }
+}
+
+/* Tabla estilo DataFrame construida con divs (permite animar filas) */
+class DfTable{
+  /* opts: {columns:[...], index:[...], rows:[[...]], caption}
+     null en una celda se muestra como NaN (clase .nan) */
+  constructor(mount,opts){
+    this.o=opts;
+    this.wrap=el('div',{class:'dfwrap'});
+    if(opts.caption)this.wrap.append(el('div',{class:'note',style:'font-weight:600;margin-bottom:.25rem'},opts.caption));
+    this.root=el('div',{class:'df'});
+    this.wrap.append(this.root); mount.append(this.wrap);
+    this.render();
+  }
+  render(){
+    const {columns,index,rows}=this.o;
+    this.root.textContent='';
+    const tpl=`repeat(${columns.length+1}, max-content)`;
+    const hr=el('div',{class:'dfrow',style:`grid-template-columns:${tpl}`},
+      el('div',{class:'dfc i'},''), columns.map(c=>el('div',{class:'dfc h'},c)));
+    this.root.append(hr);
+    this.rowEls=[]; this.cellEls=[];
+    rows.forEach((row,ri)=>{
+      const cells=row.map(v=>{
+        const d=el('div',{class:'dfc'+(v===null?' nan':'')}, v===null?'NaN':fmt(v));
+        d._isnan=(v===null); return d;
+      });
+      const idx=el('div',{class:'dfc i'}, String(index[ri]));
+      const r=el('div',{class:'dfrow',style:`grid-template-columns:${tpl}`}, idx, cells);
+      this.root.append(r); this.rowEls.push(r); this.cellEls.push(cells); r._idx=idx;
+    });
+    this.headEls=[...hr.children].slice(1);
+  }
+  cell(r,c){return this.cellEls[r][c];}
+  clearMarks(){
+    this.rowEls.forEach(r=>r.classList.remove('roff'));
+    this.cellEls.flat().forEach(c=>{ c.className='dfc'+(c._isnan?' nan':''); });
+    this.headEls.forEach(h=>h.className='dfc h');
+    this.rowEls.forEach(r=>r._idx.className='dfc i');
+  }
+}
+/* FLIP: anima la reordenación vertical de las filas de un contenedor */
+function flipRows(container,mutate){
+  const els=[...container.children];
+  const first=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
+  mutate();
+  const after=[...container.children];
+  after.forEach(e=>{
+    if(!first.has(e))return;
+    const d=first.get(e)-e.getBoundingClientRect().top;
+    if(Math.abs(d)<1)return;
+    e.style.transition='none'; e.style.transform=`translateY(${d}px)`;
+    requestAnimationFrame(()=>{ e.style.transition='transform .55s cubic-bezier(.4,0,.2,1)'; e.style.transform=''; });
+  });
+}
+
+/* Paso a paso con botones y teclado */
+let ACTIVE_STEPPER=null;
+const STEPPERS_BY_MOD={};
+class Stepper{
+  /* steps: [{d:descripción html, run:async fn(esUltimo)}] ; reset: fn estado inicial
+     modId: registra el stepper para las flechas del teclado en ese módulo */
+  constructor(mount,steps,reset,modId){
+    this.steps=steps; this.reset=reset; this.i=-1; this._run=0;
+    this.cnt=el('span',{class:'cnt'},'inicio');
+    this.desc=el('div',{class:'stepdesc',html:'Presiona <b>▶ Siguiente</b> para avanzar paso a paso.'});
+    const bPrev=el('button',{class:'btn',onclick:()=>this.go(this.i-1)},'◀ Anterior');
+    const bNext=el('button',{class:'btn primary',onclick:()=>this.go(this.i+1)},'▶ Siguiente');
+    const bRe=el('button',{class:'btn',onclick:()=>this.go(-1)},'⟲ Reiniciar');
+    const bar=el('div',{class:'stepper',onclick:()=>ACTIVE_STEPPER=this},bPrev,bNext,bRe,this.cnt);
+    mount.append(bar,this.desc);
+    if(modId)(STEPPERS_BY_MOD[modId]=STEPPERS_BY_MOD[modId]||[]).push(this);
+  }
+  async go(i){
+    if(i<-1||i>=this.steps.length)return;
+    ACTIVE_STEPPER=this;
+    const tok=++this._run;
+    this.i=i;
+    if(i===-1){ this.reset(); this.cnt.textContent='inicio';
+      this.desc.innerHTML='Presiona <b>▶ Siguiente</b> para avanzar paso a paso.'; return; }
+    this.reset();
+    this.cnt.textContent=`paso ${i+1}/${this.steps.length}`;
+    this.desc.innerHTML=this.steps[i].d;
+    for(let k=0;k<=i;k++){
+      if(this._run!==tok)return; // otro clic interrumpió esta corrida
+      await this.steps[k].run(k===i);
+    }
+  }
+}
+
+/* ================= app shell ================= */
+const MODULES=[]; // {id, title, week, lead, build(section)}
+function registerModule(m){MODULES.push(m);}
+
+function buildShell(){
+  const nav=$('#nav'), main=$('#main');
+  if(!MODULES.length)return;
+  MODULES.forEach((m,i)=>{
+    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
+    b.dataset.mod=m.id; nav.append(b);
+    const sec=el('section',{class:'module',id:'mod-'+m.id},
+      el('h2',{},m.title,el('span',{class:'week'},m.week)),
+      el('p',{class:'lead'},m.lead||''));
+    main.append(sec);
+    m._built=false; m._sec=sec;
+  });
+  /* #id en la URL abre ese módulo directamente (link compartible por tema) */
+  const wanted=location.hash.slice(1);
+  activate(MODULES.some(m=>m.id===wanted)?wanted:MODULES[0].id);
+  window.addEventListener('hashchange',()=>{
+    const id=location.hash.slice(1);
+    if(MODULES.some(m=>m.id===id))activate(id);
+  });
+}
+function activate(id){
+  document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
+  const m=MODULES.find(x=>x.id===id);
+  if(!m._built){ m.build(m._sec); m._built=true; RELAYOUT.forEach(f=>f()); }
+  ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
+  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
+  window.scrollTo({top:0});
+}
+/* helpers UI */
+function codeBox(mount){const c=el('pre',{class:'code'});mount.append(c);return c;}
+function btnGroup(mount,items,onpick,activeFirst=true){
+  /* items: [{label,value}] — botones excluyentes; devuelve los botones */
+  const wrap=el('div',{class:'controls'});
+  const btns=items.map((it,i)=>el('button',{class:'btn'+((activeFirst&&i===0)?' on':''),onclick:()=>{
+    btns.forEach(b=>b.classList.remove('on')); btns[i].classList.add('on'); onpick(it.value);
+  }},it.label));
+  wrap.append(...btns); mount.append(wrap); return btns;
+}
+
+/* tema, presentación y teclado */
+document.addEventListener('DOMContentLoaded',()=>{
+  const btnTheme=$('#btnTheme'), btnPres=$('#btnPres');
+  const THEMES=[['','🌗 Auto'],['light','☀️ Claro'],['dark','🌙 Oscuro']];
+  let themeIdx=0;
+  btnTheme.onclick=()=>{
+    themeIdx=(themeIdx+1)%3;
+    const [v,label]=THEMES[themeIdx];
+    if(v)document.documentElement.dataset.theme=v; else delete document.documentElement.dataset.theme;
+    btnTheme.textContent=label;
+  };
+  btnPres.onclick=()=>{
+    const on=document.documentElement.classList.toggle('presenta');
+    btnPres.textContent=on?'🖥️ Normal':'🖥️ Presentar';
+    RELAYOUT.forEach(f=>f());
+  };
+  document.addEventListener('keydown',e=>{
+    if(e.target.matches('input,select,textarea'))return;
+    if(e.key==='ArrowRight'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i+1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i-1);e.preventDefault();}
+    else if(/^[1-9]$/.test(e.key)){const m=MODULES[+e.key-1]; if(m)activate(m.id);}
+  });
+  buildShell();
+});
+
+</script>
+<script>
+'use strict';
+/* Módulo 1: Arrays NumPy — reshape, axis, máscaras booleanas y broadcasting */
+registerModule({
+  id:'numpy',
+  title:'Arrays NumPy',
+  week:'Semanas 1–2',
+  lead:'Un array es una grilla de valores del mismo tipo. Aquí puedes ver cómo se mueven '+
+       'las celdas al cambiar la forma, qué recorre realmente el axis y cómo filtra una máscara booleana.',
+  build(sec){
+
+    /* ---------- Tarjeta 1: reshape ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Cambiar la forma: <code>reshape</code>'}),
+        el('p',{class:'note',html:'Los 12 valores <b>siempre son los mismos y en el mismo orden</b> (orden C: fila por fila). '+
+          'Reshape solo cambia cómo se agrupan. Mira cómo viaja cada celda.'}));
+      sec.append(card);
+      const ctr=el('div');card.append(ctr);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const msg=el('div',{class:'msg'});card.append(msg);
+      const code=codeBox(card);
+      const vals=Array.from({length:12},(_,i)=>i+1);
+      function render(r,c){
+        grid.setCells(vals.map((v,i)=>({id:'v'+i, text:v, r:Math.floor(i/c), c:i%c})));
+      }
+      function pick(shape){
+        msg.textContent='';msg.className='msg';
+        if(shape==='bad'){
+          grid.shake();
+          msg.className='msg err';
+          msg.textContent='ValueError: cannot reshape array of size 12 into shape (5,3) — 5×3=15 ≠ 12';
+          code.innerHTML='a = np.arange(1, 13)\na.reshape(<b>5, 3</b>)   # 💥 5·3 = 15 celdas, pero solo hay 12';
+          return;
+        }
+        const [r,c]=shape;
+        render(r,c);
+        code.innerHTML=`a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>${r}, ${c}</b>)          # shape (${r}, ${c})`;
+      }
+      btnGroup(ctr,[
+        {label:'1 × 12',value:[1,12]},{label:'2 × 6',value:[2,6]},{label:'3 × 4',value:[3,4]},
+        {label:'4 × 3',value:[4,3]},{label:'6 × 2',value:[6,2]},{label:'12 × 1',value:[12,1]},
+        {label:'5 × 3 ✗',value:'bad'},
+      ],pick);
+      render(1,12);
+      code.innerHTML='a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>1, 12</b>)';
+    }
+
+    /* ---------- Tarjeta 2: axis ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'El famoso <code>axis</code>'}),
+        el('p',{class:'note',html:'<b>axis = el eje que se colapsa.</b> Con <code>axis=0</code> la operación recorre '+
+          'las filas (↓) y deja un resultado <b>por columna</b>; con <code>axis=1</code> recorre las columnas (→) '+
+          'y deja un resultado <b>por fila</b>.'}));
+      sec.append(card);
+      const ctr=el('div');card.append(ctr);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const code=codeBox(card);
+      const M=[[2,7,1,8],[3,5,9,4],[6,0,2,5]];
+      const nR=3,nC=4;
+      let run=0;
+      function defsBase(hlCol=-1,hlRow=-1){
+        const d=[];
+        M.forEach((row,r)=>row.forEach((v,c)=>{
+          const hl=(c===hlCol||r===hlRow)?'hl':'';
+          d.push({id:`m${r}_${c}`,text:v,r,c,cls:hl});
+        }));
+        return d;
+      }
+      function draw(d){grid.setCells(d);}
+      draw(defsBase());
+      code.textContent='M = np.array([[2,7,1,8],\n              [3,5,9,4],\n              [6,0,2,5]])';
+      async function anim(mode){
+        const t=++run;
+        if(mode==='a0'){
+          code.innerHTML='M.sum(<b>axis=0</b>)   # recorre las filas ↓ → un total por COLUMNA\n# array([11, 12, 12, 17])';
+          const res=[];
+          for(let c=0;c<nC;c++){
+            if(t!==run)return;
+            draw([...defsBase(c),...res]);
+            await sleep(430); if(t!==run)return;
+            res.push({id:'r'+c,text:M[0][c]+M[1][c]+M[2][c],r:nR+0.5,c,cls:'res'});
+          }
+          draw([...defsBase(),...res]);
+        }else if(mode==='a1'){
+          code.innerHTML='M.sum(<b>axis=1</b>)   # recorre las columnas → → un total por FILA\n# array([18, 21, 13])';
+          const res=[];
+          for(let r=0;r<nR;r++){
+            if(t!==run)return;
+            draw([...defsBase(-1,r),...res]);
+            await sleep(430); if(t!==run)return;
+            res.push({id:'r'+r,text:M[r].reduce((a,b)=>a+b),r,c:nC+0.5,cls:'res'});
+          }
+          draw([...defsBase(),...res]);
+        }else{
+          code.innerHTML='M.sum()          # sin axis: colapsa TODO\n# 52';
+          draw(defsBase().map(d=>({...d,cls:'hl'})));
+          await sleep(500); if(t!==run)return;
+          draw([...defsBase(),{id:'tot',text:52,r:nR+0.5,c:(nC-1)/2,cls:'res'}]);
+        }
+      }
+      btnGroup(ctr,[
+        {label:'sum(axis=0) ↓',value:'a0'},
+        {label:'sum(axis=1) →',value:'a1'},
+        {label:'sum() total',value:'tot'},
+      ],anim,false);
+    }
+
+    /* ---------- Tarjeta 3: máscaras booleanas ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Filtrado con máscaras booleanas'}),
+        el('p',{class:'note',html:'La condición produce un array de <code>True/False</code> con la misma forma. '+
+          'Al indexar con esa máscara, NumPy <b>extrae solo las celdas True</b>, en orden fila por fila, '+
+          'y devuelve un array 1D.'}));
+      sec.append(card);
+      const A=[[4,9,1,7],[6,2,8,3],[0,5,9,2]];
+      const ops={'>':(a,b)=>a>b,'>=':(a,b)=>a>=b,'<':(a,b)=>a<b,'==':(a,b)=>a===b};
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selOp=el('select',{},Object.keys(ops).map(o=>el('option',{},o)));
+      const rng=el('input',{type:'range',min:0,max:9,value:5});
+      const rngVal=el('span',{style:'font-weight:700;min-width:1.2em;display:inline-block'},'5');
+      const chk=el('input',{type:'checkbox',id:'npmask'});
+      ctr.append(el('label',{},'condición: A '),selOp,rng,rngVal,
+        el('label',{for:'npmask',style:'margin-left:.8rem'},chk,' ver máscara booleana'));
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const cnt=el('div',{class:'msg okc'});card.append(cnt);
+      const code=codeBox(card);
+      function render(){
+        const op=selOp.value, k=+rng.value, showBool=chk.checked;
+        rngVal.textContent=k;
+        const defs=[];const picked=[];
+        A.forEach((row,r)=>row.forEach((v,c)=>{
+          const t=ops[op](v,k);
+          if(t)picked.push(v);
+          defs.push({id:`a${r}_${c}`, r, c,
+            text:showBool?(t?'True':'False'):v,
+            cls:showBool?(t?'boolT':'boolF'):(t?'ok':'off')});
+        }));
+        defs.push({id:'lbl',text:'resultado →',r:4,c:0,w:2,cls:'hd'});
+        picked.forEach((v,i)=>defs.push({id:'p'+i,text:v,r:4,c:i+2,cls:'res'}));
+        grid.setCells(defs);
+        cnt.textContent=`quedaron ${picked.length} de 12 valores`;
+        code.innerHTML=`mask = A <b>${op} ${k}</b>        # array de booleanos, shape (3, 4)\nA[mask]           # array([${picked.join(', ')}])`;
+      }
+      selOp.onchange=render; rng.oninput=render; chk.onchange=render;
+      render();
+    }
+
+    /* ---------- Tarjeta 4: broadcasting ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{},'Broadcasting'),
+        el('p',{class:'note',html:'¿Cómo se suma una matriz (3, 4) con un vector (4,)? NumPy <b>estira virtualmente</b> '+
+          'el vector — sin copiar memoria — hasta que las formas calcen, y recién ahí opera elemento a elemento.'}));
+      sec.append(card);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const code=codeBox(card);
+      const A=[[1,2,3,4],[5,6,7,8],[9,10,11,12]], b=[10,20,30,40];
+      const off=5.4, offR=10.8;
+      const dA=()=>A.flatMap((row,r)=>row.map((v,c)=>({id:`A${r}_${c}`,text:v,r,c})));
+      const dPlus={id:'plus',text:'+',r:1,c:4.35,cls:'hd'};
+      function reset(){
+        grid.setCells([...dA(),dPlus,
+          ...b.map((v,c)=>({id:'b'+c,text:v,r:1,c:off+c,cls:'ok'}))]);
+        code.textContent='A.shape   # (3, 4)\nb.shape   # (4,)\nA + b     # ¿funciona? ¡sí!';
+      }
+      const steps=[
+        {d:'<b>Formas distintas.</b> A es (3, 4) y b es (4,). Para operar elemento a elemento, las formas deben calzar. '+
+           'NumPy compara las formas desde la derecha: el 4 calza con el 4, y a b le falta la dimensión de las filas.',
+         async run(){ reset(); }},
+        {d:'<b>b se estira (broadcast).</b> NumPy repite virtualmente la fila de b 3 veces — las copias punteadas '+
+           'no existen en memoria, solo en la aritmética. Ahora ambos lados son (3, 4).',
+         async run(){
+           grid.setCells([...dA(),dPlus,
+             ...b.map((v,c)=>({id:'b'+c,text:v,r:0,c:off+c,cls:'ok'})),
+             ...[1,2].flatMap(r=>b.map((v,c)=>({id:`g${r}_${c}`,text:v,r,c:off+c,cls:'ok ghost'})))]);
+           code.innerHTML='A.shape   # (3, 4)\nb.shape   # (4,)  →  se estira a <b>(3, 4)</b>';
+           await sleep(500);
+         }},
+        {d:'<b>Suma elemento a elemento.</b> Con las formas ya iguales, cada celda del resultado es '+
+           'A[i, j] + b[j]. El resultado es (3, 4).',
+         async run(){
+           grid.setCells([...dA(),dPlus,
+             ...b.map((v,c)=>({id:'b'+c,text:v,r:0,c:off+c,cls:'ok'})),
+             ...[1,2].flatMap(r=>b.map((v,c)=>({id:`g${r}_${c}`,text:v,r,c:off+c,cls:'ok ghost'}))),
+             {id:'eq',text:'=',r:1,c:offR-0.65,cls:'hd'},
+             ...A.flatMap((row,r)=>row.map((v,c)=>({id:`R${r}_${c}`,text:v+b[c],r,c:offR+c,cls:'res'})))]);
+           code.innerHTML='A + b\n# array([[11, 22, 33, 44],\n#        [15, 26, 37, 48],\n#        [19, 30, 41, 52]])';
+           await sleep(300);
+         }},
+      ];
+      new Stepper(card,steps,reset,'numpy');
+      reset();
+    }
+  }
+});
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Módulo: DataFrames (Semana 3)
+   ===================================================================== */
+(function(){
+
+  const DATA = {
+    index:['E01','E02','E03','E04','E05'],
+    columns:['nombre','carrera','promedio','generación'],
+    rows:[
+      ['Valentina','ICI',6.1,2023],
+      ['Matías','IECI',5.4,2024],
+      ['Camila','ICI',4.9,2022],
+      ['Joaquín','IIND',6.5,2023],
+      ['Antonia','IECI',5.8,2024],
+    ]
+  };
+
+  registerModule({
+    id:'df',
+    title:'DataFrames',
+    week:'Semana 3',
+    lead:'Un DataFrame es una tabla: cada columna es una Serie con un tipo, y cada fila tiene una etiqueta en el índice.',
+    build(section){
+      buildAnatomia(section);
+      buildLocIloc(section);
+    }
+  });
+
+  /* ---------------- Tarjeta 1: Anatomía de un DataFrame ---------------- */
+  function buildAnatomia(section){
+    const card = el('div',{class:'card'}, el('h3',{},'Anatomía de un DataFrame'));
+    section.append(card);
+
+    const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — estudiantes'});
+
+    const ITEMS=[
+      {label:'Índice', value:'index'},
+      {label:'Columnas', value:'columns'},
+      {label:'Una fila = una Serie', value:'row'},
+      {label:'Una columna = una Serie', value:'col'},
+      {label:'Valores (.values)', value:'values'},
+    ];
+    btnGroup(card, ITEMS, pick, true);
+
+    const noteEl = el('div',{class:'note'});
+    card.append(noteEl);
+    const code = codeBox(card);
+
+    const NOTES = {
+      index:'El índice etiqueta cada fila. No es una columna: vive aparte y se usa con <b>.loc</b>.',
+      columns:'Los nombres de columna etiquetan cada Serie que compone el DataFrame.',
+      row:'Una fila completa, tomada con <b>.loc</b>, es una Serie: mezcla tipos de dato (texto y número), así que su dtype es <b>object</b>.',
+      col:'Una columna es una Serie con un solo tipo de dato — aquí, <b>float64</b> para promedio.',
+      values:'<b>.values</b> entrega solo la matriz de datos, como un array de NumPy: sin índice ni nombres de columna.',
+    };
+    const CODES = {
+      index:`df.<b>index</b>\n# Index(['E01', 'E02', 'E03', 'E04', 'E05'], dtype='object')`,
+      columns:`df.<b>columns</b>\n# Index(['nombre', 'carrera', 'promedio', 'generación'], dtype='object')`,
+      row:`df.loc[<b>'E03'</b>]\n# nombre         Camila\n# carrera           ICI\n# promedio          4.9\n# generación       2022\n# Name: E03, dtype: object`,
+      col:`df[<b>'promedio'</b>]\n# E01    6.1\n# E02    5.4\n# E03    4.9\n# E04    6.5\n# E05    5.8\n# Name: promedio, dtype: float64`,
+      values:`df.<b>values</b>\n# array([['Valentina', 'ICI', 6.1, 2023],\n#        ['Matías', 'IECI', 5.4, 2024],\n#        ['Camila', 'ICI', 4.9, 2022],\n#        ['Joaquín', 'IIND', 6.5, 2023],\n#        ['Antonia', 'IECI', 5.8, 2024]], dtype=object)`,
+    };
+
+    function pick(v){
+      table.clearMarks();
+      if(v==='index'){
+        table.rowEls.forEach(r=>r._idx.classList.add('hl'));
+      }else if(v==='columns'){
+        table.headEls.forEach(h=>h.classList.add('hl'));
+      }else if(v==='row'){
+        table.cellEls[2].forEach(c=>c.classList.add('sel'));
+        table.rowEls[2]._idx.classList.add('sel');
+      }else if(v==='col'){
+        table.rowEls.forEach((r,i)=>table.cellEls[i][2].classList.add('sel'));
+        table.headEls[2].classList.add('sel');
+      }else if(v==='values'){
+        table.cellEls.flat().forEach(c=>c.classList.add('hl'));
+      }
+      noteEl.innerHTML = NOTES[v];
+      code.innerHTML = CODES[v];
+    }
+
+    pick('index');
+  }
+
+  /* ---------------- Tarjeta 2: loc vs iloc ---------------- */
+  function buildLocIloc(section){
+    const card = el('div',{class:'card'}, el('h3',{},'df.loc vs df.iloc'));
+    section.append(card);
+
+    const leftDiv = el('div',{});
+    const rightDiv = el('div',{});
+    card.append(el('div',{class:'flexcols'}, leftDiv, rightDiv));
+    const tableLoc = new DfTable(leftDiv,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df.loc — por ETIQUETA'});
+    const tableIloc = new DfTable(rightDiv,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df.iloc — por POSICIÓN'});
+
+    const PRESETS=[
+      {label:"df.loc['E03']", value:'loc1'},
+      {label:"df.loc['E02':'E04', 'nombre':'promedio']", value:'loc2'},
+      {label:"df.loc[df['promedio'] >= 5.5]", value:'loc3'},
+      {label:'df.iloc[0]', value:'iloc1'},
+      {label:'df.iloc[1:3]', value:'iloc2'},
+      {label:'df.iloc[1:3, 0:2]', value:'iloc3'},
+    ];
+    btnGroup(card, PRESETS, pick, false);
+
+    const noteEl = el('div',{class:'note'},'Elige un preset arriba para ver qué filas y columnas selecciona.');
+    card.append(noteEl);
+    const code = codeBox(card);
+    code.textContent = '# elige un botón arriba ↑';
+
+    /* marca como .sel las celdas de rows×cols (cols=null → toda la fila) y
+       atenúa con .roff las filas no involucradas de esa misma tabla */
+    function markSelection(table, rows, cols){
+      const allCols = table.o.columns.map((_,c)=>c);
+      const useCols = cols || allCols;
+      table.o.index.forEach((_,i)=>{
+        if(!rows.includes(i)) table.rowEls[i].classList.add('roff');
+      });
+      rows.forEach(i=>{
+        table.rowEls[i]._idx.classList.add('sel');
+        useCols.forEach(c=>table.cellEls[i][c].classList.add('sel'));
+      });
+      useCols.forEach(c=>table.headEls[c].classList.add('sel'));
+    }
+
+    const NOTES = {
+      loc1:"df.loc['E03'] selecciona la fila con etiqueta 'E03': una Serie con los datos de Camila.",
+      loc2:"El slice de etiquetas <b>incluye el extremo final</b>: 'E02':'E04' trae E02, E03 y E04. Igual con columnas: 'nombre':'promedio' trae nombre, carrera y promedio.",
+      loc3:"df.loc también acepta una condición booleana: trae todas las filas donde la máscara es True — aquí, promedio ≥ 5.5 (Valentina, Joaquín y Antonia).",
+      iloc1:'df.iloc[0] trae la fila en la POSICIÓN 0 (la primera), sin importar su etiqueta de índice.',
+      iloc2:'El slice de posiciones <b>excluye el extremo final</b>: 1:3 trae las posiciones 1 y 2 (no la 3) — igual que en una lista de Python.',
+      iloc3:'Slice de posiciones en filas y columnas: 1:3 trae las filas en posición 1 y 2, y 0:2 trae las columnas en posición 0 y 1 (nombre, carrera). <b>Ambos excluyen su extremo final</b>.',
+    };
+    const CODES = {
+      loc1:`df.loc[<b>'E03'</b>]`,
+      loc2:`df.loc[<b>'E02':'E04'</b>, <b>'nombre':'promedio'</b>]`,
+      loc3:`df.loc[<b>df['promedio'] >= 5.5</b>]`,
+      iloc1:`df.iloc[<b>0</b>]`,
+      iloc2:`df.iloc[<b>1:3</b>]`,
+      iloc3:`df.iloc[<b>1:3</b>, <b>0:2</b>]`,
+    };
+
+    function pick(v){
+      tableLoc.clearMarks();
+      tableIloc.clearMarks();
+      if(v==='loc1') markSelection(tableLoc,[2]);
+      else if(v==='loc2') markSelection(tableLoc,[1,2,3],[0,1,2]);
+      else if(v==='loc3') markSelection(tableLoc,[0,3,4]);
+      else if(v==='iloc1') markSelection(tableIloc,[0]);
+      else if(v==='iloc2') markSelection(tableIloc,[1,2]);
+      else if(v==='iloc3') markSelection(tableIloc,[1,2],[0,1]);
+      noteEl.innerHTML = NOTES[v];
+      code.innerHTML = CODES[v];
+    }
+  }
+
+})();
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Módulo: Valores perdidos (Semana 4)
+   dropna() y fillna() sobre un mismo DataFrame de ejemplo (empleados).
+   ===================================================================== */
+(function(){
+
+/* ---- dataset: empleados (null = NaN) ---- */
+const NULOS_COLS = ['nombre','edad','sueldo','ciudad','evaluación'];
+const NULOS_IDX  = [0,1,2,3,4,5,6,7];
+const NULOS_ROWS = [
+  ['Rosa',34,950,'Concepción',6.2],
+  ['Juan',null,780,'Talcahuano',5.1],
+  ['Elsa',41,null,null,5.9],
+  ['Iván',29,640,'Hualpén',null],
+  ['Mía',null,null,'Concepción',6.7],
+  [null,null,null,null,null],
+  ['Leo',52,1200,null,4.8],
+  ['Ana',38,null,'Talcahuano',6.0]
+];
+const NULOS_NUM_COLS = [1,2,4]; // edad, sueldo, evaluación — únicas columnas numéricas
+function nulosData(){ return NULOS_ROWS.map(r=>r.slice()); } // copia fresca (independiente) para cada tabla
+
+/* ---- estadísticas de columna, sobre los valores presentes ---- */
+function colStats(c){
+  const vals = NULOS_ROWS.map(r=>r[c]).filter(v=>v!==null);
+  const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const s = [...vals].sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  const median = s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+  return {mean, median};
+}
+
+/* ---- lógica de dropna(): array de booleanos "¿se elimina esta fila/columna?" ----
+   thresh cuenta valores NO nulos; la referencia es siempre la dimensión "cruzada":
+   al tirar filas (axis=0) se compara contra las 5 columnas; al tirar columnas
+   (axis=1) se compara contra las 8 filas. */
+function computeDropna(axis, how, thresh){
+  const nrows = NULOS_ROWS.length, ncols = NULOS_COLS.length;
+  const flags = [];
+  if(axis===0){
+    for(const row of NULOS_ROWS){
+      const nn = row.filter(v=>v!==null).length;
+      flags.push(thresh!=null ? nn<thresh : (how==='all' ? nn===0 : nn<ncols));
+    }
+  } else {
+    for(let c=0;c<ncols;c++){
+      let nn=0;
+      for(let r=0;r<nrows;r++) if(NULOS_ROWS[r][c]!==null) nn++;
+      flags.push(thresh!=null ? nn<thresh : (how==='all' ? nn===0 : nn<nrows));
+    }
+  }
+  return flags;
+}
+function dropnaCode(axis, how, thresh){
+  const parts=[];
+  if(thresh!=null){
+    parts.push(`<b>thresh=${thresh}</b>`);
+    if(axis===1) parts.push('<b>axis=1</b>');
+  } else {
+    if(axis===1) parts.push('<b>axis=1</b>');
+    if(how==='all') parts.push("<b>how='all'</b>");
+  }
+  return `df.dropna(${parts.join(', ')})`;
+}
+
+/* ---- lógica de fillna(): plan de celdas {r,c,val} a rellenar, en orden de lectura ---- */
+function computeFillPlan(strategy){
+  const cols = (strategy==='ffill'||strategy==='bfill') ? [0,1,2,3,4] : NULOS_NUM_COLS;
+  const plan = [];
+  if(strategy==='zero'){
+    for(const c of cols) for(let r=0;r<NULOS_ROWS.length;r++)
+      if(NULOS_ROWS[r][c]===null) plan.push({r,c,val:0});
+  } else if(strategy==='mean' || strategy==='median'){
+    const stats={}; for(const c of cols) stats[c]=colStats(c);
+    for(const c of cols) for(let r=0;r<NULOS_ROWS.length;r++)
+      if(NULOS_ROWS[r][c]===null) plan.push({r,c,val: strategy==='mean'?stats[c].mean:stats[c].median});
+  } else if(strategy==='ffill'){
+    for(const c of cols){
+      let last=null;
+      for(let r=0;r<NULOS_ROWS.length;r++){
+        if(NULOS_ROWS[r][c]!==null) last=NULOS_ROWS[r][c];
+        else if(last!==null) plan.push({r,c,val:last});
+      }
+    }
+  } else if(strategy==='bfill'){
+    for(const c of cols){
+      let next=null;
+      for(let r=NULOS_ROWS.length-1;r>=0;r--){
+        if(NULOS_ROWS[r][c]!==null) next=NULOS_ROWS[r][c];
+        else if(next!==null) plan.push({r,c,val:next});
+      }
+    }
+  }
+  plan.sort((a,b)=> a.r-b.r || a.c-b.c); // se aplica en orden de lectura: fila por fila
+  return plan;
+}
+function leftoverNaN(strategy, plan){
+  if(strategy!=='ffill' && strategy!=='bfill') return [];
+  const filled = new Set(plan.map(p=>p.r+'_'+p.c));
+  const out=[];
+  for(let c=0;c<5;c++) for(let r=0;r<NULOS_ROWS.length;r++)
+    if(NULOS_ROWS[r][c]===null && !filled.has(r+'_'+c)) out.push(`fila ${r} · ${NULOS_COLS[c]}`);
+  return out;
+}
+function fillnaCode(strategy){
+  if(strategy==='zero') return 'df.fillna(0)';
+  if(strategy==='mean') return 'df.fillna(df.mean(numeric_only=True))';
+  if(strategy==='median') return 'df.fillna(df.median(numeric_only=True))';
+  if(strategy==='ffill') return "df.ffill()  # equivalente: df.fillna(method='ffill')";
+  if(strategy==='bfill') return "df.bfill()  # equivalente: df.fillna(method='bfill')";
+  return 'df.fillna(...)';
+}
+
+function build(section){
+  /* ===================== Tarjeta 1: ¿dónde están los NaN? ===================== */
+  const c1 = el('div',{class:'card'});
+  c1.append(el('h3',{},'¿Dónde están los NaN?'));
+  const t1 = new DfTable(c1, {columns:NULOS_COLS, index:NULOS_IDX, rows:nulosData(),
+    caption:'df — empleados (Biobío)'});
+
+  function showMatriz(){
+    t1.cellEls.flat().forEach(cell=>{ cell.className = 'dfc ' + (cell._isnan ? 'missnan' : 'miss'); });
+  }
+  btnGroup(c1, [
+    {label:'Ver valores', value:'valores'},
+    {label:'Ver matriz de nulos', value:'matriz'}
+  ], v=>{ if(v==='matriz') showMatriz(); else t1.clearMarks(); });
+
+  const isnaCounts = NULOS_COLS.map((_,i)=> NULOS_ROWS.filter(r=>r[i]===null).length);
+  const maxLen = Math.max(...NULOS_COLS.map(c=>c.length));
+  const isnaLines = NULOS_COLS.map((c,i)=> c.padEnd(maxLen+4)+isnaCounts[i]);
+  codeBox(c1).textContent = 'df.isna().sum()\n\n'+isnaLines.join('\n')+'\ndtype: int64';
+
+  c1.append(el('div',{class:'note'},
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'MCAR'),
+      ' — perdido completamente al azar: la ausencia no depende de nada, ni de lo observado ni del propio valor. Ej: una hoja de la encuesta se traspapeló.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'MAR'),
+      ' — perdido al azar, pero condicionado: la probabilidad de faltar depende de otra columna que sí observamos. Ej: los empleados recién contratados aún no tienen evaluación.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'MNAR'),
+      ' — perdido no al azar: la ausencia depende del propio valor que falta. Ej: quienes ganan menos evitan declarar su sueldo.')
+  ));
+  section.append(c1);
+
+  /* ===================== Tarjeta 2: dropna() ===================== */
+  const c2 = el('div',{class:'card'});
+  c2.append(el('h3',{},el('code',{},'dropna()'),' — eliminar filas o columnas con nulos'));
+  const t2 = new DfTable(c2, {columns:NULOS_COLS, index:NULOS_IDX, rows:nulosData(),
+    caption:'df — empleados (Biobío)'});
+
+  const axisSel = el('select',{onchange:()=>updateCode2()},
+    el('option',{value:'0'},'0 — filas'), el('option',{value:'1'},'1 — columnas'));
+  const howSel = el('select',{onchange:()=>updateCode2()},
+    el('option',{value:'any'},'any'), el('option',{value:'all'},'all'));
+  const threshInput = el('input',{type:'number',min:'0',max:'5',placeholder:'—',oninput:()=>updateCode2()});
+  const msg2 = el('div',{class:'msg'});
+
+  c2.append(el('div',{class:'controls'},
+    el('label',{},'axis'), axisSel,
+    el('label',{},'how'), howSel,
+    el('label',{},'thresh (mínimo de valores NO nulos)'), threshInput,
+    el('button',{class:'btn primary',onclick:()=>onAplicarDropna()},'Aplicar dropna()'),
+    el('button',{class:'btn',onclick:()=>onRestaurarDropna()},'Restaurar')
+  ));
+  c2.append(msg2);
+  const cb2 = codeBox(c2);
+  c2.append(el('div',{class:'note'},
+    'Si defines ', el('b',{},'thresh'), ', pandas ', el('b',{},'ignora how'),
+    ': en dropna(), thresh y how son mutuamente excluyentes. thresh cuenta valores NO nulos: al eliminar filas (axis=0) se compara contra las 5 columnas; al eliminar columnas (axis=1) se compara contra las 8 filas — la referencia cambia según el eje, aunque el control de abajo esté limitado a 0-5.'
+  ));
+  section.append(c2);
+
+  let busy2=false;
+  function readDropnaParams(){
+    const axis=Number(axisSel.value), how=howSel.value;
+    const raw=threshInput.value, thresh = raw===''? null : Number(raw);
+    return {axis,how,thresh};
+  }
+  function updateCode2(){
+    const {axis,how,thresh}=readDropnaParams();
+    cb2.innerHTML = dropnaCode(axis,how,thresh);
+  }
+  function resetCard2(){
+    t2.clearMarks();
+    t2.headEls.forEach(h=>{ h.style.opacity=''; });
+    t2.cellEls.flat().forEach(c=>{ c.style.opacity=''; });
+    msg2.className='msg'; msg2.textContent='';
+  }
+  async function onAplicarDropna(){
+    if(busy2) return; busy2=true;
+    try{
+      resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
+      const {axis,how,thresh}=readDropnaParams();
+      const flags = computeDropna(axis,how,thresh);
+      const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
+      for(const i of dropIdx){
+        if(axis===0){
+          t2.rowEls[i].classList.add('roff');
+        } else {
+          t2.headEls[i].classList.add('roff'); t2.headEls[i].style.opacity='.16';
+          t2.cellEls.forEach(row=>{ row[i].classList.add('roff'); row[i].style.opacity='.16'; });
+        }
+        await sleep(120);
+      }
+      const total = axis===0? NULOS_ROWS.length : NULOS_COLS.length;
+      const noun = axis===0? 'filas':'columnas';
+      const verbo = dropIdx.length===1? 'Se elimina':'Se eliminan';
+      msg2.className='msg okc';
+      msg2.textContent = `${verbo} ${dropIdx.length} de ${total} ${noun}`;
+      updateCode2();
+    } finally { busy2=false; }
+  }
+  function onRestaurarDropna(){ if(busy2) return; resetCard2(); }
+  updateCode2();
+
+  /* ===================== Tarjeta 3: fillna() ===================== */
+  const c3 = el('div',{class:'card'});
+  c3.append(el('h3',{},el('code',{},'fillna()'),' — imputar valores'));
+  const t3 = new DfTable(c3, {columns:NULOS_COLS, index:NULOS_IDX, rows:nulosData(),
+    caption:'df — empleados (Biobío)'});
+
+  const stratSel = el('select',{onchange:()=>updateCode3(stratSel.value)},
+    el('option',{value:'zero'},'0 (constante)'),
+    el('option',{value:'mean'},'media de la columna'),
+    el('option',{value:'median'},'mediana de la columna'),
+    el('option',{value:'ffill'},'ffill (anterior)'),
+    el('option',{value:'bfill'},'bfill (siguiente)'));
+
+  c3.append(el('div',{class:'controls'},
+    el('label',{},'estrategia'), stratSel,
+    el('button',{class:'btn primary',onclick:()=>onAplicarFill()},'Aplicar'),
+    el('button',{class:'btn',onclick:()=>onRestaurarFill()},'Restaurar')
+  ));
+  const note3 = el('div',{class:'note'});
+  c3.append(note3);
+  const cb3 = codeBox(c3);
+  c3.append(el('div',{class:'note'},
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'0 (constante): '),
+      'inmediato, pero si la columna no es naturalmente cero (sueldo, evaluación) mete un valor irreal que puede sesgar promedios y modelos.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'Media: '),
+      'conserva el promedio original, pero reduce artificialmente la varianza — la columna queda "más pareja" de lo que en realidad es.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'Mediana: '),
+      'parecida a la media pero robusta ante outliers; suele ser una opción por defecto razonable para columnas numéricas.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'ffill: '),
+      'arrastra el valor de la fila de arriba — solo tiene sentido cuando el orden de las filas es real (series de tiempo, mediciones consecutivas).'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'bfill: '),
+      'lo mismo pero mirando hacia abajo; igual que ffill, es arbitrario si las filas no tienen un orden temporal o lógico.')
+  ));
+  section.append(c3);
+
+  let busy3=false;
+  function updateNote3(strategy, plan){
+    let txt='';
+    if(strategy==='zero'){
+      txt = 'Cada NaN de las columnas numéricas (edad, sueldo, evaluación) se reemplaza por 0. Las columnas de texto (nombre, ciudad) no se tocan.';
+    } else if(strategy==='mean'){
+      txt = `media(edad)=${fmt(colStats(1).mean)} · media(sueldo)=${fmt(colStats(2).mean)} · media(evaluación)=${fmt(colStats(4).mean)}  (nombre y ciudad no son numéricas, quedan igual)`;
+    } else if(strategy==='median'){
+      txt = `mediana(edad)=${fmt(colStats(1).median)} · mediana(sueldo)=${fmt(colStats(2).median)} · mediana(evaluación)=${fmt(colStats(4).median)}  (nombre y ciudad no son numéricas, quedan igual)`;
+    } else if(strategy==='ffill'){
+      txt = 'Cada NaN se reemplaza por el valor anterior de su columna (fila de arriba).';
+    } else if(strategy==='bfill'){
+      txt = 'Cada NaN se reemplaza por el valor siguiente de su columna (fila de abajo).';
+    }
+    const leftover = leftoverNaN(strategy, plan);
+    if(leftover.length) txt += ` Quedan como NaN, sin ${strategy==='ffill'?'valor anterior':'valor siguiente'}: ${leftover.join(', ')}.`;
+    note3.textContent = txt;
+  }
+  function updateCode3(strategy){ cb3.textContent = fillnaCode(strategy); }
+  function resetCard3(){
+    t3.render(); // reconstruye la tabla desde los datos originales (vuelve a marcar _isnan)
+    note3.textContent='';
+  }
+  async function onAplicarFill(){
+    if(busy3) return; busy3=true;
+    try{
+      resetCard3(); // evita mezclar el resultado con una estrategia aplicada antes, sin pasar por Restaurar
+      const strategy = stratSel.value;
+      const plan = computeFillPlan(strategy);
+      for(const {r,c,val} of plan){
+        const cell = t3.cellEls[r][c];
+        cell.textContent = fmt(val);
+        cell.classList.remove('nan');
+        cell.classList.add('fill');
+        await sleep(150);
+      }
+      updateNote3(strategy, plan);
+      updateCode3(strategy);
+    } finally { busy3=false; }
+  }
+  function onRestaurarFill(){
+    if(busy3) return;
+    resetCard3();
+    updateCode3(stratSel.value);
+  }
+  updateCode3('zero');
+}
+
+registerModule({
+  id:'nulos',
+  title:'Valores perdidos',
+  week:'Semana 4',
+  lead:'Los datos reales llegan con huecos. Antes de modelar hay que decidir: ¿dónde están los NaN, los elimino o los relleno? Cada decisión cambia lo que tus datos dicen.',
+  build
+});
+
+})();
+
+</script>
+<script>
+'use strict';
+/* Módulo: Outliers — detección con IQR y z-score, boxplot interactivo */
+registerModule({
+  id:'outliers',
+  title:'Outliers',
+  week:'Semanas 8–9',
+  lead:'Un outlier es un valor anómalamente lejos del resto. Detectarlo es fácil; '+
+       'la decisión difícil es qué hacer con él — y para eso hay que mirar los datos.',
+  build(sec){
+    const NS='http://www.w3.org/2000/svg';
+    const s=(tag,attrs={})=>{
+      const n=document.createElementNS(NS,tag);
+      for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
+      return n;
+    };
+    /* sueldos mensuales (miles de CLP) de analistas de datos — inspirado en DataAnalyst.csv del curso */
+    const DATA=[650,720,780,810,690,850,920,880,760,730,990,1050,840,910,700,880,820,950,1100,760,890,3900,4800,150];
+
+    const quantile=(arr,q)=>{ /* interpolación lineal, como numpy/pandas */
+      const a=[...arr].sort((x,y)=>x-y);
+      const pos=(a.length-1)*q, lo=Math.floor(pos), hi=Math.ceil(pos);
+      return a[lo]+(a[hi]-a[lo])*(pos-lo);
+    };
+    const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    const std=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+    const fmt$=v=>'$'+Math.round(v).toLocaleString('es-CL');
+
+    const card=el('div',{class:'card'},
+      el('h3',{},'Detectar outliers: IQR y z-score'),
+      el('p',{class:'note',html:'Sueldos mensuales (miles de pesos) de 24 analistas de datos. '+
+        'Mueve el umbral y observa qué puntos quedan marcados como outliers. '+
+        'Fíjate cómo la <b>media se arrastra</b> hacia los valores extremos mientras la <b>mediana casi no se mueve</b>: '+
+        'por eso el boxplot (basado en cuartiles) es la herramienta robusta para esto.'}));
+    sec.append(card);
+
+    /* controles */
+    const ctr=el('div',{class:'controls'});card.append(ctr);
+    const selM=el('select',{},el('option',{value:'iqr'},'IQR (rango intercuartílico)'),el('option',{value:'z'},'z-score'));
+    const rng=el('input',{type:'range',min:0.5,max:3,step:0.25,value:1.5,style:'width:140px'});
+    const kLab=el('span',{style:'font-weight:700;min-width:2.4em;display:inline-block'},'k = 1,5');
+    const bDrop=el('button',{class:'btn'},'🗑️ Eliminar outliers');
+    const bRes=el('button',{class:'btn'},'⟲ Restaurar');
+    ctr.append(el('label',{},'método: '),selM,el('label',{style:'margin-left:.6rem'},'umbral: '),rng,kLab,bDrop,bRes);
+
+    /* svg */
+    const W=740,H=196,L=54,R=24,plotW=W-L-R;
+    const svgWrap=el('div',{style:'overflow-x:auto'});card.append(svgWrap);
+    const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:900px;display:block'});
+    svgWrap.append(svg);
+    const gAxis=s('g'),gBox=s('g'),gFence=s('g'),gPts=s('g');
+    svg.append(gAxis,gFence,gBox,gPts);
+    /* leyenda */
+    card.append(el('div',{class:'legend'},
+      el('span',{},el('span',{class:'sw',style:'background:var(--s1)'}),'dato'),
+      el('span',{},el('span',{class:'sw',style:'background:var(--s8)'}),'outlier según el umbral'),
+      el('span',{},el('span',{class:'sw',style:'background:transparent;border:1px dashed var(--muted)'}),'límites (cercas)')));
+    const stats=el('div',{class:'msg'});card.append(stats);
+    const chips=el('div');card.append(chips);
+    const code=codeBox(card);
+    card.append(el('p',{class:'note',html:'<b>¿IQR o z-score?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
+      'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. Regla práctica del curso: '+
+      'boxplot/IQR primero, z-score solo si la variable es aproximadamente normal. Y antes de borrar un outlier pregúntate: '+
+      '¿es un error de digitación o un dato real e interesante?'}));
+
+    /* puntos persistentes */
+    let active=[...DATA]; // valores vigentes (tras eliminar)
+    const circles=DATA.map((v,i)=>{
+      const c=s('circle',{r:5.5,fill:'var(--s1)','fill-opacity':.85,style:'transition:opacity .5s, fill .3s'});
+      const hit=s('circle',{r:11,fill:'transparent'});
+      const t=s('title');t.textContent=`analista ${i+1}: ${fmt$(v)} mil`;
+      c.append(t);
+      gPts.append(c,hit);
+      return {c,hit,v,i,removed:false};
+    });
+
+    function config(){ /* reconfigura slider según método */
+      if(selM.value==='iqr'){rng.min=0.5;rng.max=3;rng.step=0.25;rng.value=1.5;}
+      else{rng.min=1;rng.max=3.5;rng.step=0.25;rng.value=3;}
+      update();
+    }
+    function update(){
+      const k=+rng.value;
+      kLab.textContent='k = '+String(k).replace('.',',');
+      const vals=circles.filter(p=>!p.removed).map(p=>p.v);
+      const q1=quantile(vals,.25),q3=quantile(vals,.75),iqr=q3-q1;
+      const m=mean(vals),sd=std(vals),med=quantile(vals,.5);
+      let lo,hi;
+      if(selM.value==='iqr'){lo=q1-k*iqr;hi=q3+k*iqr;}
+      else{lo=m-k*sd;hi=m+k*sd;}
+      /* escala */
+      const vmin=Math.min(...vals,lo),vmax=Math.max(...vals,hi);
+      const pad=(vmax-vmin)*.05;
+      const x=v=>L+ (v-(vmin-pad))/((vmax+pad)-(vmin-pad))*plotW;
+      /* eje */
+      gAxis.textContent='';
+      gAxis.append(s('line',{x1:L,x2:W-R,y1:H-18,y2:H-18,class:'axisline'}));
+      const span=vmax-vmin;
+      const step=span>3000?1000:span>1200?500:250;
+      for(let v=Math.ceil(vmin/step)*step;v<=vmax;v+=step){
+        gAxis.append(s('line',{x1:x(v),x2:x(v),y1:30,y2:H-18,class:'gridline'}));
+        const t=s('text',{x:x(v),y:H-4,'text-anchor':'middle'});t.textContent=v.toLocaleString('es-CL');
+        gAxis.append(t);
+      }
+      /* cercas */
+      gFence.textContent='';
+      for(const [v,lbl] of [[lo,'lím. inf'],[hi,'lím. sup']]){
+        gFence.append(s('line',{x1:x(v),x2:x(v),y1:26,y2:H-18,stroke:'var(--muted)','stroke-dasharray':'4 4'}));
+        const t=s('text',{x:x(v),y:20,'text-anchor':'middle'});t.textContent=lbl;
+        gFence.append(t);
+      }
+      /* boxplot (siempre por cuartiles, se dibuja sobre los datos vigentes) */
+      gBox.textContent='';
+      const yB=52,hB=34;
+      const inFence=vals.filter(v=>v>=lo&&v<=hi);
+      const wLo=Math.min(...inFence),wHi=Math.max(...inFence);
+      gBox.append(
+        s('line',{x1:x(wLo),x2:x(q1),y1:yB,y2:yB,class:'axisline'}),
+        s('line',{x1:x(q3),x2:x(wHi),y1:yB,y2:yB,class:'axisline'}),
+        s('line',{x1:x(wLo),x2:x(wLo),y1:yB-8,y2:yB+8,class:'axisline'}),
+        s('line',{x1:x(wHi),x2:x(wHi),y1:yB-8,y2:yB+8,class:'axisline'}),
+        s('rect',{x:x(q1),y:yB-hB/2,width:Math.max(1,x(q3)-x(q1)),height:hB,rx:4,
+          fill:'color-mix(in srgb, var(--s1) 22%, transparent)',stroke:'var(--s1)'}),
+        s('line',{x1:x(med),x2:x(med),y1:yB-hB/2,y2:yB+hB/2,stroke:'var(--s1)','stroke-width':2.5}));
+      /* puntos */
+      const outs=[];
+      circles.forEach((p,i)=>{
+        const yJ=96+((i*37)%64);
+        p.c.setAttribute('cx',x(p.v));p.c.setAttribute('cy',yJ);
+        p.hit.setAttribute('cx',x(p.v));p.hit.setAttribute('cy',yJ);
+        if(p.removed){p.c.style.opacity=0;p.hit.style.pointerEvents='none';return;}
+        p.c.style.opacity=1;p.hit.style.pointerEvents='';
+        const isOut=p.v<lo||p.v>hi;
+        p.c.setAttribute('fill',isOut?'var(--s8)':'var(--s1)');
+        if(isOut)outs.push(p.v);
+      });
+      /* lecturas */
+      stats.innerHTML=`Q1=${fmt$(q1)} · mediana=${fmt$(med)} · Q3=${fmt$(q3)} · `+
+        `límites [${fmt$(lo)}, ${fmt$(hi)}] · <b style="color:var(--s8)">${outs.length} outlier${outs.length===1?'':'s'}</b> · `+
+        `media=${fmt$(m)} vs mediana=${fmt$(med)}`;
+      chips.textContent='';
+      outs.sort((a,b)=>a-b).forEach(v=>chips.append(el('span',{class:'chip',style:'border-color:var(--s8);color:var(--s8)'},fmt$(v))));
+      if(selM.value==='iqr'){
+        code.innerHTML=`Q1, Q3 = df['sueldo'].quantile([0.25, 0.75])\nIQR = Q3 - Q1                        # ${fmt$(iqr)}\nlim_inf = Q1 - <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(lo)}\nlim_sup = Q3 + <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(hi)}\noutliers = df[(df['sueldo'] < lim_inf) | (df['sueldo'] > lim_sup)]   # ${outs.length} filas`;
+      }else{
+        code.innerHTML=`z = (df['sueldo'] - df['sueldo'].mean()) / df['sueldo'].std()\noutliers = df[z.abs() > <b>${String(k).replace('.',',')}</b>]        # ${outs.length} filas`;
+      }
+      return {lo,hi};
+    }
+    selM.onchange=config;
+    rng.oninput=update;
+    bDrop.onclick=()=>{
+      const {lo,hi}=update();
+      circles.forEach(p=>{if(!p.removed&&(p.v<lo||p.v>hi))p.removed=true;});
+      update();
+    };
+    bRes.onclick=()=>{circles.forEach(p=>p.removed=false);update();};
+    update();
+  }
+});
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Módulo: Data wrangling (Semanas 9–10)
+   ===================================================================== */
+(function(){
+
+  registerModule({
+    id:'wrangling',
+    title:'Data wrangling',
+    week:'Semanas 9–10',
+    lead:'Limpiar y transformar: duplicados, reemplazos, discretización y ordenamiento.',
+    build(section){
+      buildDuplicados(section);
+      buildReemplazo(section);
+      buildCut(section);
+      buildOrden(section);
+    }
+  });
+
+  /* ---------------- Tarjeta 1: Duplicados ---------------- */
+  function buildDuplicados(section){
+    const DATA = {
+      index:[0,1,2,3,4,5,6],
+      columns:['cliente','producto','monto'],
+      rows:[
+        ['Ana','Café',2500],
+        ['Luis','Té',1800],
+        ['Ana','Café',2500],
+        ['Marta','Jugo',2200],
+        ['Luis','Té',1800],
+        ['Pedro','Café',2600],
+        ['Ana','Café',2500],
+      ]
+    };
+    // grupos de filas exactamente iguales en todas las columnas
+    const GROUPS = [[0,2,6],[1,4]];
+    function dupRows(keep){
+      const out=[];
+      for(const g of GROUPS){
+        if(keep==='first') out.push(...g.slice(1));
+        else if(keep==='last') out.push(...g.slice(0,-1));
+        else out.push(...g); // keep === 'false' → False
+      }
+      return out.sort((a,b)=>a-b);
+    }
+    function keepDisplay(keep){ return keep==='false' ? 'False' : `'${keep}'`; }
+
+    const card = el('div',{class:'card'}, el('h3',{},'Duplicados'));
+    section.append(card);
+    const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — ventas'});
+
+    const selectKeep = el('select',{},
+      el('option',{value:'first'},"'first'"),
+      el('option',{value:'last'},"'last'"),
+      el('option',{value:'false'},'False'),
+    );
+    const controls = el('div',{class:'controls'},
+      el('label',{},'keep = '),
+      selectKeep,
+      el('button',{class:'btn',onclick:()=>marcar()},'Marcar duplicated(keep=…)'),
+      el('button',{class:'btn',onclick:()=>dropDup()},'drop_duplicates()'),
+      el('button',{class:'btn',onclick:()=>restaurar()},'Restaurar'),
+    );
+    card.append(controls);
+    const msg = el('div',{class:'msg'},'.duplicated().sum() = —');
+    card.append(msg);
+    const code = codeBox(card);
+
+    function marcar(){
+      table.clearMarks();
+      const keep = selectKeep.value;
+      const rows = dupRows(keep);
+      rows.forEach(i=>{
+        table.rowEls[i]._idx.classList.add('dupe');
+        table.cellEls[i].forEach(c=>c.classList.add('dupe'));
+      });
+      msg.textContent = `.duplicated().sum() = ${rows.length}`;
+      code.innerHTML = `df.duplicated(keep=<b>${keepDisplay(keep)}</b>)`;
+    }
+
+    async function dropDup(){
+      table.clearMarks();
+      const keep = selectKeep.value;
+      const rows = dupRows(keep);
+      msg.textContent = `.duplicated().sum() = ${rows.length}`;
+      code.innerHTML = `df.drop_duplicates(keep=<b>${keepDisplay(keep)}</b>)`;
+      for(const i of rows){
+        table.rowEls[i]._idx.classList.add('dupe');
+        table.cellEls[i].forEach(c=>c.classList.add('dupe'));
+        table.rowEls[i].classList.add('roff');
+        await sleep(180);
+      }
+    }
+
+    function restaurar(){
+      table.clearMarks();
+      msg.textContent = '.duplicated().sum() = —';
+      code.textContent = '# elige "keep" y presiona un botón ↑';
+    }
+
+    restaurar();
+  }
+
+  /* ---------------- Tarjeta 2: Reemplazo y mapeo ---------------- */
+  function buildReemplazo(section){
+    const DATA = {
+      index:[0,1,2,3,4],
+      columns:['respuesta','comuna'],
+      rows:[
+        ['sí','Concepción'],
+        ['no','Talcahuano'],
+        ['sí','Hualpén'],
+        ['s/r','Concepción'],
+        ['no','Hualpén'],
+      ]
+    };
+
+    const card = el('div',{class:'card'}, el('h3',{},'Reemplazo y mapeo'));
+    section.append(card);
+    const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — encuesta'});
+
+    const controls = el('div',{class:'controls'},
+      el('button',{class:'btn',onclick:()=>doReplace()},"replace({'sí':1,'no':0})"),
+      el('button',{class:'btn',onclick:()=>doMap()},"map({'sí':1,'no':0})"),
+      el('button',{class:'btn',onclick:()=>restaurar()},'Restaurar'),
+    );
+    card.append(controls);
+    const note = el('div',{class:'note'},'Elige una operación para ver cómo transforma la columna «respuesta».');
+    card.append(note);
+    const code = codeBox(card);
+    code.textContent = '# elige un botón arriba ↑';
+
+    async function doReplace(){
+      table.render();
+      for(let i=0;i<DATA.rows.length;i++){
+        const cell = table.cellEls[i][0];
+        cell.classList.add('hl');
+        await sleep(350);
+        const val = DATA.rows[i][0];
+        cell.classList.remove('hl');
+        if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
+        else if(val==='no'){ cell.textContent='0'; cell.classList.add('fill'); }
+        // 's/r' no está en el diccionario → se deja intacto
+      }
+      note.innerHTML = "replace() solo cambia los valores presentes en el diccionario ('sí'→1, 'no'→0). <b>'s/r' no está en el diccionario, así que queda igual.</b>";
+      code.innerHTML = `df['respuesta'] = df['respuesta'].<b>replace</b>({'sí': 1, 'no': 0})`;
+    }
+
+    async function doMap(){
+      table.render();
+      for(let i=0;i<DATA.rows.length;i++){
+        const cell = table.cellEls[i][0];
+        cell.classList.add('hl');
+        await sleep(350);
+        const val = DATA.rows[i][0];
+        cell.classList.remove('hl');
+        if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
+        else if(val==='no'){ cell.textContent='0'; cell.classList.add('fill'); }
+        else{ cell.textContent='NaN'; cell.className='dfc nan'; }
+      }
+      note.innerHTML = "<b>map() reemplaza según el diccionario, pero cualquier valor que NO sea una clave se convierte en NaN.</b> Por eso 's/r' se pierde como dato — a diferencia de replace(), que lo deja intacto.";
+      code.innerHTML = `df['respuesta'] = df['respuesta'].<b>map</b>({'sí': 1, 'no': 0})`;
+    }
+
+    function restaurar(){
+      table.render();
+      note.textContent = 'Elige una operación para ver cómo transforma la columna «respuesta».';
+      code.textContent = '# elige un botón arriba ↑';
+    }
+  }
+
+  /* ---------------- Tarjeta 3: Discretización con pd.cut ---------------- */
+  function buildCut(section){
+    const NOMBRES = ['Sofía','Benjamín','Pedro','Elena','Rosa','Manuel','Diego','Emilia'];
+    const EDADES  = [15,22,34,45,61,70,28,8];
+    const DATA = {
+      index: EDADES.map((_,i)=>i),
+      columns:['nombre','edad','grupo'],
+      rows: NOMBRES.map((n,i)=>[n,EDADES[i],''])
+    };
+    const BINS = [0,18,40,65,120];
+    const LABELS = ['niñez','adulto joven','adulto','mayor'];
+    const GCLS = ['g0','g1','g2','g3'];
+    function binIndex(age){
+      for(let i=0;i<BINS.length-1;i++){ if(age>BINS[i] && age<=BINS[i+1]) return i; }
+      return -1;
+    }
+
+    const card = el('div',{class:'card'}, el('h3',{},'Discretización con pd.cut'));
+    section.append(card);
+    const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — personas'});
+
+    const controls = el('div',{class:'controls'},
+      el('button',{class:'btn',onclick:()=>aplicar()},'Aplicar pd.cut(bins=[0,18,40,65,120])'),
+      el('button',{class:'btn',onclick:()=>restaurar()},'Restaurar'),
+    );
+    card.append(controls);
+
+    const legend = el('div',{class:'legend'},
+      el('span',{}, el('span',{class:'sw',style:'background:var(--s1)'}),'niñez  (0, 18]'),
+      el('span',{}, el('span',{class:'sw',style:'background:var(--s2)'}),'adulto joven  (18, 40]'),
+      el('span',{}, el('span',{class:'sw',style:'background:var(--s3)'}),'adulto  (40, 65]'),
+      el('span',{}, el('span',{class:'sw',style:'background:var(--s4)'}),'mayor  (65, 120]'),
+    );
+    card.append(legend);
+
+    const note = el('div',{class:'note',html:'Los intervalos de pd.cut son <b>(a, b]</b>: abiertos a la izquierda, cerrados a la derecha. Por eso alguien de exactamente 18 años cae en «niñez», no en «adulto joven».'});
+    card.append(note);
+
+    const code = codeBox(card);
+    code.innerHTML = `pd.cut(df['edad'],\n       bins=<b>[0, 18, 40, 65, 120]</b>,\n       labels=<b>['niñez', 'adulto joven', 'adulto', 'mayor']</b>)`;
+
+    async function aplicar(){
+      for(let i=0;i<DATA.rows.length;i++){
+        const cell = table.cellEls[i][2];
+        cell.classList.add('hl');
+        await sleep(300);
+        const bi = binIndex(DATA.rows[i][1]);
+        cell.classList.remove('hl');
+        cell.textContent = LABELS[bi];
+        cell.classList.add(GCLS[bi]);
+      }
+    }
+    function restaurar(){ table.render(); }
+  }
+
+  /* ---------------- Tarjeta 4: Ordenamiento ---------------- */
+  function buildOrden(section){
+    const DATA = {
+      index:['E01','E02','E03','E04','E05'],
+      columns:['nombre','carrera','promedio','generación'],
+      rows:[
+        ['Valentina','ICI',6.1,2023],
+        ['Matías','IECI',5.4,2024],
+        ['Camila','ICI',4.9,2022],
+        ['Joaquín','IIND',6.5,2023],
+        ['Antonia','IECI',5.8,2024],
+      ]
+    };
+
+    const card = el('div',{class:'card'}, el('h3',{},'Ordenamiento'));
+    section.append(card);
+    const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — estudiantes'});
+
+    const selCol = el('select',{},
+      el('option',{value:'promedio'},'promedio'),
+      el('option',{value:'nombre'},'nombre'),
+      el('option',{value:'generación'},'generación'),
+    );
+    const selAsc = el('select',{},
+      el('option',{value:'true'},'True'),
+      el('option',{value:'false'},'False'),
+    );
+    const controls = el('div',{class:'controls'},
+      el('label',{},'by = '), selCol,
+      el('label',{},'ascending = '), selAsc,
+      el('button',{class:'btn',onclick:()=>doSort()},'sort_values()'),
+      el('button',{class:'btn',onclick:()=>doRestore()},'Restaurar orden original'),
+    );
+    card.append(controls);
+    const code = codeBox(card);
+    code.innerHTML = `df.sort_values(by=<b>'promedio'</b>, ascending=<b>True</b>)`;
+
+    function doSort(){
+      const col = selCol.value;
+      const asc = selAsc.value==='true';
+      const colIdx = DATA.columns.indexOf(col);
+      const order = DATA.rows.map((_,i)=>i).sort((a,b)=>{
+        const va=DATA.rows[a][colIdx], vb=DATA.rows[b][colIdx];
+        const cmp = (typeof va==='number') ? (va-vb) : String(va).localeCompare(String(vb),'es');
+        return asc ? cmp : -cmp;
+      });
+      flipRows(table.root, ()=>{
+        order.forEach(i=>table.root.appendChild(table.rowEls[i]));
+      });
+      code.innerHTML = `df.sort_values(by=<b>'${col}'</b>, ascending=<b>${asc?'True':'False'}</b>)`;
+    }
+
+    function doRestore(){
+      flipRows(table.root, ()=>{
+        DATA.rows.forEach((_,i)=>table.root.appendChild(table.rowEls[i]));
+      });
+      code.innerHTML = `df.sort_values(by=<b>'promedio'</b>, ascending=<b>True</b>)`;
+    }
+  }
+
+})();
+
+</script>
+<script>
+'use strict';
+/* Módulo: GroupBy y pivoteo — split-apply-combine animado y pivot_table como heatmap */
+registerModule({
+  id:'groupby',
+  title:'GroupBy y pivoteo',
+  week:'Semana 11',
+  lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
+       'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
+  build(sec){
+    /* ventas de una cafetería universitaria — inspirado en cafe_sales.csv del curso */
+    const COLS=['producto','sucursal','monto'];
+    const ROWS=[
+      ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
+      ['Jugo','Centro',2200],['Té','Centro',1900],['Café','Centro',2400],
+      ['Jugo','Campus',2100],['Té','Campus',1700],['Café','Campus',2700]];
+    const KEYS=['Café','Té','Jugo'];               // orden de aparición → orden de grupos
+    const GCLS={ 'Café':'g0','Té':'g1','Jugo':'g2' };
+    const AGG={
+      sum:  {label:'sum',  f:a=>a.reduce((x,y)=>x+y,0)},
+      mean: {label:'mean', f:a=>a.reduce((x,y)=>x+y,0)/a.length},
+      count:{label:'count',f:a=>a.length},
+      max:  {label:'max',  f:a=>Math.max(...a)},
+    };
+    const groupsOf=key=>ROWS.map((r,i)=>[r,i]).filter(([r])=>r[0]===key);
+
+    /* ---------- Tarjeta 1: split-apply-combine ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>groupby</code> paso a paso'}),
+        el('p',{class:'note',html:'9 boletas de una cafetería. Vamos a calcular el total vendido por producto: '+
+          '<code>df.groupby(\'producto\')[\'monto\'].sum()</code>'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selA=el('select',{},Object.keys(AGG).map(k=>el('option',{value:k},AGG[k].label)));
+      ctr.append(el('label',{},'función de agregación: '),selA);
+      const cols=el('div',{class:'flexcols'});card.append(cols);
+      const left=el('div'),right=el('div');cols.append(left,right);
+      const table=new DfTable(left,{caption:'df (boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
+      const resMount=el('div');right.append(resMount);
+      const code=codeBox(card);
+      const origOrder=[...table.rowEls];
+
+      let resTable=null;
+      function clearResult(){resMount.textContent='';resTable=null;}
+      function showResult(upTo /* nº de grupos listos */){
+        clearResult();
+        const agg=AGG[selA.value];
+        const rows=KEYS.slice(0,upTo).map(k=>[agg.f(groupsOf(k).map(([r])=>r[2]))]);
+        resTable=new DfTable(resMount,{caption:`resultado (${agg.label})`,columns:['monto'],
+          index:KEYS.slice(0,upTo),rows});
+        rows.forEach((_,ri)=>{
+          resTable.cell(ri,0).classList.add(GCLS[KEYS[ri]]);
+          resTable.rowEls[ri]._idx.classList.add(GCLS[KEYS[ri]]);
+        });
+      }
+      function colorRows(){
+        ROWS.forEach((r,ri)=>{
+          table.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]]));
+        });
+      }
+      function reset(){
+        table.clearMarks();clearResult();
+        origOrder.forEach(r=>table.root.append(r));
+        code.innerHTML=`df.groupby('producto')['monto'].<b>${AGG[selA.value].label}</b>()`;
+      }
+      const steps=[
+        {d:'<b>La llave.</b> <code>groupby(\'producto\')</code> etiqueta cada fila según su valor '+
+           'en la columna <code>producto</code>. Cada color es un grupo: todavía no se movió nada.',
+         async run(){ colorRows(); }},
+        {d:'<b>Split.</b> Conceptualmente, las filas se separan en un mini-DataFrame por grupo '+
+           '(4 boletas de Café, 3 de Té, 2 de Jugo). El orden original deja de importar.',
+         async run(last){
+           colorRows();
+           flipRows(table.root,()=>{
+             KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           });
+           if(last)await sleep(600);
+         }},
+        {d:'<b>Apply.</b> A la columna <code>monto</code> de cada grupo se le aplica la función. '+
+           'Cada grupo completo colapsa en un único valor.',
+         async run(last){
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           for(let g=0;g<KEYS.length;g++){
+             if(last){
+               groupsOf(KEYS[g]).forEach(([,ri])=>table.cell(ri,2).classList.add('hl'));
+               await sleep(420);
+             }
+             showResult(g+1);
+           }
+         }},
+        {d:'<b>Combine.</b> Los tres valores se recombinan en una Serie cuyo <b>índice es la llave</b> '+
+           '(ya no 0…8, sino Café/Té/Jugo). Eso es todo groupby: split → apply → combine.',
+         async run(){
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           table.rowEls.forEach(r=>r.classList.add('roff'));
+           showResult(3);
+           const agg=AGG[selA.value];
+           const vals=KEYS.map(k=>fmt(agg.f(groupsOf(k).map(([r])=>r[2]))));
+           code.innerHTML=`df.groupby('producto')['monto'].<b>${agg.label}</b>()\n# producto\n`+
+             KEYS.map((k,i)=>`# ${k.padEnd(8)}${vals[i]}`).join('\n')+`\n# Name: monto, dtype: ${agg.label==='mean'?'float64':'int64'}`;
+         }},
+      ];
+      const st=new Stepper(card,steps,reset,'groupby');
+      selA.onchange=()=>st.go(st.i);
+      reset();
+    }
+
+    /* ---------- Tarjeta 2: pivot_table ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pivot_table</code>: groupby en dos dimensiones'}),
+        el('p',{class:'note',html:'Un pivote agrupa por <b>dos llaves a la vez</b>: una queda como índice (filas) '+
+          'y la otra se convierte en columnas. La celda (Café, Centro) contiene la agregación de las boletas '+
+          'que cumplen ambas condiciones. El color codifica la magnitud (más oscuro = más alto).'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selA=el('select',{},['sum','mean','count'].map(k=>el('option',{value:k},k)));
+      ctr.append(el('label',{},'aggfunc: '),selA);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      const SUC=['Campus','Centro'];
+      const RAMP=['--seq100','--seq200','--seq300','--seq400','--seq500','--seq600','--seq700'];
+      function render(){
+        mount.textContent='';
+        const agg=AGG[selA.value];
+        const rows=KEYS.map(k=>SUC.map(s=>{
+          const sub=ROWS.filter(r=>r[0]===k&&r[1]===s).map(r=>r[2]);
+          return agg.f(sub);
+        }));
+        const t=new DfTable(mount,{caption:'pivot (producto × sucursal)',columns:SUC,index:KEYS,rows});
+        const flat=rows.flat(),lo=Math.min(...flat),hi=Math.max(...flat);
+        rows.forEach((row,ri)=>row.forEach((v,ci)=>{
+          const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
+          const c=t.cell(ri,ci);
+          c.style.background=`var(${RAMP[k]})`;
+          /* la rampa es fija en ambos temas: la tinta también debe serlo */
+          c.style.color=k>=3?'#fff':'#0b0b0b';
+          c.style.fontWeight='600';
+        }));
+        code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;
+      }
+      selA.onchange=render;
+      render();
+    }
+  }
+});
+
+</script>
+<script>
+'use strict';
+/* Módulo: Joins y concatenación — merge con llaves conectadas, Venn y concat */
+registerModule({
+  id:'merge',
+  title:'Joins y concat',
+  week:'Semana 12',
+  lead:'merge une dos tablas emparejando filas por una llave común. El parámetro how decide '+
+       'qué pasa con las filas que no encuentran pareja.',
+  build(sec){
+    const NS='http://www.w3.org/2000/svg';
+    const s=(tag,attrs={})=>{const n=document.createElementNS(NS,tag);
+      for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);return n;};
+
+    /* ---------- Tarjeta 1: merge ---------- */
+    {
+      /* inspirado en estudiantes.csv / carreras.csv de la Semana 12 */
+      const EST=[['Valentina',10],['Matías',20],['Camila',10],['Joaquín',30],['Antonia',99]];
+      const CAR=[[10,'ICI'],[20,'IECI'],[30,'IIND'],[40,'Arquitectura']];
+      const KEYCLS={10:'g0',20:'g1',30:'g2'};
+      const KEYCOL={10:'var(--s1)',20:'var(--s2)',30:'var(--s3)'};
+      const MATCH=[['Valentina',10,'ICI'],['Matías',20,'IECI'],['Camila',10,'ICI'],['Joaquín',30,'IIND']];
+      const LEFTONLY=[['Antonia',99,null]], RIGHTONLY=[[null,40,'Arquitectura']];
+
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>merge</code>: unir por una llave'}),
+        el('p',{class:'note',html:'Cada línea conecta una llave <code>id_carrera</code> que existe en ambas tablas. '+
+          'Antonia (99) y Arquitectura (40) <b>no tienen pareja</b>: su destino depende de <code>how</code>.'}));
+      sec.append(card);
+
+      const ctr=el('div');card.append(ctr);
+      const holder=el('div',{style:'position:relative'});card.append(holder);
+      const cols=el('div',{class:'flexcols',style:'gap:4.5rem'});holder.append(cols);
+      const dEst=el('div'),dCar=el('div');cols.append(dEst,dCar);
+      const tEst=new DfTable(dEst,{caption:'estudiantes',columns:['nombre','id_carrera'],index:[0,1,2,3,4],rows:EST});
+      const tCar=new DfTable(dCar,{caption:'carreras',columns:['id_carrera','carrera'],index:[0,1,2,3],rows:CAR});
+      const overlay=s('svg',{style:'position:absolute;inset:0;width:100%;height:100%;pointer-events:none'});
+      holder.append(overlay);
+      const venn=s('svg',{viewBox:'0 0 150 90',style:'width:130px;display:block'});
+      const vennWrap=el('div',{class:'controls'},venn,el('span',{class:'msg',id:'mergemsg'}));
+      card.append(vennWrap);
+      const resMount=el('div');card.append(resMount);
+      const code=codeBox(card);
+      card.append(el('p',{class:'note',html:'Ojo con las llaves repetidas: Camila y Valentina comparten la carrera 10, '+
+        'y ambas encuentran pareja — un join puede <b>duplicar</b> información del lado derecho (ICI aparece dos veces). '+
+        'Si ambos lados tienen la llave repetida, el resultado crece multiplicativamente.'}));
+
+      let how='inner';
+      function markKeys(){
+        tEst.clearMarks();tCar.clearMarks();
+        EST.forEach((r,ri)=>{const k=r[1];
+          tEst.cell(ri,1).classList.add(KEYCLS[k]||'hl');});
+        CAR.forEach((r,ri)=>{const k=r[0];
+          tCar.cell(ri,0).classList.add(KEYCLS[k]||'hl');});
+        /* filas que este how descarta */
+        if(how==='inner'||how==='right')tEst.rowEls[4].classList.add('roff');
+        if(how==='inner'||how==='left')tCar.rowEls[3].classList.add('roff');
+      }
+      function drawLinks(){
+        overlay.textContent='';
+        const base=holder.getBoundingClientRect();
+        EST.forEach((re,ri)=>{
+          CAR.forEach((rc,ci)=>{
+            if(re[1]!==rc[0])return;
+            const a=tEst.cell(ri,1).getBoundingClientRect();
+            const b=tCar.cell(ci,0).getBoundingClientRect();
+            const x1=a.right-base.left, y1=a.top+a.height/2-base.top;
+            const x2=b.left-base.left,  y2=b.top+b.height/2-base.top;
+            if(x2<=x1)return; // layout apilado (pantalla angosta): no dibujar
+            const mx=(x1+x2)/2;
+            overlay.append(s('path',{d:`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,
+              fill:'none',stroke:KEYCOL[re[1]],'stroke-width':2,'stroke-opacity':.75}));
+          });
+        });
+      }
+      function drawVenn(){
+        venn.textContent='';
+        const defs=s('defs');
+        const clip=s('clipPath',{id:'vclip'});clip.append(s('circle',{cx:95,cy:45,r:32}));
+        defs.append(clip);venn.append(defs);
+        const fill='color-mix(in srgb, var(--s1) 45%, transparent)';
+        const none='transparent';
+        const L=s('circle',{cx:55,cy:45,r:32,fill:(how==='left'||how==='outer')?fill:none,stroke:'var(--muted)'});
+        const R=s('circle',{cx:95,cy:45,r:32,fill:(how==='right'||how==='outer')?fill:none,stroke:'var(--muted)'});
+        const inter=s('circle',{cx:55,cy:45,r:32,fill:fill,'clip-path':'url(#vclip)'});
+        venn.append(L,R,inter);
+        const t1=s('text',{x:38,y:48,'text-anchor':'middle'});t1.textContent='izq';
+        const t2=s('text',{x:112,y:48,'text-anchor':'middle'});t2.textContent='der';
+        venn.append(t1,t2);
+      }
+      function render(){
+        markKeys();drawVenn();
+        let rows=[...MATCH];
+        if(how==='left')rows=[...MATCH,...LEFTONLY];
+        if(how==='right')rows=[...MATCH,...RIGHTONLY];
+        if(how==='outer')rows=[...MATCH,...LEFTONLY,...RIGHTONLY];
+        resMount.textContent='';
+        const t=new DfTable(resMount,{caption:`resultado — how='${how}' (${rows.length} filas)`,
+          columns:['nombre','id_carrera','carrera'],index:[...rows.keys()],rows});
+        rows.forEach((r,ri)=>{const k=r[1];
+          t.cell(ri,1).classList.add(KEYCLS[k]||'hl');});
+        $('#mergemsg').innerHTML={
+          inner:'<b>inner</b>: solo las filas con pareja en ambas tablas. Antonia y Arquitectura quedan fuera.',
+          left:'<b>left</b>: todas las filas de la izquierda. Antonia entra, pero su carrera es <b>NaN</b>.',
+          right:'<b>right</b>: todas las filas de la derecha. Arquitectura entra sin estudiante (nombre NaN).',
+          outer:'<b>outer</b>: todo el mundo entra; lo que no calza se rellena con NaN.',
+        }[how];
+        code.innerHTML=`pd.merge(estudiantes, carreras,\n         on='id_carrera', how=<b>'${how}'</b>)   # ${rows.length} filas`;
+        requestAnimationFrame(drawLinks);
+      }
+      btnGroup(ctr,[
+        {label:'inner',value:'inner'},{label:'left',value:'left'},
+        {label:'right',value:'right'},{label:'outer',value:'outer'},
+      ],v=>{how=v;render();});
+      window.addEventListener('resize',drawLinks);
+      RELAYOUT.push(drawLinks);
+      render();
+    }
+
+    /* ---------- Tarjeta 2: concat ---------- */
+    {
+      const MAR=[['Café',2500],['Té',1800]], ABR=[['Jugo',2200],['Café',2600]];
+      const STK=[[12],[8]];
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pd.concat</code>: apilar tablas'}),
+        el('p',{class:'note',html:'concat no empareja nada: simplemente <b>apila</b>. Con <code>axis=0</code> apila filas '+
+          '(¡y los índices se repiten si no usas <code>ignore_index=True</code>!); con <code>axis=1</code> pega columnas '+
+          'alineando por índice.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selAx=el('select',{},el('option',{value:'0'},'axis=0 (apilar filas)'),el('option',{value:'1'},'axis=1 (pegar columnas)'));
+      const chk=el('input',{type:'checkbox',id:'igidx'});
+      const chkLab=el('label',{for:'igidx'},chk,' ignore_index=True');
+      ctr.append(selAx,chkLab);
+      const cols=el('div',{class:'flexcols'});card.append(cols);
+      const dA=el('div'),dB=el('div'),dR=el('div');cols.append(dA,dB,dR);
+      const code=codeBox(card);
+      function render(){
+        dA.textContent='';dB.textContent='';dR.textContent='';
+        const ax=selAx.value, ig=chk.checked;
+        chkLab.style.display=ax==='0'?'':'none';
+        const tA=new DfTable(dA,{caption:'ventas_marzo',columns:['producto','monto'],index:[0,1],rows:MAR});
+        let tB,tR;
+        if(ax==='0'){
+          tB=new DfTable(dB,{caption:'ventas_abril',columns:['producto','monto'],index:[0,1],rows:ABR});
+          const idx=ig?[0,1,2,3]:[0,1,0,1];
+          tR=new DfTable(dR,{caption:'pd.concat([marzo, abril])',columns:['producto','monto'],
+            index:idx,rows:[...MAR,...ABR]});
+          [0,1].forEach(ri=>tR.rowEls[ri].querySelectorAll('.dfc:not(.i)').forEach(c=>c.classList.add('g0')));
+          [2,3].forEach(ri=>tR.rowEls[ri].querySelectorAll('.dfc:not(.i)').forEach(c=>c.classList.add('g1')));
+          if(!ig)[2,3].forEach(ri=>tR.rowEls[ri]._idx.classList.add('hl'));
+          code.innerHTML=`pd.concat([ventas_marzo, ventas_abril]${ig?', <b>ignore_index=True</b>':''})`+
+            (ig?'':'\n# ⚠️ índice repetido: 0, 1, 0, 1 — df.loc[0] devolvería DOS filas');
+        }else{
+          tB=new DfTable(dB,{caption:'stock',columns:['stock'],index:[0,1],rows:STK});
+          tR=new DfTable(dR,{caption:'pd.concat([...], axis=1)',columns:['producto','monto','stock'],
+            index:[0,1],rows:MAR.map((r,i)=>[...r,...STK[i]])});
+          tR.cellEls.forEach(row=>{row[0].classList.add('g0');row[1].classList.add('g0');row[2].classList.add('g1');});
+          code.innerHTML=`pd.concat([ventas_marzo, stock], <b>axis=1</b>)   # alinea por índice`;
+        }
+        tA.cellEls.forEach(row=>row.forEach(c=>c.classList.add('g0')));
+        tB.cellEls.forEach(row=>row.forEach(c=>c.classList.add('g1')));
+      }
+      selAx.onchange=render;chk.onchange=render;
+      render();
+    }
+  }
+});
+
+</script>
+</body>
+</html>
