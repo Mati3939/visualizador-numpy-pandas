@@ -1,0 +1,168 @@
+/* ============ Paleta y temas ============ */
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#008300; --s3:#e87ba4; --s4:#eda100; --s5:#1baf7a; --s6:#eb6834; --s7:#4a3aa7; --s8:#e34948;
+  --seq100:#cde2fb; --seq200:#9ec5f4; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95; --seq700:#0d366b;
+  --cell:46px; --cellgap:6px;
+  font-size:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s3:#d55181; --s4:#c98500; --s5:#199e70; --s6:#d95926; --s7:#9085e9; --s8:#e66767;
+  }
+}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --s1:#3987e5; --s3:#d55181; --s4:#c98500; --s5:#199e70; --s6:#d95926; --s7:#9085e9; --s8:#e66767;
+}
+:root.presenta{ font-size:20px; --cell:64px; --cellgap:8px; }
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  line-height:1.5;
+}
+/* ============ Encabezado y navegación ============ */
+header{
+  position:sticky; top:0; z-index:50; background:var(--surface);
+  border-bottom:1px solid var(--border); padding:.55rem 1rem;
+  display:flex; flex-wrap:wrap; gap:.4rem .9rem; align-items:center;
+}
+header h1{font-size:1.05rem; margin:0; white-space:nowrap;}
+header h1 small{color:var(--muted); font-weight:500;}
+nav{display:flex; flex-wrap:wrap; gap:.3rem; flex:1;}
+nav button{
+  border:1px solid transparent; background:transparent; color:var(--ink2);
+  font:inherit; font-size:.85rem; padding:.28rem .6rem; border-radius:999px; cursor:pointer;
+}
+nav button:hover{background:color-mix(in srgb, var(--ink) 6%, transparent);}
+nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); color:var(--ink); border-color:color-mix(in srgb, var(--s1) 45%, transparent); font-weight:600;}
+.hdrbtns{display:flex; gap:.3rem;}
+.hdrbtns button{
+  border:1px solid var(--border); background:var(--surface); color:var(--ink2);
+  font:inherit; font-size:.8rem; padding:.28rem .6rem; border-radius:8px; cursor:pointer;
+}
+.hdrbtns button:hover{color:var(--ink);}
+
+main{max-width:1150px; margin:0 auto; padding:1rem 1.2rem 4rem;}
+.module{display:none;}
+.module.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
+.module>h2{margin:.9rem 0 .1rem; font-size:1.45rem;}
+.week{display:inline-block; font-size:.72rem; font-weight:600; color:var(--ink2);
+  background:color-mix(in srgb, var(--s7) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--s7) 35%, transparent);
+  border-radius:999px; padding:.1rem .55rem; vertical-align:middle; margin-left:.5rem;}
+.lead{color:var(--ink2); margin:.2rem 0 1rem; max-width:70ch;}
+
+/* ============ Tarjetas y controles ============ */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.2rem 1.2rem; margin:1rem 0;}
+.card>h3{margin:.1rem 0 .3rem; font-size:1.1rem;}
+.card>h3 code{font-size:.95em;}
+.controls{display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; margin:.6rem 0;}
+.controls label{font-size:.85rem; color:var(--ink2);}
+.btn{
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+  font:inherit; font-size:.85rem; padding:.32rem .7rem; border-radius:8px; cursor:pointer;
+  transition:background .15s;
+}
+.btn:hover{background:color-mix(in srgb, var(--ink) 6%, var(--surface));}
+.btn.on{background:color-mix(in srgb, var(--s1) 18%, var(--surface)); border-color:var(--s1); font-weight:600;}
+.btn.primary{background:var(--s1); border-color:var(--s1); color:#fff; font-weight:600;}
+.btn.primary:hover{background:color-mix(in srgb, var(--s1) 85%, var(--ink));}
+select,input[type=number],input[type=text]{
+  font:inherit; font-size:.85rem; padding:.28rem .45rem; border-radius:8px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink);
+}
+input[type=range]{accent-color:var(--s1); vertical-align:middle;}
+.code{
+  font-family:ui-monospace,Consolas,"Cascadia Mono",monospace; font-size:.85rem;
+  background:color-mix(in srgb, var(--ink) 5%, var(--surface));
+  border:1px solid var(--border);
+  border-radius:9px; padding:.65rem .9rem; overflow-x:auto; white-space:pre; margin:.6rem 0;
+  line-height:1.55;
+}
+.code b{color:var(--s1); font-weight:700;}
+.note{color:var(--ink2); font-size:.88rem; max-width:75ch;}
+.note b{color:var(--ink);}
+.msg{font-size:.9rem; font-weight:600; min-height:1.4em; margin:.4rem 0;}
+.msg.err{color:var(--s8);}
+.msg.okc{color:var(--s2);}
+.chip{display:inline-block; font-size:.8rem; font-weight:600; padding:.12rem .55rem;
+  border-radius:999px; border:1px solid var(--border); margin:.1rem;}
+.legend{display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center; font-size:.8rem; color:var(--ink2); margin:.4rem 0;}
+.legend .sw{display:inline-block; width:.85em; height:.85em; border-radius:4px; vertical-align:-2px; margin-right:.3em; border:1px solid var(--border);}
+
+/* ============ Celdas (arrays NumPy) ============ */
+.stage{position:relative; margin:.9rem 0; transition:height .5s ease, width .5s ease;}
+.cell{
+  position:absolute; left:0; top:0; display:flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--s1) 12%, var(--surface));
+  border:1px solid color-mix(in srgb, var(--s1) 40%, var(--border));
+  border-radius:8px; font-weight:600; font-variant-numeric:tabular-nums; font-size:.92rem;
+  transition:transform .55s cubic-bezier(.4,0,.2,1), background .3s, opacity .4s, border-color .3s, box-shadow .3s;
+}
+.cell.hd{background:transparent; border-color:transparent; color:var(--muted); font-size:.75rem; font-weight:600;}
+.cell.hl{background:color-mix(in srgb, var(--s4) 38%, var(--surface)); border-color:var(--s4); box-shadow:0 0 0 2px color-mix(in srgb, var(--s4) 45%, transparent);}
+.cell.ok{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); border-color:var(--s2);}
+.cell.res{background:color-mix(in srgb, var(--s7) 16%, var(--surface)); border-color:var(--s7);}
+.cell.off{opacity:.22;}
+.cell.ghost{opacity:.6; border-style:dashed;}
+.cell.hide{opacity:0; pointer-events:none;}
+.cell.boolT{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); border-color:var(--s2); font-size:.72rem;}
+.cell.boolF{background:color-mix(in srgb, var(--ink) 4%, var(--surface)); border-color:var(--border); color:var(--muted); font-size:.72rem;}
+.stage.shake{animation:shake .4s;}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* ============ Tablas (DataFrames) ============ */
+.dfwrap{overflow-x:auto; padding:2px; margin:.6rem 0;}
+.df{display:inline-flex; flex-direction:column; gap:2px;}
+.dfrow{display:grid; gap:2px; transition:opacity .45s, transform .5s;}
+.dfrow.roff{opacity:.16;}
+.dfc{
+  padding:.32rem .6rem; border-radius:6px; font-size:.88rem; font-variant-numeric:tabular-nums;
+  background:color-mix(in srgb, var(--ink) 3.5%, var(--surface));
+  transition:background .3s, opacity .4s, box-shadow .3s; white-space:nowrap;
+}
+.dfc.h{font-weight:700; background:color-mix(in srgb, var(--s1) 15%, var(--surface));}
+.dfc.i{color:var(--muted); font-weight:600; background:color-mix(in srgb, var(--ink) 7%, var(--surface));}
+.dfc.hl{box-shadow:inset 0 0 0 2px var(--s4); background:color-mix(in srgb, var(--s4) 30%, var(--surface));}
+.dfc.sel{background:color-mix(in srgb, var(--s2) 22%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s2);}
+.dfc.nan{
+  background:repeating-linear-gradient(45deg, transparent 0 4px, color-mix(in srgb, var(--muted) 22%, transparent) 4px 8px),
+             color-mix(in srgb, var(--ink) 3%, var(--surface));
+  color:var(--muted); font-style:italic;
+}
+.dfc.fill{background:color-mix(in srgb, var(--s5) 26%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s5); font-style:normal; color:var(--ink);}
+.dfc.dupe{background:color-mix(in srgb, var(--s6) 26%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s6);}
+.dfc.out8{background:color-mix(in srgb, var(--s8) 24%, var(--surface)); box-shadow:inset 0 0 0 2px var(--s8);}
+.dfc.miss{background:color-mix(in srgb, var(--ink) 60%, var(--surface)); color:transparent;}
+.dfc.missnan{background:color-mix(in srgb, var(--ink) 3%, var(--surface)); color:transparent; box-shadow:inset 0 0 0 1px var(--grid);}
+.dfc.g0{background:color-mix(in srgb, var(--s1) 22%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s1) 60%, transparent);}
+.dfc.g1{background:color-mix(in srgb, var(--s2) 20%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s2) 55%, transparent);}
+.dfc.g2{background:color-mix(in srgb, var(--s3) 26%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s3) 60%, transparent);}
+.dfc.g3{background:color-mix(in srgb, var(--s4) 30%, var(--surface)); box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s4) 60%, transparent);}
+
+/* ============ Stepper ============ */
+.stepper{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin:.6rem 0;}
+.stepper .cnt{font-size:.8rem; color:var(--muted); min-width:5.2em; text-align:center;}
+.stepdesc{font-size:.92rem; color:var(--ink2); min-height:2.6em; margin:.3rem 0;}
+.stepdesc b{color:var(--ink);}
+
+/* ============ SVG ============ */
+svg text{fill:var(--muted); font-family:inherit; font-size:11px;}
+svg .axisline{stroke:var(--axis);}
+svg .gridline{stroke:var(--grid);}
+.flexcols{display:flex; flex-wrap:wrap; gap:1.4rem; align-items:flex-start;}
+.flexcols>div{min-width:0;}
+
+footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
+kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
