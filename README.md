@@ -13,7 +13,9 @@ dónde*, no solo el resultado final.
   mandarlo por WhatsApp/Canvas o usarlo sin internet.
 - **Modo presentación**: botón «🖥️ Presentar» agranda celdas y tipografía para
   el proyector. Tema claro/oscuro con «🌗».
-- **Teclado**: `←`/`→` avanzan los pasos de las animaciones, `1`–`7` cambian de módulo.
+- **Teclado**: `←`/`→` avanzan los pasos de las animaciones, `1`–`8` cambian de módulo.
+- **Portada**: el menú es un DataFrame — columnas = temas, filas = contenidos;
+  cada celda navega a su tarjeta (y las celdas `NaN` también enseñan algo).
 
 ## Módulos (siguen el orden del curso)
 

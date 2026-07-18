@@ -164,5 +164,15 @@ svg .gridline{stroke:var(--grid);}
 .flexcols{display:flex; flex-wrap:wrap; gap:1.4rem; align-items:flex-start;}
 .flexcols>div{min-width:0;}
 
+/* ============ Portada (menú-DataFrame) ============ */
+.card{scroll-margin-top:5.4rem;}
+.menu-df .dfc{font-size:1rem; padding:.55rem .95rem;}
+.menu-df .dfc.h{cursor:pointer; border-bottom:3px solid var(--hcol,var(--s1));}
+.menu-df .dfc:not(.i):not(.nan):hover{
+  box-shadow:inset 0 0 0 2px var(--hcol,var(--s1));
+  background:color-mix(in srgb, var(--hcol,var(--s1)) 18%, var(--surface));
+  cursor:pointer;
+}
+
 footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
 kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}

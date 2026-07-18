@@ -50,9 +50,10 @@ registerModule({
     {
       const card=el('div',{class:'card'},
         el('h3',{html:'El famoso <code>axis</code>'}),
-        el('p',{class:'note',html:'<b>axis = el eje que se colapsa.</b> Con <code>axis=0</code> la operación recorre '+
-          'las filas (↓) y deja un resultado <b>por columna</b>; con <code>axis=1</code> recorre las columnas (→) '+
-          'y deja un resultado <b>por fila</b>.'}));
+        el('p',{class:'note',html:'<b>axis = el eje que se recorre (y desaparece).</b> Con <code>axis=0</code> la suma '+
+          '<b>baja por cada columna</b> consumiendo las filas (↓): queda un valor por columna. Con <code>axis=1</code> '+
+          '<b>avanza por cada fila</b> consumiendo las columnas (→): queda un valor por fila. '+
+          'Fíjate en la dirección del barrido amarillo.'}));
       sec.append(card);
       const ctr=el('div');card.append(ctr);
       const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
@@ -61,44 +62,51 @@ registerModule({
       const M=[[2,7,1,8],[3,5,9,4],[6,0,2,5]];
       const nR=3,nC=4;
       let run=0;
-      function defsBase(hlCol=-1,hlRow=-1){
-        const d=[];
-        M.forEach((row,r)=>row.forEach((v,c)=>{
-          const hl=(c===hlCol||r===hlRow)?'hl':'';
-          d.push({id:`m${r}_${c}`,text:v,r,c,cls:hl});
-        }));
-        return d;
+      const res=[];      // celdas de resultado ya calculadas
+      const hl=new Set(); // celdas actualmente barridas (amarillo)
+      function draw(){
+        grid.setCells([
+          ...M.flatMap((row,r)=>row.map((v,c)=>({id:`m${r}_${c}`,text:v,r,c,cls:hl.has(r+'_'+c)?'hl':''}))),
+          ...res]);
       }
-      function draw(d){grid.setCells(d);}
-      draw(defsBase());
+      draw();
       code.textContent='M = np.array([[2,7,1,8],\n              [3,5,9,4],\n              [6,0,2,5]])';
       async function anim(mode){
         const t=++run;
+        res.length=0; hl.clear(); draw();
+        /* el barrido amarillo avanza celda a celda EN LA DIRECCIÓN del eje */
         if(mode==='a0'){
-          code.innerHTML='M.sum(<b>axis=0</b>)   # recorre las filas ↓ → un total por COLUMNA\n# array([11, 12, 12, 17])';
-          const res=[];
+          code.innerHTML='M.sum(<b>axis=0</b>)   # ↓ baja por cada columna consumiendo las filas\n# array([11, 12, 12, 17])';
           for(let c=0;c<nC;c++){
-            if(t!==run)return;
-            draw([...defsBase(c),...res]);
-            await sleep(430); if(t!==run)return;
+            hl.clear();
+            for(let r=0;r<nR;r++){
+              hl.add(`${r}_${c}`); draw();
+              await sleep(200); if(t!==run)return;
+            }
             res.push({id:'r'+c,text:M[0][c]+M[1][c]+M[2][c],r:nR+0.5,c,cls:'res'});
+            hl.clear(); draw();
+            await sleep(160); if(t!==run)return;
           }
-          draw([...defsBase(),...res]);
         }else if(mode==='a1'){
-          code.innerHTML='M.sum(<b>axis=1</b>)   # recorre las columnas → → un total por FILA\n# array([18, 21, 13])';
-          const res=[];
+          code.innerHTML='M.sum(<b>axis=1</b>)   # → avanza por cada fila consumiendo las columnas\n# array([18, 21, 13])';
           for(let r=0;r<nR;r++){
-            if(t!==run)return;
-            draw([...defsBase(-1,r),...res]);
-            await sleep(430); if(t!==run)return;
+            hl.clear();
+            for(let c=0;c<nC;c++){
+              hl.add(`${r}_${c}`); draw();
+              await sleep(200); if(t!==run)return;
+            }
             res.push({id:'r'+r,text:M[r].reduce((a,b)=>a+b),r,c:nC+0.5,cls:'res'});
+            hl.clear(); draw();
+            await sleep(160); if(t!==run)return;
           }
-          draw([...defsBase(),...res]);
         }else{
           code.innerHTML='M.sum()          # sin axis: colapsa TODO\n# 52';
-          draw(defsBase().map(d=>({...d,cls:'hl'})));
-          await sleep(500); if(t!==run)return;
-          draw([...defsBase(),{id:'tot',text:52,r:nR+0.5,c:(nC-1)/2,cls:'res'}]);
+          M.forEach((row,r)=>row.forEach((_,c)=>hl.add(`${r}_${c}`)));
+          draw();
+          await sleep(550); if(t!==run)return;
+          hl.clear();
+          res.push({id:'tot',text:52,r:nR+0.5,c:(nC-1)/2,cls:'res'});
+          draw();
         }
       }
       btnGroup(ctr,[

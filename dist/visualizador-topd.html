@@ -171,6 +171,16 @@ svg .gridline{stroke:var(--grid);}
 .flexcols{display:flex; flex-wrap:wrap; gap:1.4rem; align-items:flex-start;}
 .flexcols>div{min-width:0;}
 
+/* ============ Portada (menú-DataFrame) ============ */
+.card{scroll-margin-top:5.4rem;}
+.menu-df .dfc{font-size:1rem; padding:.55rem .95rem;}
+.menu-df .dfc.h{cursor:pointer; border-bottom:3px solid var(--hcol,var(--s1));}
+.menu-df .dfc:not(.i):not(.nan):hover{
+  box-shadow:inset 0 0 0 2px var(--hcol,var(--s1));
+  background:color-mix(in srgb, var(--hcol,var(--s1)) 18%, var(--surface));
+  cursor:pointer;
+}
+
 footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
 kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
 
@@ -188,7 +198,7 @@ kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; 
 <main id="main"></main>
 <footer>
   Hecho para las ayudantías del Taller de Obtención y Preparación de Datos ·
-  <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>7</kbd> cambian de módulo ·
+  <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>8</kbd> cambian de módulo ·
   «Presentar» agranda todo para el proyector.
 </footer>
 <script>
@@ -433,6 +443,75 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script>
 'use strict';
+/* Portada: el menú del curso es, como corresponde, un DataFrame */
+(function(){
+
+/* columnas = temas (módulos); filas = contenidos. null → NaN (no hay contenido ahí) */
+const TEMAS=[
+  {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3]]},
+  {col:'DataFrames',mod:'df',       items:[['anatomía',0],['loc vs iloc',1]]},
+  {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
+  {col:'Outliers',  mod:'outliers', items:[['boxplot',0],['IQR / z-score',0]]},
+  {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
+  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
+  {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
+];
+const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
+
+registerModule({
+  id:'inicio',
+  title:'Visualizador TOPD',
+  week:'portada',
+  lead:'Aprende NumPy y Pandas viendo qué celda va a dónde. Y como corresponde, '+
+       'el menú también es un DataFrame: haz clic en una celda para ir a ese contenido.',
+  build(sec){
+    const card=el('div',{class:'card menu-df'});
+    sec.append(card);
+    const mount=el('div');card.append(mount);
+    const rows=[];
+    for(let r=0;r<NFILAS;r++)rows.push(TEMAS.map(t=>t.items[r]?t.items[r][0]:null));
+    const table=new DfTable(mount,{caption:'df_menu — elige una celda',
+      columns:TEMAS.map(t=>t.col),index:[...Array(NFILAS).keys()],rows});
+    const code=codeBox(card);
+    code.textContent="df_menu.loc[?, ?]        # pasa el mouse por una celda…";
+
+    function go(mod,cardIdx){
+      activate(mod);
+      setTimeout(()=>{
+        const c=document.querySelectorAll('#mod-'+mod+' .card')[cardIdx];
+        if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
+      },80);
+    }
+    TEMAS.forEach((t,c)=>{
+      const head=table.headEls[c];
+      head.style.setProperty('--hcol',`var(--s${c+1})`);
+      table.cellEls.forEach(row=>row[c].style.setProperty('--hcol',`var(--s${c+1})`));
+      head.onclick=()=>go(t.mod,0);
+      head.onmouseenter=()=>{code.innerHTML=`df_menu[<b>'${t.col}'</b>]           # abre el módulo completo`;};
+      t.items.forEach((it,r)=>{
+        const cell=table.cell(r,c);
+        cell.onclick=()=>go(t.mod,it[1]);
+        cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${t.col}'</b>]   # abre → ${it[0]}`;};
+      });
+    });
+    /* las celdas NaN también enseñan algo */
+    table.cellEls.forEach((row,r)=>row.forEach((cell,c)=>{
+      if(cell._isnan)cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${TEMAS[c].col}'</b>]   # NaN: ese tema no tiene más contenidos 😉`;};
+    }));
+    /* entrada escalonada */
+    table.rowEls.forEach((r,i)=>r.style.animation=`fadein .45s ${.08+i*.09}s both`);
+
+    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
+      '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
+      'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
+  }
+});
+
+})();
+
+</script>
+<script>
+'use strict';
 /* Módulo 1: Arrays NumPy — reshape, axis, máscaras booleanas y broadcasting */
 registerModule({
   id:'numpy',
@@ -484,9 +563,10 @@ registerModule({
     {
       const card=el('div',{class:'card'},
         el('h3',{html:'El famoso <code>axis</code>'}),
-        el('p',{class:'note',html:'<b>axis = el eje que se colapsa.</b> Con <code>axis=0</code> la operación recorre '+
-          'las filas (↓) y deja un resultado <b>por columna</b>; con <code>axis=1</code> recorre las columnas (→) '+
-          'y deja un resultado <b>por fila</b>.'}));
+        el('p',{class:'note',html:'<b>axis = el eje que se recorre (y desaparece).</b> Con <code>axis=0</code> la suma '+
+          '<b>baja por cada columna</b> consumiendo las filas (↓): queda un valor por columna. Con <code>axis=1</code> '+
+          '<b>avanza por cada fila</b> consumiendo las columnas (→): queda un valor por fila. '+
+          'Fíjate en la dirección del barrido amarillo.'}));
       sec.append(card);
       const ctr=el('div');card.append(ctr);
       const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
@@ -495,44 +575,51 @@ registerModule({
       const M=[[2,7,1,8],[3,5,9,4],[6,0,2,5]];
       const nR=3,nC=4;
       let run=0;
-      function defsBase(hlCol=-1,hlRow=-1){
-        const d=[];
-        M.forEach((row,r)=>row.forEach((v,c)=>{
-          const hl=(c===hlCol||r===hlRow)?'hl':'';
-          d.push({id:`m${r}_${c}`,text:v,r,c,cls:hl});
-        }));
-        return d;
+      const res=[];      // celdas de resultado ya calculadas
+      const hl=new Set(); // celdas actualmente barridas (amarillo)
+      function draw(){
+        grid.setCells([
+          ...M.flatMap((row,r)=>row.map((v,c)=>({id:`m${r}_${c}`,text:v,r,c,cls:hl.has(r+'_'+c)?'hl':''}))),
+          ...res]);
       }
-      function draw(d){grid.setCells(d);}
-      draw(defsBase());
+      draw();
       code.textContent='M = np.array([[2,7,1,8],\n              [3,5,9,4],\n              [6,0,2,5]])';
       async function anim(mode){
         const t=++run;
+        res.length=0; hl.clear(); draw();
+        /* el barrido amarillo avanza celda a celda EN LA DIRECCIÓN del eje */
         if(mode==='a0'){
-          code.innerHTML='M.sum(<b>axis=0</b>)   # recorre las filas ↓ → un total por COLUMNA\n# array([11, 12, 12, 17])';
-          const res=[];
+          code.innerHTML='M.sum(<b>axis=0</b>)   # ↓ baja por cada columna consumiendo las filas\n# array([11, 12, 12, 17])';
           for(let c=0;c<nC;c++){
-            if(t!==run)return;
-            draw([...defsBase(c),...res]);
-            await sleep(430); if(t!==run)return;
+            hl.clear();
+            for(let r=0;r<nR;r++){
+              hl.add(`${r}_${c}`); draw();
+              await sleep(200); if(t!==run)return;
+            }
             res.push({id:'r'+c,text:M[0][c]+M[1][c]+M[2][c],r:nR+0.5,c,cls:'res'});
+            hl.clear(); draw();
+            await sleep(160); if(t!==run)return;
           }
-          draw([...defsBase(),...res]);
         }else if(mode==='a1'){
-          code.innerHTML='M.sum(<b>axis=1</b>)   # recorre las columnas → → un total por FILA\n# array([18, 21, 13])';
-          const res=[];
+          code.innerHTML='M.sum(<b>axis=1</b>)   # → avanza por cada fila consumiendo las columnas\n# array([18, 21, 13])';
           for(let r=0;r<nR;r++){
-            if(t!==run)return;
-            draw([...defsBase(-1,r),...res]);
-            await sleep(430); if(t!==run)return;
+            hl.clear();
+            for(let c=0;c<nC;c++){
+              hl.add(`${r}_${c}`); draw();
+              await sleep(200); if(t!==run)return;
+            }
             res.push({id:'r'+r,text:M[r].reduce((a,b)=>a+b),r,c:nC+0.5,cls:'res'});
+            hl.clear(); draw();
+            await sleep(160); if(t!==run)return;
           }
-          draw([...defsBase(),...res]);
         }else{
           code.innerHTML='M.sum()          # sin axis: colapsa TODO\n# 52';
-          draw(defsBase().map(d=>({...d,cls:'hl'})));
-          await sleep(500); if(t!==run)return;
-          draw([...defsBase(),{id:'tot',text:52,r:nR+0.5,c:(nC-1)/2,cls:'res'}]);
+          M.forEach((row,r)=>row.forEach((_,c)=>hl.add(`${r}_${c}`)));
+          draw();
+          await sleep(550); if(t!==run)return;
+          hl.clear();
+          res.push({id:'tot',text:52,r:nR+0.5,c:(nC-1)/2,cls:'res'});
+          draw();
         }
       }
       btnGroup(ctr,[
