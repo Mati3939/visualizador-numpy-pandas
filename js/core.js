@@ -177,7 +177,13 @@ function buildShell(){
     main.append(sec);
     m._built=false; m._sec=sec;
   });
-  activate(MODULES[0].id);
+  /* #id en la URL abre ese módulo directamente (link compartible por tema) */
+  const wanted=location.hash.slice(1);
+  activate(MODULES.some(m=>m.id===wanted)?wanted:MODULES[0].id);
+  window.addEventListener('hashchange',()=>{
+    const id=location.hash.slice(1);
+    if(MODULES.some(m=>m.id===id))activate(id);
+  });
 }
 function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
@@ -185,6 +191,7 @@ function activate(id){
   const m=MODULES.find(x=>x.id===id);
   if(!m._built){ m.build(m._sec); m._built=true; RELAYOUT.forEach(f=>f()); }
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
+  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
   window.scrollTo({top:0});
 }
 /* helpers UI */
