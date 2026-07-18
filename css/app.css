@@ -176,3 +176,29 @@ svg .gridline{stroke:var(--grid);}
 
 footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
 kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
+
+/* ============ Móvil ============ */
+@media (max-width:700px){
+  :root{--cell:38px; --cellgap:5px;}
+  header{padding:.45rem .6rem; gap:.25rem .5rem;}
+  header h1{font-size:.95rem;}
+  header h1 small{display:none;}
+  #btnPres{display:none;} /* el modo proyector no aplica en un celular */
+  nav{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; order:3; flex-basis:100%;}
+  nav::-webkit-scrollbar{display:none;}
+  nav button{white-space:nowrap; flex:0 0 auto;}
+  main{padding:.6rem .7rem 3rem;}
+  .module>h2{font-size:1.25rem;}
+  .card{padding:.8rem .8rem 1rem; border-radius:12px;}
+  .flexcols{gap:.9rem;}
+  .code{font-size:.78rem;}
+  .menu-df .dfc{min-width:0; font-size:.92rem; padding:.5rem .7rem; text-align:left;}
+  .kbdhint{display:none;} /* atajos de teclado no aplican en táctil */
+}
+/* dedos, no cursores: targets más generosos */
+@media (pointer:coarse){
+  .btn{padding:.5rem .85rem;}
+  nav button{padding:.42rem .75rem;}
+  select,input[type=number],input[type=text]{padding:.45rem .55rem;}
+  input[type=range]{min-height:2.2rem;}
+}

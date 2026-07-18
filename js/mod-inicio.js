@@ -1,5 +1,6 @@
 'use strict';
-/* Portada: el menú del curso es, como corresponde, un DataFrame */
+/* Portada: el menú del curso es, como corresponde, un DataFrame.
+   En pantallas angostas se muestra transpuesto (df_menu.T) — y eso también enseña. */
 (function(){
 
 /* columnas = temas (módulos); filas = contenidos. null → NaN (no hay contenido ahí) */
@@ -13,23 +14,22 @@ const TEMAS=[
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
+const mqMovil=window.matchMedia('(max-width:700px)');
 
 registerModule({
   id:'inicio',
   title:'Visualizador TOPD',
   week:'portada',
   lead:'Aprende NumPy y Pandas viendo qué celda va a dónde. Y como corresponde, '+
-       'el menú también es un DataFrame: haz clic en una celda para ir a ese contenido.',
+       'el menú también es un DataFrame: toca una celda para ir a ese contenido.',
   build(sec){
     const card=el('div',{class:'card menu-df'});
     sec.append(card);
     const mount=el('div');card.append(mount);
-    const rows=[];
-    for(let r=0;r<NFILAS;r++)rows.push(TEMAS.map(t=>t.items[r]?t.items[r][0]:null));
-    const table=new DfTable(mount,{caption:'df_menu — elige una celda',
-      columns:TEMAS.map(t=>t.col),index:[...Array(NFILAS).keys()],rows});
     const code=codeBox(card);
-    code.textContent="df_menu.loc[?, ?]        # pasa el mouse por una celda…";
+    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
+      '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
+      'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
 
     function go(mod,cardIdx){
       activate(mod);
@@ -38,28 +38,56 @@ registerModule({
         if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
       },80);
     }
-    TEMAS.forEach((t,c)=>{
-      const head=table.headEls[c];
-      head.style.setProperty('--hcol',`var(--s${c+1})`);
-      table.cellEls.forEach(row=>row[c].style.setProperty('--hcol',`var(--s${c+1})`));
-      head.onclick=()=>go(t.mod,0);
-      head.onmouseenter=()=>{code.innerHTML=`df_menu[<b>'${t.col}'</b>]           # abre el módulo completo`;};
-      t.items.forEach((it,r)=>{
-        const cell=table.cell(r,c);
-        cell.onclick=()=>go(t.mod,it[1]);
-        cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${t.col}'</b>]   # abre → ${it[0]}`;};
-      });
-    });
-    /* las celdas NaN también enseñan algo */
-    table.cellEls.forEach((row,r)=>row.forEach((cell,c)=>{
-      if(cell._isnan)cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${TEMAS[c].col}'</b>]   # NaN: ese tema no tiene más contenidos 😉`;};
-    }));
-    /* entrada escalonada */
-    table.rowEls.forEach((r,i)=>r.style.animation=`fadein .45s ${.08+i*.09}s both`);
-
-    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
-      '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
-      'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
+    function renderMenu(){
+      mount.textContent='';
+      const T=mqMovil.matches; // transpuesta en móvil
+      let table;
+      if(!T){
+        const rows=[];
+        for(let r=0;r<NFILAS;r++)rows.push(TEMAS.map(t=>t.items[r]?t.items[r][0]:null));
+        table=new DfTable(mount,{caption:'df_menu — elige una celda',
+          columns:TEMAS.map(t=>t.col),index:[...Array(NFILAS).keys()],rows});
+        TEMAS.forEach((t,c)=>{
+          const head=table.headEls[c];
+          head.style.setProperty('--hcol',`var(--s${c+1})`);
+          table.cellEls.forEach(row=>row[c].style.setProperty('--hcol',`var(--s${c+1})`));
+          head.onclick=()=>go(t.mod,0);
+          head.onmouseenter=()=>{code.innerHTML=`df_menu[<b>'${t.col}'</b>]           # abre el módulo completo`;};
+          t.items.forEach((it,r)=>{
+            const cell=table.cell(r,c);
+            cell.onclick=()=>go(t.mod,it[1]);
+            cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${t.col}'</b>]   # abre → ${it[0]}`;};
+          });
+        });
+        table.cellEls.forEach((row,r)=>row.forEach((cell,c)=>{
+          if(cell._isnan)cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${TEMAS[c].col}'</b>]   # NaN: ese tema no tiene más contenidos 😉`;};
+        }));
+        code.textContent="df_menu.loc[?, ?]        # pasa el mouse por una celda…";
+      }else{
+        /* móvil: temas como filas — la transpuesta cabe mejor en vertical */
+        const rows=TEMAS.map(t=>{
+          const r=[];
+          for(let i=0;i<NFILAS;i++)r.push(t.items[i]?t.items[i][0]:null);
+          return r;
+        });
+        table=new DfTable(mount,{caption:'df_menu.T — en pantalla angosta, ¡transpuesta!',
+          columns:[...Array(NFILAS).keys()],index:TEMAS.map(t=>t.col),rows});
+        TEMAS.forEach((t,r)=>{
+          const idx=table.rowEls[r]._idx;
+          idx.style.borderLeft=`3px solid var(--s${r+1})`;
+          idx.style.color='var(--ink)';
+          idx.onclick=()=>go(t.mod,0);
+          t.items.forEach((it,c)=>{
+            table.cell(r,c).onclick=()=>go(t.mod,it[1]);
+          });
+        });
+        code.textContent="df_menu.T                # toca una celda para navegar";
+      }
+      /* entrada escalonada */
+      table.rowEls.forEach((r,i)=>r.style.animation=`fadein .45s ${.08+i*.09}s both`);
+    }
+    mqMovil.addEventListener('change',renderMenu);
+    renderMenu();
   }
 });
 

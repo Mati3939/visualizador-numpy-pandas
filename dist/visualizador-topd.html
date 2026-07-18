@@ -184,6 +184,32 @@ svg .gridline{stroke:var(--grid);}
 footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
 kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
 
+/* ============ Móvil ============ */
+@media (max-width:700px){
+  :root{--cell:38px; --cellgap:5px;}
+  header{padding:.45rem .6rem; gap:.25rem .5rem;}
+  header h1{font-size:.95rem;}
+  header h1 small{display:none;}
+  #btnPres{display:none;} /* el modo proyector no aplica en un celular */
+  nav{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; order:3; flex-basis:100%;}
+  nav::-webkit-scrollbar{display:none;}
+  nav button{white-space:nowrap; flex:0 0 auto;}
+  main{padding:.6rem .7rem 3rem;}
+  .module>h2{font-size:1.25rem;}
+  .card{padding:.8rem .8rem 1rem; border-radius:12px;}
+  .flexcols{gap:.9rem;}
+  .code{font-size:.78rem;}
+  .menu-df .dfc{min-width:0; font-size:.92rem; padding:.5rem .7rem; text-align:left;}
+  .kbdhint{display:none;} /* atajos de teclado no aplican en táctil */
+}
+/* dedos, no cursores: targets más generosos */
+@media (pointer:coarse){
+  .btn{padding:.5rem .85rem;}
+  nav button{padding:.42rem .75rem;}
+  select,input[type=number],input[type=text]{padding:.45rem .55rem;}
+  input[type=range]{min-height:2.2rem;}
+}
+
 </style>
 </head>
 <body>
@@ -197,9 +223,9 @@ kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; 
 </header>
 <main id="main"></main>
 <footer>
-  Hecho para las ayudantías del Taller de Obtención y Preparación de Datos ·
+  Hecho para las ayudantías del Taller de Obtención y Preparación de Datos.<span class="kbdhint">
   <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>8</kbd> cambian de módulo ·
-  «Presentar» agranda todo para el proyector.
+  «Presentar» agranda todo para el proyector.</span>
 </footer>
 <script>
 'use strict';
@@ -418,6 +444,9 @@ function buildShell(){
 function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
+  /* en móvil el nav scrollea horizontal: dejar visible la pestaña activa */
+  const on=document.querySelector('#nav button.on');
+  if(on)on.scrollIntoView({inline:'center',block:'nearest'});
   const m=MODULES.find(x=>x.id===id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
@@ -465,7 +494,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script>
 'use strict';
-/* Portada: el menú del curso es, como corresponde, un DataFrame */
+/* Portada: el menú del curso es, como corresponde, un DataFrame.
+   En pantallas angostas se muestra transpuesto (df_menu.T) — y eso también enseña. */
 (function(){
 
 /* columnas = temas (módulos); filas = contenidos. null → NaN (no hay contenido ahí) */
@@ -479,23 +509,22 @@ const TEMAS=[
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
+const mqMovil=window.matchMedia('(max-width:700px)');
 
 registerModule({
   id:'inicio',
   title:'Visualizador TOPD',
   week:'portada',
   lead:'Aprende NumPy y Pandas viendo qué celda va a dónde. Y como corresponde, '+
-       'el menú también es un DataFrame: haz clic en una celda para ir a ese contenido.',
+       'el menú también es un DataFrame: toca una celda para ir a ese contenido.',
   build(sec){
     const card=el('div',{class:'card menu-df'});
     sec.append(card);
     const mount=el('div');card.append(mount);
-    const rows=[];
-    for(let r=0;r<NFILAS;r++)rows.push(TEMAS.map(t=>t.items[r]?t.items[r][0]:null));
-    const table=new DfTable(mount,{caption:'df_menu — elige una celda',
-      columns:TEMAS.map(t=>t.col),index:[...Array(NFILAS).keys()],rows});
     const code=codeBox(card);
-    code.textContent="df_menu.loc[?, ?]        # pasa el mouse por una celda…";
+    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
+      '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
+      'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
 
     function go(mod,cardIdx){
       activate(mod);
@@ -504,28 +533,56 @@ registerModule({
         if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
       },80);
     }
-    TEMAS.forEach((t,c)=>{
-      const head=table.headEls[c];
-      head.style.setProperty('--hcol',`var(--s${c+1})`);
-      table.cellEls.forEach(row=>row[c].style.setProperty('--hcol',`var(--s${c+1})`));
-      head.onclick=()=>go(t.mod,0);
-      head.onmouseenter=()=>{code.innerHTML=`df_menu[<b>'${t.col}'</b>]           # abre el módulo completo`;};
-      t.items.forEach((it,r)=>{
-        const cell=table.cell(r,c);
-        cell.onclick=()=>go(t.mod,it[1]);
-        cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${t.col}'</b>]   # abre → ${it[0]}`;};
-      });
-    });
-    /* las celdas NaN también enseñan algo */
-    table.cellEls.forEach((row,r)=>row.forEach((cell,c)=>{
-      if(cell._isnan)cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${TEMAS[c].col}'</b>]   # NaN: ese tema no tiene más contenidos 😉`;};
-    }));
-    /* entrada escalonada */
-    table.rowEls.forEach((r,i)=>r.style.animation=`fadein .45s ${.08+i*.09}s both`);
-
-    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
-      '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
-      'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
+    function renderMenu(){
+      mount.textContent='';
+      const T=mqMovil.matches; // transpuesta en móvil
+      let table;
+      if(!T){
+        const rows=[];
+        for(let r=0;r<NFILAS;r++)rows.push(TEMAS.map(t=>t.items[r]?t.items[r][0]:null));
+        table=new DfTable(mount,{caption:'df_menu — elige una celda',
+          columns:TEMAS.map(t=>t.col),index:[...Array(NFILAS).keys()],rows});
+        TEMAS.forEach((t,c)=>{
+          const head=table.headEls[c];
+          head.style.setProperty('--hcol',`var(--s${c+1})`);
+          table.cellEls.forEach(row=>row[c].style.setProperty('--hcol',`var(--s${c+1})`));
+          head.onclick=()=>go(t.mod,0);
+          head.onmouseenter=()=>{code.innerHTML=`df_menu[<b>'${t.col}'</b>]           # abre el módulo completo`;};
+          t.items.forEach((it,r)=>{
+            const cell=table.cell(r,c);
+            cell.onclick=()=>go(t.mod,it[1]);
+            cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${t.col}'</b>]   # abre → ${it[0]}`;};
+          });
+        });
+        table.cellEls.forEach((row,r)=>row.forEach((cell,c)=>{
+          if(cell._isnan)cell.onmouseenter=()=>{code.innerHTML=`df_menu.loc[<b>${r}</b>, <b>'${TEMAS[c].col}'</b>]   # NaN: ese tema no tiene más contenidos 😉`;};
+        }));
+        code.textContent="df_menu.loc[?, ?]        # pasa el mouse por una celda…";
+      }else{
+        /* móvil: temas como filas — la transpuesta cabe mejor en vertical */
+        const rows=TEMAS.map(t=>{
+          const r=[];
+          for(let i=0;i<NFILAS;i++)r.push(t.items[i]?t.items[i][0]:null);
+          return r;
+        });
+        table=new DfTable(mount,{caption:'df_menu.T — en pantalla angosta, ¡transpuesta!',
+          columns:[...Array(NFILAS).keys()],index:TEMAS.map(t=>t.col),rows});
+        TEMAS.forEach((t,r)=>{
+          const idx=table.rowEls[r]._idx;
+          idx.style.borderLeft=`3px solid var(--s${r+1})`;
+          idx.style.color='var(--ink)';
+          idx.onclick=()=>go(t.mod,0);
+          t.items.forEach((it,c)=>{
+            table.cell(r,c).onclick=()=>go(t.mod,it[1]);
+          });
+        });
+        code.textContent="df_menu.T                # toca una celda para navegar";
+      }
+      /* entrada escalonada */
+      table.rowEls.forEach((r,i)=>r.style.animation=`fadein .45s ${.08+i*.09}s both`);
+    }
+    mqMovil.addEventListener('change',renderMenu);
+    renderMenu();
   }
 });
 
@@ -1264,7 +1321,8 @@ registerModule({
     /* svg */
     const W=740,H=196,L=54,R=24,plotW=W-L-R;
     const svgWrap=el('div',{style:'overflow-x:auto'});card.append(svgWrap);
-    const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:900px;display:block'});
+    /* min-width: en un celular el gráfico se desplaza horizontal en vez de encogerse */
+    const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:900px;min-width:540px;display:block'});
     svgWrap.append(svg);
     const gAxis=s('g'),gBox=s('g'),gFence=s('g'),gPts=s('g');
     svg.append(gAxis,gFence,gBox,gPts);

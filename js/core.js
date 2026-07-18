@@ -214,6 +214,9 @@ function buildShell(){
 function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
+  /* en móvil el nav scrollea horizontal: dejar visible la pestaña activa */
+  const on=document.querySelector('#nav button.on');
+  if(on)on.scrollIntoView({inline:'center',block:'nearest'});
   const m=MODULES.find(x=>x.id===id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */

@@ -45,7 +45,8 @@ registerModule({
     /* svg */
     const W=740,H=196,L=54,R=24,plotW=W-L-R;
     const svgWrap=el('div',{style:'overflow-x:auto'});card.append(svgWrap);
-    const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:900px;display:block'});
+    /* min-width: en un celular el gráfico se desplaza horizontal en vez de encogerse */
+    const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:900px;min-width:540px;display:block'});
     svgWrap.append(svg);
     const gAxis=s('g'),gBox=s('g'),gFence=s('g'),gPts=s('g');
     svg.append(gAxis,gFence,gBox,gPts);
