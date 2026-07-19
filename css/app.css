@@ -104,6 +104,21 @@ nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); colo
   border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem; resize:vertical;}
 .tberror:focus,.pyin:focus{outline:2px solid color-mix(in srgb, var(--s1) 55%, transparent);}
 
+/* modo ayudantía en vivo */
+.vivofila{display:flex; gap:1.2rem; flex-wrap:wrap; align-items:flex-start;}
+.vivoizq{flex:1 1 380px; min-width:300px;}
+.vivoder{flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:.4rem;
+  background:#fff; border-radius:12px; padding:.7rem;}
+.vivoder .note{color:#333;}
+.vivoopt{display:flex; align-items:center; gap:.6rem;}
+.vivoletra{display:inline-flex; align-items:center; justify-content:center;
+  width:1.9em; height:1.9em; border-radius:8px; color:#fff; font-weight:800; flex:none;}
+.vivopantalla{position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; cursor:pointer;}
+.vivoletrona{font-size:38vmin; font-weight:900; color:#fff;
+  text-shadow:0 4px 30px rgba(0,0,0,.35); line-height:1;}
+.vivotip{color:#fff; font-size:1rem; opacity:.85;}
+
 /* simulacro */
 .simhead{display:flex; gap:1rem; align-items:center; margin-bottom:.35rem;}
 .simreloj{font-variant-numeric:tabular-nums; font-weight:700; font-size:1.05rem;}
