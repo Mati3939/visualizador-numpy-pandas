@@ -58,15 +58,81 @@ nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); colo
   font:inherit; font-size:.8rem; padding:.28rem .6rem; border-radius:8px; cursor:pointer;
 }
 .hdrbtns button:hover{color:var(--ink);}
+#btnEx.on,#btnEx.active-ex{background:color-mix(in srgb, var(--s7) 16%, var(--surface));
+  border-color:color-mix(in srgb, var(--s7) 50%, transparent); color:var(--ink); font-weight:600;}
+#btnRec.rec-on{background:color-mix(in srgb, var(--s8) 18%, var(--surface));
+  border-color:var(--s8); color:var(--ink); font-weight:600; animation:recpulse 1.2s infinite;}
+@keyframes recpulse{50%{box-shadow:0 0 0 4px color-mix(in srgb, var(--s8) 25%, transparent);}}
+
+/* ============ Menú «Ejercicios» (desplegable del header) ============ */
+.exmenu{
+  position:absolute; right:.8rem; top:100%; display:none; z-index:60;
+  min-width:280px; max-width:min(92vw,380px);
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 12px 32px color-mix(in srgb, var(--ink) 18%, transparent);
+  padding:.4rem; margin-top:.3rem;
+}
+.exmenu.open{display:block; animation:fadein .18s ease;}
+.exitem{
+  display:flex; flex-direction:column; gap:.1rem; width:100%; text-align:left;
+  border:0; background:transparent; color:var(--ink); font:inherit;
+  padding:.5rem .6rem; border-radius:8px; cursor:pointer;
+}
+.exitem:hover{background:color-mix(in srgb, var(--s7) 12%, transparent);}
+.exitem b{font-size:.9rem;}
+.exitem span{font-size:.78rem; color:var(--ink2);}
+
+/* ============ Ejercicios (predice / detective / boss) ============ */
+.exmeta{display:flex; gap:.5rem; align-items:center; margin-bottom:.2rem;}
+.exbadge{font-size:.72rem; font-weight:600; color:var(--ink2);
+  background:color-mix(in srgb, var(--s7) 14%, var(--surface));
+  border:1px solid color-mix(in srgb, var(--s7) 35%, transparent);
+  border-radius:999px; padding:.08rem .55rem;}
+.exnivel{font-size:.72rem; color:var(--s4); letter-spacing:.1em;}
+.exscore{margin-left:auto; font-size:.8rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
+.exopts{display:flex; flex-direction:column; gap:.4rem; margin:.6rem 0;}
+.exopt{text-align:left; padding:.45rem .7rem;}
+.exopt .optcode{margin:0; font-family:ui-monospace,Consolas,monospace; font-size:.82rem; white-space:pre-wrap;}
+.exopt.good{background:color-mix(in srgb, var(--s2) 20%, var(--surface)); border-color:var(--s2); font-weight:600;}
+.exopt.bad{background:color-mix(in srgb, var(--s8) 16%, var(--surface)); border-color:var(--s8);}
+.exopt:disabled{cursor:default; opacity:1;}
+.exopt:disabled:not(.good):not(.bad){opacity:.55;}
+.exreveal .exvisual{margin:.6rem 0;}
+.buglines{padding:.4rem .3rem;}
+.bugline{padding:.1rem .55rem; border-radius:6px; cursor:pointer; white-space:pre;}
+.bugline:hover{background:color-mix(in srgb, var(--s4) 18%, transparent);}
+.bugline.bughit{background:color-mix(in srgb, var(--s2) 22%, var(--surface));
+  box-shadow:inset 0 0 0 2px var(--s2);}
+.bugline.bugmiss{animation:shake .4s; background:color-mix(in srgb, var(--s8) 18%, var(--surface));}
+
+/* traductor de errores y sandbox */
+.tberror,.pyin{width:100%; box-sizing:border-box; font-family:ui-monospace,Consolas,monospace;
+  font-size:.85rem; color:var(--ink); background:var(--codebg,color-mix(in srgb, var(--ink) 5%, var(--surface)));
+  border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem; resize:vertical;}
+.tberror:focus,.pyin:focus{outline:2px solid color-mix(in srgb, var(--s1) 55%, transparent);}
+
+/* boss final */
+.bosshdr{display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:.5rem;}
+.bossbar{width:min(320px,60vw); height:12px; border-radius:999px; margin:.25rem 0;
+  background:color-mix(in srgb, var(--s8) 12%, var(--surface)); border:1px solid var(--border); overflow:hidden;}
+.bossfill{height:100%; background:linear-gradient(90deg, var(--s8), var(--s6));
+  border-radius:999px; transition:width .6s ease;}
+.bosslbl{font-size:.75rem; color:var(--ink2);}
+.bossvidas{font-size:1.05rem; letter-spacing:.1em; white-space:nowrap;}
+
+/* ============ Diff de DataFrames (estilo git) ============ */
+.dfc.ddel{background:color-mix(in srgb, var(--s8) 18%, var(--surface));
+  color:color-mix(in srgb, var(--s8) 70%, var(--ink)); text-decoration:line-through; opacity:.85;}
+.dfc.dnew{background:color-mix(in srgb, var(--s1) 18%, var(--surface));
+  box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s1) 45%, transparent);}
+.dfc.dchg{background:color-mix(in srgb, var(--s2) 20%, var(--surface));
+  box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--s2) 50%, transparent); font-weight:600;}
 
 main{max-width:1150px; margin:0 auto; padding:1rem 1.2rem 4rem;}
 .module{display:none;}
 .module.active{display:block; animation:fadein .25s ease;}
 @keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
 .module>h2{margin:.9rem 0 .1rem; font-size:1.45rem;}
-.week{display:inline-block; font-size:.72rem; font-weight:600; color:var(--ink2);
-  background:color-mix(in srgb, var(--s7) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--s7) 35%, transparent);
-  border-radius:999px; padding:.1rem .55rem; vertical-align:middle; margin-left:.5rem;}
 .lead{color:var(--ink2); margin:.2rem 0 1rem; max-width:70ch;}
 
 /* ============ Tarjetas y controles ============ */
@@ -224,15 +290,15 @@ kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; 
 <main id="main"></main>
 <footer>
   Hecho para las ayudantías del Taller de Obtención y Preparación de Datos.<span class="kbdhint">
-  <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>8</kbd> cambian de módulo ·
-  «Presentar» agranda todo para el proyector.</span>
+  <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>9</kbd> y <kbd>0</kbd> cambian de módulo ·
+  los ejercicios viven en el botón «🎯 Ejercicios» · «Presentar» agranda todo para el proyector.</span>
 </footer>
 <script>
 'use strict';
 /* =====================================================================
    Núcleo del Visualizador TOPD
    API para módulos:
-     registerModule({id, title, week, lead, build(section)})
+     registerModule({id, title, lead, build(section)})
      el(tag, attrs, ...hijos)  $(sel)  fmt(x)  sleep(ms)
      CellGrid(mount)           — rejilla de celdas animadas (arrays NumPy)
      DfTable(mount, opts)      — tabla estilo DataFrame (divs animables)
@@ -294,6 +360,7 @@ class CellGrid{
     if(cls!==undefined)c.className='cell '+cls;
   }
   layout(){
+    if(!this.stage.isConnected)return; // visuales de ejercicios ya descartados
     const {size,gap}=cellMetrics(); let mr=0, mc=0;
     for(const c of this.cells.values()){
       const [r,cc,w]=c._pos;
@@ -418,42 +485,122 @@ class Stepper{
 }
 
 /* ================= app shell ================= */
-const MODULES=[]; // {id, title, week, lead, build(section)}
+const MODULES=[];   // {id, title, lead, build(section)} — nav principal, teclas 1-9
+const EXERCISES=[]; // ídem, pero viven en el menú «Ejercicios» (estudio sin ruido)
 function registerModule(m){MODULES.push(m);}
+function registerExercise(m){EXERCISES.push(m);}
+const allSections=()=>MODULES.concat(EXERCISES);
+
+/* Estado en la URL: #merge?how=outer — compartible por WhatsApp.
+   hashId() da el id sin parámetros; hashParams() el objeto {k:v};
+   setHashParams(obj) los escribe sin recargar ni re-activar. */
+const hashId=()=>decodeURIComponent(location.hash.slice(1).split('?')[0]);
+function hashParams(){
+  const q=location.hash.split('?')[1]||'';
+  return Object.fromEntries(new URLSearchParams(q));
+}
+function setHashParams(obj){
+  const clean=Object.fromEntries(Object.entries(obj).filter(([,v])=>v!=null&&v!==''));
+  const q=new URLSearchParams(clean).toString();
+  history.replaceState(null,'','#'+hashId()+(q?'?'+q:''));
+}
 
 function buildShell(){
   const nav=$('#nav'), main=$('#main');
   if(!MODULES.length)return;
-  MODULES.forEach((m,i)=>{
-    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
-    b.dataset.mod=m.id; nav.append(b);
+  const mkSection=m=>{
     const sec=el('section',{class:'module',id:'mod-'+m.id},
-      el('h2',{},m.title,el('span',{class:'week'},m.week)),
+      el('h2',{},m.title),
       el('p',{class:'lead'},m.lead||''));
     main.append(sec);
     m._built=false; m._sec=sec;
+  };
+  MODULES.forEach((m,i)=>{
+    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
+    b.dataset.mod=m.id; nav.append(b);
+    mkSection(m);
   });
+  EXERCISES.forEach(mkSection);
+  buildExMenu();
   /* #id en la URL abre ese módulo directamente (link compartible por tema) */
-  const wanted=location.hash.slice(1);
-  activate(MODULES.some(m=>m.id===wanted)?wanted:MODULES[0].id);
+  const wanted=hashId();
+  activate(allSections().some(m=>m.id===wanted)?wanted:MODULES[0].id);
   window.addEventListener('hashchange',()=>{
-    const id=location.hash.slice(1);
-    if(MODULES.some(m=>m.id===id))activate(id);
+    const id=hashId();
+    if(allSections().some(m=>m.id===id)&&!document.getElementById('mod-'+id).classList.contains('active'))
+      activate(id);
   });
 }
+
+/* Menú «Ejercicios»: botón en el header que despliega las secciones de práctica.
+   Escondido a propósito: la app se estudia limpia y los ejercicios aparecen al clic. */
+function buildExMenu(){
+  if(!EXERCISES.length)return;
+  const btn=el('button',{id:'btnEx',title:'Ejercicios y práctica'},'🎯 Ejercicios');
+  const panel=el('div',{id:'exmenu',class:'exmenu'});
+  EXERCISES.forEach(m=>{
+    panel.append(el('button',{class:'exitem',onclick:()=>{close(); activate(m.id);}},
+      el('b',{},m.title), el('span',{},m.lead||'')));
+  });
+  const close=()=>{panel.classList.remove('open'); btn.classList.remove('on');};
+  btn.onclick=e=>{e.stopPropagation(); panel.classList.toggle('open'); btn.classList.toggle('on');};
+  document.addEventListener('click',e=>{ if(!panel.contains(e.target))close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape')close(); });
+  const hdr=$('.hdrbtns'); hdr.prepend(btn);
+  document.querySelector('header').append(panel);
+}
+
 function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
+  const isEx=EXERCISES.some(m=>m.id===id);
+  const bEx=$('#btnEx'); if(bEx)bEx.classList.toggle('active-ex',isEx);
   /* en móvil el nav scrollea horizontal: dejar visible la pestaña activa */
   const on=document.querySelector('#nav button.on');
   if(on)on.scrollIntoView({inline:'center',block:'nearest'});
-  const m=MODULES.find(x=>x.id===id);
+  const m=allSections().find(x=>x.id===id);
+  const keep=(hashId()===id); // conservar ?params si ya estábamos en este módulo
+  if(!keep)history.replaceState(null,'','#'+id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
   RELAYOUT.forEach(f=>f());
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
-  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
   window.scrollTo({top:0});
+}
+
+/* Diff de DataFrames estilo git: filas eliminadas en rojo tachado, filas/columnas
+   nuevas en azul, celdas cambiadas (imputadas, reemplazadas…) en verde.
+   before/after: {columns, index, rows} como DfTable. Devuelve la DfTable. */
+function dfDiff(mount,before,after,caption){
+  const cols=[...before.columns, ...after.columns.filter(c=>!before.columns.includes(c))];
+  const index=[...before.index, ...after.index.filter(i=>!before.index.includes(i))];
+  const get=(o,ix,c)=>{
+    const r=o.index.indexOf(ix), k=o.columns.indexOf(c);
+    return (r<0||k<0)?undefined:o.rows[r][k];
+  };
+  const rows=index.map(ix=>cols.map(c=>{
+    const av=get(after,ix,c);
+    return av!==undefined?av:(get(before,ix,c)??null);
+  }));
+  const t=new DfTable(mount,{columns:cols,index,rows,caption});
+  index.forEach((ix,r)=>{
+    const inA=after.index.includes(ix), inB=before.index.includes(ix);
+    cols.forEach((c,ci)=>{
+      const cell=t.cell(r,ci);
+      const av=get(after,ix,c), bv=get(before,ix,c);
+      if(!inA||!after.columns.includes(c))cell.classList.add('ddel');
+      else if(!inB||!before.columns.includes(c))cell.classList.add('dnew');
+      else if(av!==bv)cell.classList.add('dchg');
+    });
+    if(!inA)t.rowEls[r]._idx.classList.add('ddel');
+    else if(!inB)t.rowEls[r]._idx.classList.add('dnew');
+  });
+  t.headEls.forEach((h,ci)=>{
+    const c=cols[ci];
+    if(!after.columns.includes(c))h.classList.add('ddel');
+    else if(!before.columns.includes(c))h.classList.add('dnew');
+  });
+  return t;
 }
 /* helpers UI */
 function codeBox(mount){const c=el('pre',{class:'code'});mount.append(c);return c;}
@@ -486,7 +633,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(e.target.matches('input,select,textarea'))return;
     if(e.key==='ArrowRight'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i+1);e.preventDefault();}
     else if(e.key==='ArrowLeft'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i-1);e.preventDefault();}
-    else if(/^[1-9]$/.test(e.key)){const m=MODULES[+e.key-1]; if(m)activate(m.id);}
+    else if(/^[0-9]$/.test(e.key)){const m=MODULES[e.key==='0'?9:+e.key-1]; if(m)activate(m.id);}
   });
   buildShell();
 });
@@ -514,7 +661,6 @@ const mqMovil=window.matchMedia('(max-width:700px)');
 registerModule({
   id:'inicio',
   title:'Visualizador TOPD',
-  week:'portada',
   lead:'Aprende NumPy y Pandas viendo qué celda va a dónde. Y como corresponde, '+
        'el menú también es un DataFrame: toca una celda para ir a ese contenido.',
   build(sec){
@@ -595,7 +741,6 @@ registerModule({
 registerModule({
   id:'numpy',
   title:'Arrays NumPy',
-  week:'Semanas 1–2',
   lead:'Un array es una grilla de valores del mismo tipo. Aquí puedes ver cómo se mueven '+
        'las celdas al cambiar la forma, qué recorre realmente el axis y cómo filtra una máscara booleana.',
   build(sec){
@@ -629,13 +774,19 @@ registerModule({
         render(r,c);
         code.innerHTML=`a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>${r}, ${c}</b>)          # shape (${r}, ${c})`;
       }
-      btnGroup(ctr,[
-        {label:'1 × 12',value:[1,12]},{label:'2 × 6',value:[2,6]},{label:'3 × 4',value:[3,4]},
-        {label:'4 × 3',value:[4,3]},{label:'6 × 2',value:[6,2]},{label:'12 × 1',value:[12,1]},
+      const SHAPES=[[1,12],[2,6],[3,4],[4,3],[6,2],[12,1]];
+      const shapeBtns=btnGroup(ctr,[
+        ...SHAPES.map(s=>({label:`${s[0]} × ${s[1]}`,value:s})),
         {label:'5 × 3 ✗',value:'bad'},
-      ],pick);
-      render(1,12);
-      code.innerHTML='a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>1, 12</b>)';
+      ],v=>{pick(v); setHashParams({shape:v==='bad'?'5x3':v.join('x')});},false);
+      /* #numpy?shape=4x3 abre directo con esa forma (link compartible) */
+      const si=SHAPES.findIndex(s=>s.join('x')===hashParams().shape);
+      shapeBtns[si<0?0:si].classList.add('on');
+      if(si>0){ pick(SHAPES[si]); }
+      else{
+        render(1,12);
+        code.innerHTML='a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>1, 12</b>)';
+      }
     }
 
     /* ---------- Tarjeta 2: axis ---------- */
@@ -823,7 +974,6 @@ registerModule({
   registerModule({
     id:'df',
     title:'DataFrames',
-    week:'Semana 3',
     lead:'Un DataFrame es una tabla: cada columna es una Serie con un tipo, y cada fila tiene una etiqueta en el índice.',
     build(section){
       buildAnatomia(section);
@@ -960,6 +1110,303 @@ registerModule({
     }
   }
 
+})();
+
+</script>
+<script>
+'use strict';
+/* Módulo: Visualización — qué gráfico usar, anatomía de la figura matplotlib
+   e interfaz pyplot vs OO. Unidad III de 2026-1 (clase 09, Control 2, C5).
+   Mini-gráficos según las specs del skill dataviz: un solo tono para magnitud,
+   rampa secuencial para el heatmap (tinta fija sobre la rampa), grilla recesiva. */
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const s=(tag,attrs={},text)=>{
+  const n=document.createElementNS(NS,tag);
+  for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
+  if(text!=null)n.textContent=text;
+  return n;
+};
+/* mini-lienzo estándar: ejes recesivos y área de trazado */
+function lienzo(W=380,H=210,L=34,B=26){
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:440px;display:block'});
+  svg.append(
+    s('line',{x1:L,y1:H-B,x2:W-8,y2:H-B,class:'axisline'}),
+    s('line',{x1:L,y1:10,x2:L,y2:H-B,class:'axisline'}));
+  return {svg,L,B,W,H,pw:W-L-8-4,ph:H-B-14};
+}
+
+registerModule({
+  id:'viz',
+  title:'Visualización',
+  lead:'Antes de elegir colores o estilos, la pregunta es qué quieres mostrar: '+
+       'esa respuesta elige el gráfico. Aquí está el mapa del curso y la anatomía '+
+       'de una figura de Matplotlib.',
+  build(sec){
+
+    /* ---------- Tarjeta 1: ¿Qué gráfico uso? ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{},'¿Qué gráfico uso?'),
+        el('p',{class:'note',html:'Elige tu <b>objetivo</b> y mira el gráfico que el curso recomienda '+
+          '(sección 3 del Control 5: cada pregunta de negocio pide una forma distinta).'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const holder=el('div',{style:'display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start'});
+      card.append(holder);
+      const chart=el('div',{style:'flex:1 1 300px;min-width:280px'});
+      const side=el('div',{style:'flex:1 1 260px;min-width:240px'});
+      holder.append(chart,side);
+      const code=codeBox(side);
+      const note=el('p',{class:'note'});side.append(note);
+
+      const draw={
+        hist(){
+          const {svg,L,B,H,pw,ph}=lienzo();
+          const bins=[2,5,9,12,8,4,1], bw=pw/bins.length, max=12;
+          bins.forEach((v,i)=>{
+            const h=v/max*ph;
+            svg.append(s('rect',{x:L+4+i*bw,y:H-B-h,width:bw-2,height:h,rx:3,
+              fill:'var(--s1)'}));
+          });
+          svg.append(s('text',{x:L+pw/2,y:H-6,'text-anchor':'middle',class:'axistext'},'precio del tour'));
+          return svg;
+        },
+        linea(){
+          const {svg,L,B,H,pw,ph}=lienzo();
+          const v=[38,42,35,50,64,58,72,80,74,88];
+          const x=i=>L+8+i*(pw-12)/(v.length-1), y=k=>H-B-(k/90)*ph;
+          [25,50,75].forEach(g=>svg.append(s('line',{x1:L,x2:L+pw,y1:y(g),y2:y(g),class:'gridline'})));
+          svg.append(s('path',{d:v.map((k,i)=>(i?'L':'M')+x(i)+','+y(k)).join(' '),
+            fill:'none',stroke:'var(--s1)','stroke-width':2}));
+          const last=v.length-1;
+          svg.append(s('circle',{cx:x(last),cy:y(v[last]),r:4,fill:'var(--s1)'}));
+          svg.append(s('text',{x:x(last)-4,y:y(v[last])-8,'text-anchor':'end',class:'axistext'},'88'));
+          svg.append(s('text',{x:L+pw/2,y:H-6,'text-anchor':'middle',class:'axistext'},'mes'));
+          return svg;
+        },
+        barras(){
+          const {svg,L,B,H,pw,ph}=lienzo();
+          const cats=[['Trekking',92],['Kayak',71],['Rafting',55],['Cabalgata',30]];
+          const bh=(ph-16)/cats.length;
+          cats.forEach(([n,v],i)=>{
+            const w=v/100*(pw-70), yy=16+i*bh;
+            svg.append(s('rect',{x:L+2,y:yy,width:w,height:bh-8,rx:3,fill:'var(--s1)'}));
+            svg.append(s('text',{x:L+w+6,y:yy+bh/2,class:'axistext','dominant-baseline':'middle'},n+' · '+v));
+          });
+          return svg;
+        },
+        scatter(){
+          const {svg,L,B,H,pw,ph}=lienzo();
+          const pts=[[5,20],[10,26],[14,24],[18,35],[24,33],[30,44],[35,40],[42,55],
+                     [50,52],[55,63],[62,60],[70,74],[78,70],[85,84]];
+          [25,50,75].forEach(g=>svg.append(s('line',{x1:L,x2:L+pw,y1:H-B-g/100*ph,y2:H-B-g/100*ph,class:'gridline'})));
+          pts.forEach(([px,py])=>svg.append(s('circle',{
+            cx:L+8+px/90*(pw-12),cy:H-B-py/90*ph,r:4.5,fill:'var(--s1)','fill-opacity':.75})));
+          svg.append(s('text',{x:L+pw/2,y:H-6,'text-anchor':'middle',class:'axistext'},'duración (h)'));
+          return svg;
+        },
+        heatmap(){
+          const svg=s('svg',{viewBox:'0 0 380 210',style:'width:100%;max-width:440px;display:block'});
+          /* rampa fija --seq*: la tinta sobre ella también es fija (no var(--ink)) */
+          const RAMP=['var(--seq100)','var(--seq200)','var(--seq300)','var(--seq400)','var(--seq500)','var(--seq600)','var(--seq700)'];
+          const INK=['#0b0b0b','#0b0b0b','#0b0b0b','#fff','#fff','#fff','#fff'];
+          const vals=[[12,35,60,88],[25,48,74,95],[8,20,42,66]];
+          const rows=['Centro','San Pedro','Talcahuano'],colsq=['T1','T2','T3','T4'];
+          const cw=70,ch=52,X0=96,Y0=26;
+          vals.forEach((row,r)=>{
+            svg.append(s('text',{x:X0-8,y:Y0+r*ch+ch/2,'text-anchor':'end',class:'axistext','dominant-baseline':'middle'},rows[r]));
+            row.forEach((v,c)=>{
+              const step=Math.min(6,Math.floor(v/100*7));
+              svg.append(s('rect',{x:X0+c*cw,y:Y0+r*ch,width:cw-3,height:ch-3,rx:4,fill:RAMP[step]}));
+              /* tinta fija sobre la rampa fija (no var(--ink)): regla del proyecto */
+              svg.append(s('text',{x:X0+c*cw+(cw-3)/2,y:Y0+r*ch+ch/2,'text-anchor':'middle',
+                'dominant-baseline':'middle',style:`font-size:12px;font-weight:600;fill:${INK[step]}`},v));
+            });
+          });
+          colsq.forEach((q,c)=>svg.append(s('text',{x:X0+c*cw+(cw-3)/2,y:Y0-8,'text-anchor':'middle',class:'axistext'},q)));
+          return svg;
+        },
+        torta(){
+          const svg=s('svg',{viewBox:'0 0 380 210',style:'width:100%;max-width:440px;display:block'});
+          const cx=140,cy=105,R=78;
+          const parts=[['Trekking',52,'var(--s1)'],['Kayak',31,'var(--s2)'],['Rafting',17,'var(--s3)']];
+          let a0=-Math.PI/2;
+          parts.forEach(([n,p,c])=>{
+            const a1=a0+p/100*2*Math.PI;
+            const x0=cx+R*Math.cos(a0),y0=cy+R*Math.sin(a0);
+            const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+            svg.append(s('path',{d:`M${cx},${cy} L${x0},${y0} A${R},${R} 0 ${p>50?1:0} 1 ${x1},${y1} Z`,
+              fill:c,stroke:'var(--surface)','stroke-width':2}));
+            const am=(a0+a1)/2;
+            svg.append(s('text',{x:cx+(R+26)*Math.cos(am),y:cy+(R+26)*Math.sin(am),
+              'text-anchor':'middle',class:'axistext'},`${n} ${p}%`));
+            a0=a1;
+          });
+          return svg;
+        },
+      };
+      const INFO={
+        hist:{t:'Distribución de una variable numérica',c:"plt.hist(df['precio'], bins=20)\nplt.xlabel('precio del tour')",
+          n:'El histograma muestra <b>cómo se reparte</b> una variable: ¿simétrica, sesgada, con dos grupos? '+
+            'Es la pregunta 3.1 del Control 5. Su hermano resumido es el boxplot del <a href="#outliers">módulo Outliers</a>.'},
+        linea:{t:'Evolución en el tiempo',c:"df_mes = df.resample('ME')['ventas'].sum()\nplt.plot(df_mes.index, df_mes.values)",
+          n:'La línea es para <b>series temporales</b>: meses, semanas, años en el eje x. '+
+            'Pregunta 3.4 del Control 5 («¿se recuperó el turismo tras la pandemia?»). '+
+            'El eje temporal sale de <a href="#fechas">resample</a>.'},
+        barras:{t:'Comparar categorías',c:"conteo = df['actividad'].value_counts()\nplt.barh(conteo.index, conteo.values)",
+          n:'Barras para <b>comparar cantidades entre categorías</b> — ordénalas de mayor a menor '+
+            '(value_counts ya lo hace). Horizontales si los nombres son largos. Un solo color: '+
+            'la identidad ya la dan las etiquetas.'},
+        scatter:{t:'Relación entre dos numéricas',c:"plt.scatter(df['duracion'], df['precio'], alpha=0.6)",
+          n:'La dispersión revela <b>correlaciones</b>: ¿a más duración, más precio? '+
+            'Con muchos puntos usa <code>alpha</code> para ver la densidad. Es el paso previo '+
+            'a la matriz de correlación del Control 5.'},
+        heatmap:{t:'Dos categorías × una magnitud',c:"tabla = pd.pivot_table(df, values='ventas',\n        index='sucursal', columns='trimestre')\nsns.heatmap(tabla, annot=True, cmap='Blues')",
+          n:'El heatmap pinta una <b>tabla cruzada</b>: el color codifica magnitud con UNA rampa '+
+            '(claro→oscuro), nunca un arcoíris. Es el pivote del <a href="#groupby">módulo GroupBy</a> con color, '+
+            'y la pregunta 3.2 del Control 5 (matriz de correlación).'},
+        torta:{t:'Composición (pocas partes)',c:"plt.pie(partes, labels=nombres, autopct='%1.0f%%')",
+          n:'La torta solo funciona con <b>pocas categorías</b> (≤4) que suman 100%. '+
+            'Con más partes o valores parecidos, el ojo compara mal ángulos: prefiere barras. '+
+            'El curso la enseña — y también sus límites.'},
+      };
+      function pick(k){
+        chart.textContent='';
+        chart.append(el('div',{class:'note',style:'font-weight:600;margin-bottom:.3rem'},INFO[k].t));
+        chart.append(draw[k]());
+        code.textContent=INFO[k].c;
+        note.innerHTML=INFO[k].n;
+      }
+      btnGroup(ctr,[
+        {label:'📊 distribución',value:'hist'},{label:'📈 evolución temporal',value:'linea'},
+        {label:'🏷️ comparar categorías',value:'barras'},{label:'⚬⚬ relación entre variables',value:'scatter'},
+        {label:'🔥 tabla cruzada',value:'heatmap'},{label:'🥧 composición',value:'torta'},
+      ],pick);
+      pick('hist');
+    }
+
+    /* ---------- Tarjeta 2: anatomía de la figura ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{},'Anatomía de una figura'),
+        el('p',{class:'note',html:'Cada pieza de un gráfico tiene su línea de código. '+
+          'Haz clic en una parte para ver quién la dibuja.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const W=560,H=300,L=64,B=46,T=40,R=20;
+      const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:640px;display:block'});
+      card.append(svg);
+      const code=codeBox(card);
+      const pw=W-L-R, ph=H-T-B;
+      const x=i=>L+10+i*(pw-20)/9, y=v=>H-B-(v/100)*ph;
+      const centro=[38,42,35,50,64,58,72,80,74,88], sanpedro=[30,28,34,40,38,49,55,52,60,66];
+      const G={};
+      G.grid=s('g');[25,50,75].forEach(g=>G.grid.append(s('line',{x1:L,x2:W-R,y1:y(g),y2:y(g),class:'gridline'})));
+      G.ejes=s('g');
+      G.ejes.append(s('line',{x1:L,y1:H-B,x2:W-R,y2:H-B,class:'axisline'}),
+                    s('line',{x1:L,y1:T,x2:L,y2:H-B,class:'axisline'}));
+      G.ticks=s('g');
+      'EFMAMJJASO'.split('').forEach((m,i)=>G.ticks.append(s('text',{x:x(i),y:H-B+16,'text-anchor':'middle',class:'axistext'},m)));
+      [0,25,50,75,100].forEach(v=>G.ticks.append(s('text',{x:L-8,y:y(v)+4,'text-anchor':'end',class:'axistext'},v)));
+      G.serie=s('g');
+      G.serie.append(
+        s('path',{d:centro.map((k,i)=>(i?'L':'M')+x(i)+','+y(k)).join(' '),fill:'none',stroke:'var(--s1)','stroke-width':2}),
+        s('path',{d:sanpedro.map((k,i)=>(i?'L':'M')+x(i)+','+y(k)).join(' '),fill:'none',stroke:'var(--s2)','stroke-width':2}));
+      G.titulo=s('g');G.titulo.append(s('text',{x:L,y:22,style:'font-weight:700;font-size:15px;fill:var(--ink)'},'Ventas cafetería 2026'));
+      G.xlabel=s('g');G.xlabel.append(s('text',{x:L+pw/2,y:H-8,'text-anchor':'middle',class:'axistext'},'mes'));
+      G.ylabel=s('g');G.ylabel.append(s('text',{x:16,y:T+ph/2,class:'axistext',transform:`rotate(-90 16 ${T+ph/2})`,'text-anchor':'middle'},'miles de $'));
+      G.leyenda=s('g');
+      const ly=T+8;
+      G.leyenda.append(
+        s('rect',{x:W-R-150,y:ly-12,width:132,height:44,rx:6,fill:'var(--surface)',stroke:'var(--border)'}),
+        s('line',{x1:W-R-140,x2:W-R-118,y1:ly,y2:ly,stroke:'var(--s1)','stroke-width':2}),
+        s('text',{x:W-R-112,y:ly+4,class:'axistext'},'Centro'),
+        s('line',{x1:W-R-140,x2:W-R-118,y1:ly+20,y2:ly+20,stroke:'var(--s2)','stroke-width':2}),
+        s('text',{x:W-R-112,y:ly+24,class:'axistext'},'San Pedro'));
+      Object.values(G).forEach(g=>svg.append(g));
+      const FULL={
+        titulo:"ax.set_title('Ventas cafetería 2026')",
+        serie:"ax.plot(meses, centro, label='Centro')\nax.plot(meses, sanpedro, label='San Pedro')",
+        leyenda:"ax.legend()",
+        xlabel:"ax.set_xlabel('mes')",
+        ylabel:"ax.set_ylabel('miles de $')",
+        ticks:"ax.set_xticks(range(10), list('EFMAMJJASO'))",
+        grid:"ax.grid(alpha=0.3)",
+        ejes:"fig, ax = plt.subplots()   # la figura y sus ejes (el lienzo)",
+      };
+      function hl(k){
+        Object.entries(G).forEach(([kk,g])=>{g.style.opacity=(k===kk)?1:.25;g.style.transition='opacity .3s';});
+        code.innerHTML=Object.entries(FULL).map(([kk,c])=>kk===k?`<b>${c}</b>`:c).join('\n');
+      }
+      btnGroup(ctr,[
+        {label:'título',value:'titulo'},{label:'series',value:'serie'},{label:'leyenda',value:'leyenda'},
+        {label:'xlabel',value:'xlabel'},{label:'ylabel',value:'ylabel'},{label:'ticks',value:'ticks'},
+        {label:'grilla',value:'grid'},{label:'ejes (ax)',value:'ejes'},
+      ],hl,false);
+      code.textContent=Object.values(FULL).join('\n');
+      card.append(el('p',{class:'note',html:'Dos series ⇒ <b>leyenda obligatoria</b>; un color por serie '+
+        'y ese color <b>no cambia</b> aunque filtres. La grilla va tenue: es apoyo, no protagonista.'}));
+    }
+
+    /* ---------- Tarjeta 3: pyplot vs interfaz OO ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>plt.plot</code> vs <code>fig, ax</code> (interfaz OO)'}),
+        el('p',{class:'note',html:'Las dos interfaces dibujan lo mismo. La clase 09 recomienda la '+
+          '<b>orientada a objetos</b>: cada gráfico vive en su <code>ax</code> y los subgráficos son triviales.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const holder=el('div',{style:'display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start'});
+      card.append(holder);
+      const cchart=el('div',{style:'flex:0 1 340px;min-width:260px'});
+      const ccode=el('div',{style:'flex:1 1 300px;min-width:260px'});
+      holder.append(cchart,ccode);
+      const code=codeBox(ccode);
+      const note=el('p',{class:'note'});ccode.append(note);
+      function mini(){
+        const {svg,L,B,H,pw,ph}=lienzo(300,170,30,22);
+        const v=[35,50,44,66,60,80];
+        const xx=i=>L+8+i*(pw-12)/(v.length-1), yy=k=>H-B-(k/90)*ph;
+        svg.append(s('path',{d:v.map((k,i)=>(i?'L':'M')+xx(i)+','+yy(k)).join(' '),
+          fill:'none',stroke:'var(--s1)','stroke-width':2}));
+        return svg;
+      }
+      function panel4(){
+        const wrap=el('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:.4rem'});
+        for(let i=0;i<4;i++){
+          const {svg,L,B,H,pw,ph}=lienzo(150,95,20,14);
+          const v=Array.from({length:6},(_,j)=>20+((i*13+j*29)%60));
+          const xx=k=>L+4+k*(pw-8)/5, yy=k=>H-B-(k/90)*ph;
+          svg.append(s('path',{d:v.map((k,j)=>(j?'L':'M')+xx(j)+','+yy(k)).join(' '),
+            fill:'none',stroke:['var(--s1)','var(--s2)','var(--s3)','var(--s4)'][i],'stroke-width':2}));
+          wrap.append(svg);
+        }
+        return wrap;
+      }
+      const MODOS={
+        plt:{draw:mini,c:"plt.plot(meses, ventas)\nplt.title('Ventas')\nplt.xlabel('mes')\nplt.show()",
+          n:'La interfaz <b>pyplot</b> dibuja sobre «la figura actual» implícita. Cómoda para un gráfico rápido, '+
+            'confusa cuando hay varios.'},
+        oo:{draw:mini,c:"fig, ax = plt.subplots()\nax.plot(meses, ventas)\nax.set_title('Ventas')\nax.set_xlabel('mes')",
+          n:'La interfaz <b>OO</b>: pides la figura y sus ejes, y cada orden va dirigida a un <code>ax</code> '+
+            'específico. Es la forma recomendada del curso — y nota que los métodos cambian a <code>set_*</code>.'},
+        sub:{draw:panel4,c:"fig, axs = plt.subplots(2, 2, figsize=(10, 6))\naxs[0, 0].plot(x, ventas)\naxs[0, 1].plot(x, costos)\naxs[1, 0].plot(x, clientes)\naxs[1, 1].plot(x, margen)",
+          n:'Con OO los <b>subgráficos</b> son una grilla de axes: <code>axs[fila, columna]</code>. '+
+            'Cuatro medidas distintas = cuatro paneles, jamás dos escalas en un mismo eje.'},
+      };
+      function pick(k){
+        cchart.textContent='';cchart.append(MODOS[k].draw());
+        code.textContent=MODOS[k].c;note.innerHTML=MODOS[k].n;
+      }
+      btnGroup(ctr,[
+        {label:'pyplot (implícita)',value:'plt'},{label:'fig, ax (OO)',value:'oo'},
+        {label:'subplots 2×2',value:'sub'},
+      ],pick);
+      pick('plt');
+    }
+  }
+});
 })();
 
 </script>
@@ -1265,7 +1712,6 @@ function build(section){
 registerModule({
   id:'nulos',
   title:'Valores perdidos',
-  week:'Semana 4',
   lead:'Los datos reales llegan con huecos. Antes de modelar hay que decidir: ¿dónde están los NaN, los elimino o los relleno? Cada decisión cambia lo que tus datos dicen.',
   build
 });
@@ -1279,7 +1725,6 @@ registerModule({
 registerModule({
   id:'outliers',
   title:'Outliers',
-  week:'Semanas 8–9',
   lead:'Un outlier es un valor anómalamente lejos del resto. Detectarlo es fácil; '+
        'la decisión difícil es qué hacer con él — y para eso hay que mirar los datos.',
   build(sec){
@@ -1302,7 +1747,7 @@ registerModule({
     const fmt$=v=>'$'+Math.round(v).toLocaleString('es-CL');
 
     const card=el('div',{class:'card'},
-      el('h3',{},'Detectar outliers: IQR y z-score'),
+      el('h3',{},'Detectar outliers: IQR, z-score y MAD'),
       el('p',{class:'note',html:'Sueldos mensuales (miles de pesos) de 24 analistas de datos. '+
         'Mueve el umbral y observa qué puntos quedan marcados como outliers. '+
         'Fíjate cómo la <b>media se arrastra</b> hacia los valores extremos mientras la <b>mediana casi no se mueve</b>: '+
@@ -1311,7 +1756,10 @@ registerModule({
 
     /* controles */
     const ctr=el('div',{class:'controls'});card.append(ctr);
-    const selM=el('select',{},el('option',{value:'iqr'},'IQR (rango intercuartílico)'),el('option',{value:'z'},'z-score'));
+    const selM=el('select',{},
+      el('option',{value:'iqr'},'IQR (rango intercuartílico)'),
+      el('option',{value:'z'},'z-score'),
+      el('option',{value:'mad'},'MAD (desviación absoluta mediana)'));
     const rng=el('input',{type:'range',min:0.5,max:3,step:0.25,value:1.5,style:'width:140px'});
     const kLab=el('span',{style:'font-weight:700;min-width:2.4em;display:inline-block'},'k = 1,5');
     const bDrop=el('button',{class:'btn'},'🗑️ Eliminar outliers');
@@ -1334,10 +1782,12 @@ registerModule({
     const stats=el('div',{class:'msg'});card.append(stats);
     const chips=el('div');card.append(chips);
     const code=codeBox(card);
-    card.append(el('p',{class:'note',html:'<b>¿IQR o z-score?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
-      'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. Regla práctica del curso: '+
-      'boxplot/IQR primero, z-score solo si la variable es aproximadamente normal. Y antes de borrar un outlier pregúntate: '+
-      '¿es un error de digitación o un dato real e interesante?'}));
+    card.append(el('p',{class:'note',html:'<b>¿IQR, z-score o MAD?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
+      'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. El <b>MAD</b> es aún más duro de engañar: '+
+      'mediana de las distancias a la mediana — cambia el método aquí arriba y nota que sus cercas casi no se mueven al eliminar outliers. '+
+      'Regla práctica del curso: boxplot/IQR primero, z-score solo si la variable es aproximadamente normal, MAD cuando hay muchos extremos. '+
+      '(La clase 15 menciona además <i>Isolation Forest</i>, un método de ML fuera del alcance de este visualizador.) '+
+      'Y antes de borrar un outlier pregúntate: ¿es un error de digitación o un dato real e interesante?'}));
 
     /* puntos persistentes */
     let active=[...DATA]; // valores vigentes (tras eliminar)
@@ -1352,7 +1802,8 @@ registerModule({
 
     function config(){ /* reconfigura slider según método */
       if(selM.value==='iqr'){rng.min=0.5;rng.max=3;rng.step=0.25;rng.value=1.5;}
-      else{rng.min=1;rng.max=3.5;rng.step=0.25;rng.value=3;}
+      else if(selM.value==='z'){rng.min=1;rng.max=3.5;rng.step=0.25;rng.value=3;}
+      else{rng.min=2;rng.max=5;rng.step=0.25;rng.value=3.5;} /* MAD: umbral típico 3.5 */
       update();
     }
     function update(){
@@ -1361,9 +1812,12 @@ registerModule({
       const vals=circles.filter(p=>!p.removed).map(p=>p.v);
       const q1=quantile(vals,.25),q3=quantile(vals,.75),iqr=q3-q1;
       const m=mean(vals),sd=std(vals),med=quantile(vals,.5);
+      const mad=quantile(vals.map(v=>Math.abs(v-med)),.5);
       let lo,hi;
       if(selM.value==='iqr'){lo=q1-k*iqr;hi=q3+k*iqr;}
-      else{lo=m-k*sd;hi=m+k*sd;}
+      else if(selM.value==='z'){lo=m-k*sd;hi=m+k*sd;}
+      /* z modificado: 0.6745·(x−med)/MAD > k  ⇔  x fuera de med ± k·MAD/0.6745 */
+      else{lo=med-k*mad/0.6745;hi=med+k*mad/0.6745;}
       /* escala */
       const vmin=Math.min(...vals,lo),vmax=Math.max(...vals,hi);
       const pad=(vmax-vmin)*.05;
@@ -1418,8 +1872,10 @@ registerModule({
       outs.sort((a,b)=>a-b).forEach(v=>chips.append(el('span',{class:'chip',style:'border-color:var(--s8);color:var(--s8)'},fmt$(v))));
       if(selM.value==='iqr'){
         code.innerHTML=`Q1, Q3 = df['sueldo'].quantile([0.25, 0.75])\nIQR = Q3 - Q1                        # ${fmt$(iqr)}\nlim_inf = Q1 - <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(lo)}\nlim_sup = Q3 + <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(hi)}\noutliers = df[(df['sueldo'] < lim_inf) | (df['sueldo'] > lim_sup)]   # ${outs.length} filas`;
-      }else{
+      }else if(selM.value==='z'){
         code.innerHTML=`z = (df['sueldo'] - df['sueldo'].mean()) / df['sueldo'].std()\noutliers = df[z.abs() > <b>${String(k).replace('.',',')}</b>]        # ${outs.length} filas`;
+      }else{
+        code.innerHTML=`med = df['sueldo'].median()                      # ${fmt$(med)}\nMAD = (df['sueldo'] - med).abs().median()        # ${fmt$(mad)}\nz_mod = 0.6745 * (df['sueldo'] - med) / MAD\noutliers = df[z_mod.abs() > <b>${String(k).replace('.',',')}</b>]      # ${outs.length} filas`;
       }
       return {lo,hi};
     }
@@ -1446,7 +1902,6 @@ registerModule({
   registerModule({
     id:'wrangling',
     title:'Data wrangling',
-    week:'Semanas 9–10',
     lead:'Limpiar y transformar: duplicados, reemplazos, discretización y ordenamiento.',
     build(section){
       buildDuplicados(section);
@@ -1732,7 +2187,6 @@ registerModule({
 registerModule({
   id:'groupby',
   title:'GroupBy y pivoteo',
-  week:'Semana 11',
   lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
        'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
   build(sec){
@@ -1883,7 +2337,6 @@ registerModule({
 registerModule({
   id:'merge',
   title:'Joins y concat',
-  week:'Semana 12',
   lead:'merge une dos tablas emparejando filas por una llave común. El parámetro how decide '+
        'qué pasa con las filas que no encuentran pareja.',
   build(sec){
@@ -1987,10 +2440,12 @@ registerModule({
         code.innerHTML=`pd.merge(estudiantes, carreras,\n         on='id_carrera', how=<b>'${how}'</b>)   # ${rows.length} filas`;
         requestAnimationFrame(drawLinks);
       }
-      btnGroup(ctr,[
-        {label:'inner',value:'inner'},{label:'left',value:'left'},
-        {label:'right',value:'right'},{label:'outer',value:'outer'},
-      ],v=>{how=v;render();});
+      const HOWS=['inner','left','right','outer'];
+      /* #merge?how=outer abre directo con ese how (link compartible) */
+      if(HOWS.includes(hashParams().how))how=hashParams().how;
+      const howBtns=btnGroup(ctr,HOWS.map(h=>({label:h,value:h})),
+        v=>{how=v;setHashParams({how:v});render();},false);
+      howBtns[HOWS.indexOf(how)].classList.add('on');
       window.addEventListener('resize',drawLinks);
       RELAYOUT.push(drawLinks);
       render();
@@ -2045,6 +2500,1164 @@ registerModule({
     }
   }
 });
+
+</script>
+<script>
+'use strict';
+/* Módulo: Fechas — to_datetime, accesor .dt, Timedelta, resample y date_range
+   (clase 22 de 2026-1 y Ejercicio Integrador 2). Datos verificados con pandas. */
+(function(){
+registerModule({
+  id:'fechas',
+  title:'Fechas',
+  lead:'Una fecha guardada como texto ordena mal y no se puede restar. El flujo del curso: '+
+       'parsear con to_datetime, extraer componentes con .dt, restar para obtener Timedelta '+
+       'y agrupar en el tiempo con resample.',
+  build(sec){
+
+    /* ---------- Tarjeta 1: to_datetime + .dt ---------- */
+    {
+      const FECHAS=['2026-03-02','2026-03-15','2026-04-01','2026-04-18','2026-05-05'];
+      const MONTOS=[8990,12500,7490,15990,9990];
+      /* salidas reales de pandas para cada accesor */
+      const DT={
+        month:{col:'mes',vals:[3,3,4,4,5],code:".dt.month"},
+        day:{col:'dia',vals:[2,15,1,18,5],code:".dt.day"},
+        year:{col:'año',vals:[2026,2026,2026,2026,2026],code:".dt.year"},
+        day_name:{col:'dia_sem',vals:['Monday','Sunday','Wednesday','Saturday','Tuesday'],code:".dt.day_name()"},
+      };
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pd.to_datetime</code> y el accesor <code>.dt</code>'}),
+        el('p',{class:'note',html:'Pedidos de una app de delivery. La columna llega como <b>texto</b>: '+
+          'primero se parsea y recién entonces <code>.dt</code> puede extraer componentes.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      const note=el('p',{class:'note'});card.append(note);
+      let parsed=false, acc=null;
+      function render(){
+        mount.textContent='';
+        const cols=['fecha','monto'], rows=FECHAS.map((f,i)=>[f,MONTOS[i]]);
+        if(acc){cols.push(DT[acc].col); rows.forEach((r,i)=>r.push(DT[acc].vals[i]));}
+        const t=new DfTable(mount,{caption:parsed
+          ?'df — fecha: datetime64[ns] ✓':'df — fecha: object (texto) ⚠️',
+          columns:cols,index:[0,1,2,3,4],rows});
+        if(acc)rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
+        if(parsed)FECHAS.forEach((_,i)=>t.cell(i,0).classList.add('sel'));
+        if(!parsed){
+          code.textContent="df['fecha'].dtype   # object — solo texto disfrazado de fecha";
+          note.innerHTML='Como texto, <code>.dt</code> no existe y el orden es alfabético. Parsea primero.';
+        }else if(!acc){
+          code.innerHTML="df['fecha'] = <b>pd.to_datetime</b>(df['fecha'])\ndf['fecha'].dtype   # datetime64[ns] ✓";
+          note.innerHTML='Ahora sí: la columna es una fecha de verdad. Prueba los accesores <code>.dt</code>.';
+        }else{
+          code.innerHTML=`df['${DT[acc].col}'] = df['fecha']<b>${DT[acc].code}</b>`;
+          note.innerHTML=acc==='day_name'
+            ?'<b>day_name() habla inglés</b> por defecto — el clásico «¿por qué me salió Monday?». '+
+             'Para español: <code>day_name(locale=\'es_CL\')</code> (si el sistema lo tiene instalado).'
+            :'La columna nueva (azul) es numérica: sirve para filtrar y agrupar por periodo.';
+        }
+      }
+      const bParse=el('button',{class:'btn primary',onclick:()=>{parsed=true;bParse.disabled=true;accBtns.forEach(b=>b.disabled=false);render();}},'pd.to_datetime(df[\'fecha\'])');
+      ctr.append(bParse);
+      const accBtns=btnGroup(ctr,[
+        {label:'.dt.month',value:'month'},{label:'.dt.day',value:'day'},
+        {label:'.dt.year',value:'year'},{label:'.dt.day_name()',value:'day_name'},
+      ],v=>{acc=v;render();},false);
+      accBtns.forEach(b=>b.disabled=true);
+      render();
+    }
+
+    /* ---------- Tarjeta 2: Timedelta ---------- */
+    {
+      const PED=['2026-03-02','2026-03-15','2026-04-01','2026-04-18'];
+      const ENT=['2026-03-05','2026-03-26','2026-04-02','2026-04-30'];
+      const DIAS=[3,11,1,12]; /* (entrega - pedido).dt.days verificado */
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Restar fechas: <code>Timedelta</code>'}),
+        el('p',{class:'note',html:'Pedido y entrega de 4 despachos. Restar dos columnas de fecha '+
+          'da un <b>Timedelta</b> («3 days») y <code>.dt.days</code> lo convierte en número — '+
+          'así se calculan demoras y atrasos en el Ejercicio Integrador 2.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      let conDias=false;
+      function render(){
+        mount.textContent='';
+        const cols=['pedido','entrega']; const rows=PED.map((p,i)=>[p,ENT[i]]);
+        if(conDias){cols.push('demora'); rows.forEach((r,i)=>r.push(DIAS[i]));}
+        const t=new DfTable(mount,{columns:cols,index:[0,1,2,3],rows});
+        if(conDias){
+          rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
+          const max=Math.max(...DIAS), maxI=DIAS.indexOf(max);
+          t.cell(maxI,2).classList.add('hl');
+          code.innerHTML="df['demora'] = (df['entrega'] - df['pedido'])<b>.dt.days</b>\ndf['demora'].max()   # "+max+" días — el despacho más lento";
+        }else{
+          code.textContent="df['entrega'] - df['pedido']   # Serie de Timedelta: '3 days', '11 days', …";
+        }
+      }
+      btnGroup(ctr,[
+        {label:'restar fechas',value:false},
+        {label:"+ columna demora (.dt.days)",value:true},
+      ],v=>{conDias=v;render();});
+      render();
+    }
+
+    /* ---------- Tarjeta 3: resample (groupby en el tiempo) ---------- */
+    {
+      /* boletas desordenadas, como llegan en la vida real */
+      const ROWS=[['2026-03-03',1200],['2026-04-05',900],['2026-03-18',800],['2026-05-10',700],
+                  ['2026-04-22',1100],['2026-03-29',1500],['2026-05-19',1300],['2026-05-30',600]];
+      const MESCLS={3:'g0',4:'g1',5:'g2'};
+      const MESNOM={3:'marzo',4:'abril',5:'mayo'};
+      const SUMS=[['2026-03-31',3500],['2026-04-30',2000],['2026-05-31',2600]]; /* verificado */
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>resample</code>: groupby en el tiempo'}),
+        el('p',{class:'note',html:'Ventas sueltas de la cafetería → total por mes. '+
+          '<code>resample(\'ME\')</code> agrupa por periodo calendario (ME = fin de mes; '+
+          'en versiones antiguas de pandas se escribía <code>\'M\'</code>).'}));
+      sec.append(card);
+      const holder=el('div',{style:'display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start'});
+      card.append(holder);
+      const mLeft=el('div'),mRight=el('div');holder.append(mLeft,mRight);
+      const code=codeBox(card);
+      let t=null;
+      const mes=f=>+f.slice(5,7);
+      function reset(){
+        mLeft.textContent='';mRight.textContent='';
+        t=new DfTable(mLeft,{caption:'ventas (como llegaron)',columns:['fecha','monto'],
+          index:[...ROWS.keys()],rows:ROWS.map(r=>[...r])});
+        code.textContent="serie = df.set_index('fecha').resample('ME')['monto'].sum()";
+      }
+      const steps=[
+        {d:'<b>Etiquetar.</b> <code>set_index(\'fecha\')</code> + <code>resample(\'ME\')</code> asignan cada boleta '+
+           'a su periodo: un color por mes.',
+         async run(){
+           ROWS.forEach((r,i)=>{
+             t.cell(i,0).classList.add(MESCLS[mes(r[0])]);
+             t.cell(i,1).classList.add(MESCLS[mes(r[0])]);
+           });
+         }},
+        {d:'<b>Ordenar.</b> El índice temporal ordena cronológicamente — las boletas de cada mes quedan juntas.',
+         async run(){
+           const order=[...ROWS.keys()].sort((a,b)=>ROWS[a][0]<ROWS[b][0]?-1:1);
+           flipRows(t.root,()=>{
+             order.forEach(i=>t.root.append(t.rowEls[i]));
+           });
+           await sleep(650);
+         }},
+        {d:'<b>Colapsar.</b> Cada grupo se reduce a UNA fila con la suma del mes. Ojo: la etiqueta es el '+
+           '<b>fin de mes</b> (2026-03-31), no el inicio.',
+         async run(){
+           mRight.textContent='';
+           const tr=new DfTable(mRight,{caption:"resample('ME')['monto'].sum()",
+             columns:['monto'],index:SUMS.map(s=>s[0]),rows:SUMS.map(s=>[s[1]])});
+           SUMS.forEach((s,i)=>tr.cell(i,0).classList.add(MESCLS[mes(s[0])]));
+           code.innerHTML="serie = df.set_index('fecha').resample(<b>'ME'</b>)['monto'].sum()\n# 2026-03-31    3500   ← marzo\n# 2026-04-30    2000   ← abril\n# 2026-05-31    2600   ← mayo";
+         }},
+      ];
+      reset();
+      new Stepper(card,steps,reset,'fechas');
+      card.append(el('p',{class:'note',html:'La agrupación por mes también se logra con '+
+        '<code>df.groupby(df[\'fecha\'].dt.month)</code> — pero resample respeta el calendario '+
+        '(meses sin ventas aparecen con 0) y permite frecuencias como \'W\' o \'D\'.'}));
+    }
+
+    /* ---------- Tarjeta 4: date_range ---------- */
+    {
+      const RANGES={ /* pd.date_range('2026-01-01', periods=6, freq=…) verificado */
+        'D':  ['2026-01-01','2026-01-02','2026-01-03','2026-01-04','2026-01-05','2026-01-06'],
+        'W':  ['2026-01-04','2026-01-11','2026-01-18','2026-01-25','2026-02-01','2026-02-08'],
+        'ME': ['2026-01-31','2026-02-28','2026-03-31','2026-04-30','2026-05-31','2026-06-30'],
+        '12h':['01-01 00:00','01-01 12:00','01-02 00:00','01-02 12:00','01-03 00:00','01-03 12:00'],
+      };
+      const NOTAS={
+        'D':'Un día tras otro: la base para construir calendarios completos y detectar días sin datos.',
+        'W':'<b>\'W\' ancla al domingo</b>: la primera fecha no es el 1 de enero sino el primer domingo (2026-01-04).',
+        'ME':'Fin de cada mes — las mismas etiquetas que produce <code>resample(\'ME\')</code>.',
+        '12h':'También hay frecuencias con hora: cada 12 horas, \'6h\', \'30min\'…',
+      };
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pd.date_range</code>: fabricar fechas'}),
+        el('p',{class:'note',html:'Genera secuencias regulares de fechas. En el Ejercicio Integrador 2 se usa '+
+          'para armar el calendario completo y descubrir días sin pedidos.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const chips=el('div');card.append(chips);
+      const code=codeBox(card);
+      const note=el('p',{class:'note'});card.append(note);
+      function render(freq){
+        chips.textContent='';
+        RANGES[freq].forEach(f=>chips.append(el('span',{class:'chip'},f)));
+        code.innerHTML=`pd.date_range('2026-01-01', periods=6, freq=<b>'${freq}'</b>)`;
+        note.innerHTML=NOTAS[freq];
+      }
+      btnGroup(ctr,[
+        {label:"freq='D' (diaria)",value:'D'},{label:"'W' (semanal)",value:'W'},
+        {label:"'ME' (mensual)",value:'ME'},{label:"'12h'",value:'12h'},
+      ],render);
+      render('D');
+    }
+  }
+});
+})();
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Banco de ejercicios — salidas verificadas con NumPy/Pandas reales.
+   Contextos calcados de las evaluaciones 2026-1 del curso:
+     Control 1 (epidemiología), Control 2 (laboratorio), Control 3 (nulos),
+     Control 4 (VeloCity/wrangling), Control 5 (SERNATUR/EDA),
+     Certamen 1 (radiografías), Guía GroupBy (cafetería Concepción),
+     Ejercicios Integradores 1-2 (fechas, joins).
+   ===================================================================== */
+
+/* ---------------- Predice la salida ---------------- */
+const BANCO_PREDICE=[
+
+/* ===== NumPy ===== */
+{tema:'numpy',origen:'Control 1 · epidemiología',nivel:1,
+ code:"casos = np.array([[0, 1, 2],\n                  [3, 4, 5]])\nprint(casos.sum(axis=0))",
+ opciones:['[3 5 7]','[ 3 12]','15','ValueError'],correcta:0,
+ explica:"<b>axis=0 colapsa las filas</b>: suma hacia abajo, columna por columna (0+3, 1+4, 2+5). "+
+  "axis=1 daría [ 3 12] (por fila) y sin axis daría 15. Míralo animado en el <a href='#numpy'>módulo Arrays NumPy</a>.",
+ visual(m){const g=new CellGrid(m);g.setCells([
+   {id:'a',text:0,r:0,c:0},{id:'b',text:1,r:0,c:1},{id:'c',text:2,r:0,c:2},
+   {id:'d',text:3,r:1,c:0},{id:'e',text:4,r:1,c:1},{id:'f',text:5,r:1,c:2},
+   {id:'r0',text:3,r:2,c:0,cls:'res'},{id:'r1',text:5,r:2,c:1,cls:'res'},{id:'r2',text:7,r:2,c:2,cls:'res'}]);}},
+
+{tema:'numpy',origen:'Control 1 · epidemiología',nivel:1,
+ code:"casos = np.array([12, 45, 8, 60, 33, 5])\nbrote = casos > 30\nprint(brote.sum())",
+ opciones:['3','138','True','[45 60 33]'],correcta:0,
+ explica:"<code>casos &gt; 30</code> es un array de booleanos y al sumarlos <b>True vale 1</b>: "+
+  "cuenta cuántos superan el umbral (45, 60 y 33). Para sumar los valores sería <code>casos[brote].sum()</code> = 138."},
+
+{tema:'numpy',origen:'Certamen 1 · datos médicos',nivel:1,
+ code:"temp = np.array([36.2, 38.5, 37.1, 39.0])\nprint(np.where(temp >= 37.5, 'fiebre', 'normal'))",
+ opciones:["['normal' 'fiebre' 'normal' 'fiebre']","['fiebre' 'normal' 'fiebre' 'normal']",
+  "['fiebre' 'fiebre']","TypeError"],correcta:0,
+ explica:"<code>np.where(cond, A, B)</code> evalúa elemento a elemento: donde la condición es True pone A, "+
+  "donde es False pone B. El resultado <b>siempre tiene el mismo largo</b> que el array original."},
+
+{tema:'numpy',origen:'Clase 02 · operaciones',nivel:2,
+ code:"A = np.ones((3, 4), dtype=int)\nb = np.array([10, 20, 30, 40])\nprint((A + b).shape)",
+ opciones:['(3, 4)','(4, 3)','(3,)','ValueError'],correcta:0,
+ explica:"<b>Broadcasting</b>: b tiene shape (4,) y calza con las columnas de A (3, 4), así que "+
+  "se «estira» copiándose en cada fila. El resultado conserva la forma grande. "+
+  "Míralo en el <a href='#numpy'>módulo Arrays NumPy</a>."},
+
+{tema:'numpy',origen:'Control 1 · epidemiología',nivel:1,
+ code:"a = np.arange(12)\nprint(a.reshape(5, 3))",
+ opciones:['ValueError','una matriz 5×3 rellena con ceros al final','una matriz 4×3','[[0 1 2 3 4], [5 6 7 8 9], ...]'],correcta:0,
+ explica:"5 × 3 = 15 celdas pero el array tiene 12: <code>cannot reshape array of size 12 into shape (5,3)</code>. "+
+  "reshape <b>nunca inventa ni bota datos</b>. Prueba el caso 5×3 ✗ en el <a href='#numpy'>módulo Arrays NumPy</a>."},
+
+/* ===== DataFrames ===== */
+{tema:'df',origen:'Control 2 · laboratorio',nivel:2,
+ code:"s1 = pd.Series([10, 20, 30], index=['a', 'b', 'c'])\ns2 = pd.Series([1, 2, 3], index=['b', 'c', 'd'])\nprint((s1 + s2)['a'])",
+ opciones:['nan','11','10','KeyError'],correcta:0,
+ explica:"Las Series se suman <b>alineando por índice</b>, no por posición: 'a' existe solo en s1, "+
+  "y algo + nada = <b>NaN</b>. Solo 'b' (20+1) y 'c' (30+2) tienen pareja."},
+
+{tema:'df',origen:'Certamen 1 · datos médicos',nivel:2,
+ code:"df = pd.DataFrame({'ciudad':\n  ['Stgo','Conce','Valpo','Temuco','Arica']})\nprint(len(df.loc[1:3]), len(df.iloc[1:3]))",
+ opciones:['3 2','2 2','3 3','2 3'],correcta:0,
+ explica:"<code>loc</code> va por <b>etiqueta</b> e incluye ambos extremos (filas 1, 2 y 3). "+
+  "<code>iloc</code> va por <b>posición</b> y excluye el final (filas 1 y 2), como los slices de Python. "+
+  "Compáralo en el <a href='#df'>módulo DataFrames</a>.",
+ visual(m){
+   const t1=new DfTable(m,{caption:"df.loc[1:3] — 3 filas",columns:['ciudad'],index:[0,1,2,3,4],
+     rows:[['Stgo'],['Conce'],['Valpo'],['Temuco'],['Arica']]});
+   [1,2,3].forEach(r=>t1.cell(r,0).classList.add('sel'));
+   const t2=new DfTable(m,{caption:"df.iloc[1:3] — 2 filas",columns:['ciudad'],index:[0,1,2,3,4],
+     rows:[['Stgo'],['Conce'],['Valpo'],['Temuco'],['Arica']]});
+   [1,2].forEach(r=>t2.cell(r,0).classList.add('sel'));}},
+
+{tema:'df',origen:'Control 2 · laboratorio',nivel:1,
+ code:"urgencia = pd.Series(['alta','baja','alta',\n                      'media','alta','baja'])\nprint(urgencia.value_counts().index[0])",
+ opciones:["'alta'","'media'","3","'baja'"],correcta:0,
+ explica:"<code>value_counts()</code> entrega las categorías <b>ordenadas de más a menos frecuente</b>: "+
+  "alta (3), baja (2), media (1). Su índice son las categorías; sus valores, los conteos."},
+
+/* ===== Nulos ===== */
+{tema:'nulos',origen:'Control 3 · valores faltantes',nivel:1,
+ code:"df = pd.DataFrame({'glucosa': [90, None, 110, None],\n                   'presion': [120, 130, None, 125]})\nprint(df.isnull().sum()['glucosa'])",
+ opciones:['2','1','3','NaN'],correcta:0,
+ explica:"<code>isnull()</code> marca cada celda como True/False y <code>.sum()</code> cuenta por columna: "+
+  "glucosa tiene 2 nulos, presion 1. Es el diagnóstico estándar del <a href='#nulos'>módulo Valores perdidos</a>."},
+
+{tema:'nulos',origen:'Control 3 · valores faltantes',nivel:2,
+ code:"df = pd.DataFrame({'a': [1, None, 3, None],\n                   'b': [None, None, 7, 8],\n                   'c': [9, 10, 11, None]})\nprint(len(df.dropna(thresh=2)))",
+ opciones:['2','4','1','3'],correcta:0,
+ explica:"<code>thresh=2</code> exige <b>al menos 2 valores no nulos</b> para que la fila sobreviva. "+
+  "Las filas 1 ([NaN, NaN, 10]) y 3 ([NaN, 8, NaN]) tienen solo 1 y se van.",
+ visual(m){dfDiff(m,
+   {columns:['a','b','c'],index:[0,1,2,3],rows:[[1,null,9],[null,null,10],[3,7,11],[null,8,null]]},
+   {columns:['a','b','c'],index:[0,2],rows:[[1,null,9],[3,7,11]]},
+   'dropna(thresh=2) — filas eliminadas en rojo');}},
+
+{tema:'nulos',origen:'Control 3 · valores faltantes',nivel:1,
+ code:"s = pd.Series([10.0, None, 14.0, None, 18.0])\nprint(s.fillna(s.mean())[1])",
+ opciones:['14.0','10.5','NaN','21.0'],correcta:0,
+ explica:"<code>mean()</code> <b>ignora los NaN</b>: (10+14+18)/3 = 14. Ambos huecos se rellenan con 14.0. "+
+  "Ojo: imputar con la media achata la varianza — el <a href='#nulos'>módulo Valores perdidos</a> muestra los casos borde.",
+ visual(m){dfDiff(m,
+   {columns:['valor'],index:[0,1,2,3,4],rows:[[10],[null],[14],[null],[18]]},
+   {columns:['valor'],index:[0,1,2,3,4],rows:[[10],[14],[14],[14],[18]]},
+   'fillna(media) — celdas imputadas en verde');}},
+
+{tema:'nulos',origen:'Clase 12 · datos faltantes',nivel:1,
+ code:"s = pd.Series([2.0, 4.0, None])\nprint(s.mean())",
+ opciones:['3.0','2.0','nan','TypeError'],correcta:0,
+ explica:"Por defecto <code>skipna=True</code>: pandas suma lo que hay (6.0) y divide por los datos "+
+  "<b>válidos</b> (2), no por el largo (3). Los NaN no arrastran el promedio… hasta que imputas con ceros."},
+
+/* ===== Outliers ===== */
+{tema:'outliers',origen:'Clase 15 · outliers',nivel:2,
+ code:"sueldos = pd.Series([950, 1000, 1100, 1200,\n                     1250, 1300, 1400, 5000])\nQ1, Q3 = sueldos.quantile([0.25, 0.75])\nIQR = Q3 - Q1\nfuera = (sueldos < Q1-1.5*IQR) | (sueldos > Q3+1.5*IQR)\nprint(sueldos[fuera].tolist())",
+ opciones:['[5000]','[]','[950, 5000]','[1400, 5000]'],correcta:0,
+ explica:"Q1=1075, Q3=1325 → IQR=250 y límites [700, 1700]. Solo el 5000 queda fuera. "+
+  "Juega con el umbral en el <a href='#outliers'>módulo Outliers</a>."},
+
+{tema:'outliers',origen:'Clase 15 · outliers',nivel:3,
+ code:"notas = pd.Series([60.0, 62.0, 58.0, 61.0, 95.0])\nz = (notas - notas.mean()) / notas.std()\nprint((z.abs() > 1.5).sum())",
+ opciones:['1','0','2','5'],correcta:0,
+ explica:"El 95 dispara la media a 67.2 y la desviación a 15.6, así que su z es solo 1.78: "+
+  "<b>el outlier infla la desviación y casi se esconde a sí mismo</b>. Por eso el curso prefiere IQR o MAD, "+
+  "que usan medianas robustas."},
+
+/* ===== Wrangling ===== */
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:1,
+ code:"df = pd.DataFrame({'patente':\n  ['AA11','BB22','AA11','CC33','AA11']})\nprint(df.duplicated().sum())",
+ opciones:['2','3','1','0'],correcta:0,
+ explica:"<code>keep='first'</code> por defecto: la <b>primera</b> AA11 no se marca como duplicada; "+
+  "las otras dos sí. Cambia el keep en el <a href='#wrangling'>módulo Data wrangling</a>."},
+
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:2,
+ code:"df = pd.DataFrame({'patente':\n  ['AA11','BB22','AA11','CC33','AA11']})\nprint(df.drop_duplicates(keep=False)['patente'].tolist())",
+ opciones:["['BB22', 'CC33']","['BB22', 'CC33', 'AA11']","['AA11', 'BB22', 'CC33']","[]"],correcta:0,
+ explica:"<code>keep=False</code> es el modo drástico: elimina <b>todas</b> las copias, "+
+  "incluida la original. AA11 desaparece por completo.",
+ visual(m){dfDiff(m,
+   {columns:['patente'],index:[0,1,2,3,4],rows:[['AA11'],['BB22'],['AA11'],['CC33'],['AA11']]},
+   {columns:['patente'],index:[1,3],rows:[['BB22'],['CC33']]},
+   "drop_duplicates(keep=False)");}},
+
+{tema:'wrangling',origen:'Clase 17 · binning',nivel:2,
+ code:"edades = pd.Series([18, 25, 40, 65])\ncat = pd.cut(edades, bins=[0, 18, 40, 65, 120],\n             labels=['niñez','joven','adulto','mayor'])\nprint(cat[0])",
+ opciones:["niñez","joven","NaN","ValueError"],correcta:0,
+ explica:"Los intervalos de <code>pd.cut</code> son <b>(a, b]</b>: abiertos a la izquierda y cerrados a la derecha. "+
+  "18 cae en (0, 18] → 'niñez'. El 40 y el 65 también caen en su intervalo «de abajo»."},
+
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:2,
+ code:"resp = pd.Series(['sí', 'no', 's/r', 'sí'])\nprint(resp.map({'sí': 1, 'no': 0}).tolist())",
+ opciones:["[1.0, 0.0, nan, 1.0]","[1, 0, 's/r', 1]","[1, 0, 0, 1]","KeyError"],correcta:0,
+ explica:"<code>map</code> convierte en <b>NaN todo lo que no esté en el diccionario</b> ('s/r' se pierde), "+
+  "y con NaN la columna pasa a float. <code>replace</code> habría dejado 's/r' intacto — "+
+  "compáralos en el <a href='#wrangling'>módulo Data wrangling</a>."},
+
+/* ===== GroupBy ===== */
+{tema:'groupby',origen:'Guía GroupBy · cafetería',nivel:2,
+ code:"df = pd.DataFrame({\n  'sucursal': ['Centro','San Pedro','Centro',\n               'Talcahuano','San Pedro'],\n  'total': [4000, 3000, 2000, 9000, 4500]})\nprint(df.groupby('sucursal')['total'].sum().index[0])",
+ opciones:["'Centro'","'Talcahuano'","'San Pedro'","el primero que aparece en df"],correcta:0,
+ explica:"groupby entrega los grupos <b>ordenados alfabéticamente por llave</b>, no por valor ni por aparición. "+
+  "Talcahuano lidera en plata (9000) pero para verlo primero necesitas <code>.sort_values(ascending=False)</code> — "+
+  "la pregunta 1 de la guía de GroupBy."},
+
+{tema:'groupby',origen:'Guía GroupBy · cafetería',nivel:2,
+ code:"df = pd.DataFrame({'cat': ['a','a','b','b'],\n                   'monto': [1, None, 3, 4]})\nprint(df.groupby('cat')['monto'].count()['a'])",
+ opciones:['1','2','1.0','NaN'],correcta:0,
+ explica:"<code>count()</code> cuenta <b>valores no nulos</b>: el NaN de 'a' no cuenta. "+
+  "Para contar filas (transacciones) usa <code>.size()</code>, que daría 2. "+
+  "La diferencia aparece en la pregunta 3 de la guía."},
+
+{tema:'groupby',origen:'Guía GroupBy · pregunta 7',nivel:2,
+ code:"df = pd.DataFrame({'producto': ['café','café','té'],\n                   'sucursal': ['Centro','SP','Centro'],\n                   'monto': [100, 150, 80]})\np = pd.pivot_table(df, values='monto', index='producto',\n                   columns='sucursal', aggfunc='sum')\nprint(p.loc['té', 'SP'])",
+ opciones:['nan','0','80','KeyError'],correcta:0,
+ explica:"El té nunca se vendió en SP: la tabla cruzada rellena esa celda con <b>NaN</b> "+
+  "(usa <code>fill_value=0</code> si prefieres 0). El heatmap del <a href='#groupby'>módulo GroupBy</a> lo muestra en gris.",
+ visual(m){const t=new DfTable(m,{caption:"pivot_table (producto × sucursal)",columns:['Centro','SP'],
+   index:['café','té'],rows:[[100,150],[80,null]]});}},
+
+/* ===== Joins ===== */
+{tema:'merge',origen:'Clase 19 · joins',nivel:2,
+ code:"ventas = pd.DataFrame({'id_cli': [1, 2, 2, 3],\n                       'monto': [10, 20, 30, 40]})\nclientes = pd.DataFrame({'id_cli': [1, 2, 4],\n                         'nombre': ['Ana','Beto','Dani']})\nm = pd.merge(ventas, clientes, on='id_cli', how='inner')\nprint(len(m))",
+ opciones:['3','4','2','7'],correcta:0,
+ explica:"El id 2 está repetido a la izquierda y <b>ambas filas encuentran a Beto</b> (2 filas); "+
+  "Ana aporta 1; el id 3 no tiene pareja y el 4 tampoco → quedan fuera con inner. "+
+  "Mira las líneas entre llaves en el <a href='#merge'>módulo Joins</a>.",
+ visual(m){const t=new DfTable(m,{caption:"resultado inner (3 filas)",columns:['id_cli','monto','nombre'],
+   index:[0,1,2],rows:[[1,10,'Ana'],[2,20,'Beto'],[2,30,'Beto']]});}},
+
+{tema:'merge',origen:'Ej. Integrador 2 · P2.1',nivel:2,
+ code:"m = pd.merge(ventas, clientes,\n             on='id_cli', how='left')\nprint(m['nombre'].isnull().sum())\n# ventas: id_cli 1,2,2,3 — clientes: 1,2,4",
+ opciones:['1','0','2','4'],correcta:0,
+ explica:"<code>left</code> conserva las 4 filas de ventas; el id 3 no existe en clientes y su nombre queda "+
+  "<b>NaN</b>. Validar cuántos NaN deja un merge es exactamente la P2.3 del Ejercicio Integrador 2."},
+
+{tema:'merge',origen:'Clase 20 · concat',nivel:2,
+ code:"t1 = pd.DataFrame({'v': [1, 2]})\nt2 = pd.DataFrame({'v': [3, 4]})\nc = pd.concat([t1, t2])\nprint(len(c.loc[0]))",
+ opciones:['2','1','4','KeyError'],correcta:0,
+ explica:"Sin <code>ignore_index=True</code> el índice queda <b>0, 1, 0, 1</b> y <code>loc[0]</code> "+
+  "devuelve DOS filas. La trampa clásica del concat — está animada en el <a href='#merge'>módulo Joins</a>.",
+ visual(m){const t=new DfTable(m,{caption:"concat sin ignore_index",columns:['v'],
+   index:[0,1,0,1],rows:[[1],[2],[3],[4]]});
+   t.rowEls[0]._idx.classList.add('hl');t.rowEls[2]._idx.classList.add('hl');}},
+
+/* ===== Fechas ===== */
+{tema:'fechas',origen:'Clase 22 · fechas',nivel:1,
+ code:"f = pd.Series(pd.to_datetime(\n  ['2024-03-15', '2024-07-01', '2024-12-25']))\nprint(f.dt.month.tolist())",
+ opciones:['[3, 7, 12]',"['marzo', 'julio', 'diciembre']",'[15, 1, 25]','AttributeError'],correcta:0,
+ explica:"El accesor <code>.dt</code> extrae componentes de fechas ya parseadas: "+
+  "<code>.dt.month</code> da el número de mes. Para el nombre existe <code>.dt.month_name()</code>."},
+
+{tema:'fechas',origen:'Guía GroupBy · día de la semana',nivel:2,
+ code:"f = pd.Series(pd.to_datetime(['2024-03-15']))\nprint(f.dt.day_name()[0])",
+ opciones:["Friday","Viernes","4","viernes"],correcta:0,
+ explica:"<code>day_name()</code> habla <b>inglés</b> por defecto — el clásico «¿por qué me salió Friday?» "+
+  "de la guía de GroupBy. Se puede pedir en español con <code>day_name(locale='es_CL')</code> si el sistema lo tiene."},
+
+{tema:'fechas',origen:'Ej. Integrador 2 · P3.2',nivel:1,
+ code:"plazo = (pd.to_datetime('2026-03-20')\n         - pd.to_datetime('2026-03-02'))\nprint(plazo.days)",
+ opciones:['18','19',"'18 days'","TypeError"],correcta:0,
+ explica:"Restar dos fechas da un <b>Timedelta</b> («18 days») y <code>.days</code> saca el entero. "+
+  "Así se calculan atrasos y duraciones en el Ejercicio Integrador 2."},
+
+{tema:'fechas',origen:'Ej. Integrador 1 · P1.2',nivel:2,
+ code:"print('10-01-2024' > '02-12-2024')",
+ opciones:['True','False','SyntaxError','depende del formato regional'],correcta:0,
+ explica:"Son <b>strings</b>: compara carácter a carácter y '1' &gt; '0', así que enero «gana» a diciembre. "+
+  "Por eso el paso 1 de todo análisis temporal es <code>pd.to_datetime</code> — las fechas como texto ordenan mal."},
+];
+
+/* ---------------- Detective de bugs ---------------- */
+const BANCO_BUGS=[
+
+{tema:'numpy',origen:'Control 1 · epidemiología',nivel:1,
+ lineas:["# promedio de casos POR SEMANA (columnas = semanas)",
+         "casos = np.array([[10, 12, 8],",
+         "                  [20, 25, 30]])   # filas = regiones",
+         "prom = casos.mean(axis=1)",
+         "print(prom)   # ¿una cifra por semana?"],
+ bug:3,pista:"¿Qué dirección colapsa cada axis?",
+ explica:"<code>axis=1</code> colapsa las <b>columnas</b> → entrega un promedio por región (2 valores), "+
+  "no por semana. Para colapsar las filas y quedarte con 3 cifras (una por semana) es <code>axis=0</code>.",
+ fix:"prom = casos.mean(axis=0)   # [15.  18.5 19. ]"},
+
+{tema:'df',origen:'Certamen 1 · datos médicos',nivel:1,
+ lineas:["df = pd.DataFrame({'edad': [30, 70, 45],",
+         "                   'presion': [120, 160, 135]})",
+         "riesgo = df[df['edad'] > 60 & df['presion'] > 140]",
+         "print(riesgo)"],
+ bug:2,pista:"¿Qué operador se evalúa primero: > o &?",
+ explica:"<code>&amp;</code> tiene <b>más precedencia</b> que <code>&gt;</code>: Python intenta "+
+  "<code>60 &amp; df['presion']</code> primero y explota con «The truth value of a Series is ambiguous». "+
+  "Cada condición necesita sus paréntesis.",
+ fix:"riesgo = df[(df['edad'] > 60) & (df['presion'] > 140)]"},
+
+{tema:'df',origen:'Control 2 · laboratorio',nivel:2,
+ lineas:["df = pd.DataFrame({'v': [10, 20, 30, 40, 50]})",
+         "primeros_tres = df.loc[0:3]",
+         "print(len(primeros_tres))   # esperaba 3…"],
+ bug:1,pista:"loc va por etiqueta, no por posición.",
+ explica:"<code>loc[0:3]</code> incluye <b>ambos extremos</b> (0, 1, 2 y 3): son 4 filas. "+
+  "Para «las primeras tres» se usa <code>iloc[0:3]</code> o <code>head(3)</code>.",
+ fix:"primeros_tres = df.iloc[0:3]   # filas 0, 1, 2"},
+
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:3,
+ lineas:["df = pd.DataFrame({'estado': ['activo','baja','activo'],",
+         "                   'tarifa': [1000, 900, 1200]})",
+         "activos = df[df['estado'] == 'activo']",
+         "activos['tarifa'] = 1500",
+         "print(df)   # df sigue igual… y salta un warning"],
+ bug:3,pista:"¿activos es el DataFrame original o una copia?",
+ explica:"<code>activos</code> es una <b>copia filtrada</b>: escribir sobre ella dispara el "+
+  "<i>SettingWithCopyWarning</i> y el df original no cambia. Para modificar el original se filtra y asigna "+
+  "en una sola operación con <code>loc</code>.",
+ fix:"df.loc[df['estado'] == 'activo', 'tarifa'] = 1500"},
+
+{tema:'nulos',origen:'Control 3 · valores faltantes',nivel:1,
+ lineas:["df = pd.DataFrame({'a': [1, None, 3]})",
+         "df.dropna()",
+         "print(df.isnull().sum()['a'])   # ¡sigue habiendo 1 nulo!"],
+ bug:1,pista:"¿dropna modifica df o devuelve algo?",
+ explica:"<code>dropna()</code> <b>devuelve una copia</b> sin nulos; si no la guardas, no pasó nada. "+
+  "El clásico «lo limpié pero siguen los NaN» del Control 3.",
+ fix:"df = df.dropna()"},
+
+{tema:'merge',origen:'Clase 20 · bicicletas Concepción',nivel:2,
+ lineas:["enero = pd.DataFrame({'viajes': [120, 90]})",
+         "febrero = pd.DataFrame({'viajes': [150, 80]})",
+         "anual = pd.concat([enero, febrero])",
+         "print(anual.loc[1])   # esperaba UNA fila"],
+ bug:2,pista:"¿Cómo quedó el índice después de apilar?",
+ explica:"concat apila <b>conservando los índices originales</b>: quedan 0, 1, 0, 1 y "+
+  "<code>loc[1]</code> trae dos filas. Al apilar periodos hay que renumerar.",
+ fix:"anual = pd.concat([enero, febrero], ignore_index=True)"},
+
+{tema:'groupby',origen:'Guía GroupBy · cafetería',nivel:2,
+ lineas:["ventas = pd.DataFrame({'sucursal': ['C','SP','C'],",
+         "                       'total': [100, 200, 50]})",
+         "resumen = ventas.groupby('sucursal')['total'].sum()",
+         "print(resumen['sucursal'])   # KeyError ?!"],
+ bug:2,pista:"Después del groupby, ¿dónde quedó la columna sucursal?",
+ explica:"Tras el groupby, la llave <b>deja de ser columna y pasa a ser el índice</b>: "+
+  "<code>resumen['sucursal']</code> busca una etiqueta que no existe. Con "+
+  "<code>reset_index()</code> vuelve a ser columna (imprescindible antes de un merge).",
+ fix:"resumen = ventas.groupby('sucursal')['total'].sum().reset_index()"},
+
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:2,
+ lineas:["duraciones = pd.Series([5, 25, 70, 130])",
+         "tramo = pd.cut(duraciones, bins=[0, 30, 60, 120],",
+         "               labels=['corto','medio','largo'])",
+         "print(tramo.tolist())   # el 130 desapareció"],
+ bug:1,pista:"¿Hasta dónde llega el último bin?",
+ explica:"El 130 queda <b>fuera del último intervalo</b> (0–120] y pd.cut lo convierte en NaN "+
+  "<b>sin avisar</b> — igual que el 70, que sí cae en (60, 120]. Un viaje de 130 min se pierde en silencio.",
+ fix:"tramo = pd.cut(duraciones, bins=[0, 30, 60, np.inf],\n               labels=['corto','medio','largo'])"},
+
+{tema:'merge',origen:'Ej. Integrador 2 · P2.1',nivel:2,
+ lineas:["pedidos = pd.DataFrame({'id_cli': [1, 2, 3]})",
+         "clientes = pd.DataFrame({'id_cli': [1, 2],",
+         "                         'ciudad': ['C','SP']})",
+         "tabla = pd.merge(pedidos, clientes,",
+         "                 on='id_cli', how='inner')",
+         "# el informe debía incluir TODOS los pedidos"],
+ bug:4,pista:"¿Qué hace inner con los pedidos sin cliente registrado?",
+ explica:"<code>inner</code> <b>bota en silencio</b> el pedido del cliente 3, que no está en la tabla de clientes. "+
+  "Si el análisis exige conservar todos los pedidos, corresponde <code>left</code> (y luego decidir qué hacer con los NaN).",
+ fix:"                 on='id_cli', how='left'"},
+
+{tema:'fechas',origen:'Ej. Integrador 1 · P1.2',nivel:2,
+ lineas:["df = pd.DataFrame({'fecha':",
+         "  ['10-05-2024', '02-01-2025', '20-11-2024']})",
+         "df['fecha'] = df['fecha'].astype(str)",
+         "antigua = df.sort_values('fecha')['fecha'].iloc[0]",
+         "print(antigua)   # sale '02-01-2025' ?!"],
+ bug:2,pista:"¿Ordenar texto es lo mismo que ordenar fechas?",
+ explica:"Como texto, '02-01-2025' &lt; '10-05-2024' porque '0' &lt; '1': el orden es alfabético, no temporal. "+
+  "Había que <b>parsear</b> con <code>pd.to_datetime</code> indicando que el día va primero.",
+ fix:"df['fecha'] = pd.to_datetime(df['fecha'], format='%d-%m-%Y')"},
+
+{tema:'wrangling',origen:'Clase 17 · cadenas',nivel:1,
+ lineas:["df = pd.DataFrame({'comuna': ['stgo', 'conce']})",
+         "df['comuna'] = df['comuna'].upper()",
+         "print(df)"],
+ bug:1,pista:"upper() es de strings… ¿y qué es df['comuna']?",
+ explica:"Una columna es una <b>Serie</b>, no un string: los métodos de texto van tras el accesor "+
+  "<code>.str</code>. Sin él: <i>AttributeError: 'Series' object has no attribute 'upper'</i>.",
+ fix:"df['comuna'] = df['comuna'].str.upper()"},
+
+{tema:'wrangling',origen:'Control 4 · VeloCity',nivel:2,
+ lineas:["df = pd.DataFrame({'id_viaje': [1, 2, 3],",
+         "  'patente': ['AA11', 'AA11', 'BB22']})",
+         "repetidos = df.duplicated().sum()",
+         "print(repetidos)   # 0 … ¿y las patentes repetidas?"],
+ bug:2,pista:"¿duplicated compara una columna o la fila entera?",
+ explica:"<code>duplicated()</code> compara la <b>fila completa</b> y el id_viaje distinto hace única "+
+  "cada fila. Para buscar patentes repetidas hay que mirar solo esa columna con <code>subset</code>.",
+ fix:"repetidos = df.duplicated(subset='patente').sum()   # 1"},
+];
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Motor de ejercicios — secciones del menú «Ejercicios»
+     · Predice la salida (idea 1): código → el estudiante elige qué imprime
+       → se revela la respuesta con visual y explicación.
+     · Detective de bugs (idea 2): código con UN error plantado → el
+       estudiante hace clic en la línea culpable.
+   Los bancos viven en js/ex-banco.js (BANCO_PREDICE, BANCO_BUGS):
+     predice: {tema, origen, nivel, code, opciones[], correcta, explica, visual?}
+     bug:     {tema, origen, nivel, lineas[], bug, pista, explica, fix, visual?}
+   `visual(mount)` es opcional y dibuja la respuesta con DfTable/CellGrid/dfDiff.
+   ===================================================================== */
+
+const EX_TEMAS=[
+  ['todos','Todos'],['numpy','NumPy'],['df','DataFrames'],['nulos','Nulos'],
+  ['outliers','Outliers'],['wrangling','Wrangling'],['groupby','GroupBy'],
+  ['merge','Joins'],['fechas','Fechas'],
+];
+const NIVEL=n=>'●'.repeat(n)+'○'.repeat(3-n);
+
+/* barra común: filtro por tema + marcador de sesión */
+function exToolbar(sec,onFilter){
+  const score={ok:0,tot:0,racha:0};
+  const marker=el('span',{class:'exscore'},'0/0 · racha 0');
+  const bar=el('div',{class:'controls'});
+  btnGroup(bar,EX_TEMAS.map(([v,l])=>({label:l,value:v})),onFilter);
+  bar.append(marker);
+  sec.append(bar);
+  return {
+    score,
+    hit(ok){ score.tot++; if(ok){score.ok++; score.racha++;}else score.racha=0;
+      marker.textContent=`${score.ok}/${score.tot} · racha ${score.racha}`;
+      if(ok&&score.racha>0&&score.racha%5===0)marker.textContent+=' 🔥'; },
+  };
+}
+function exMeta(q){
+  return el('div',{class:'exmeta'},
+    el('span',{class:'exbadge'},q.origen),
+    el('span',{class:'exnivel',title:'dificultad'},NIVEL(q.nivel||1)));
+}
+/* baraja sin mutar el banco */
+const exShuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+
+/* ---------------- Predice la salida ---------------- */
+registerExercise({
+  id:'predice',
+  title:'Predice la salida',
+  lead:'Lee el código, decide qué imprime y recién entonces revela la respuesta. '+
+       'Preguntas basadas en los controles y certámenes reales del curso.',
+  build(sec){
+    const banco=(typeof BANCO_PREDICE!=='undefined')?BANCO_PREDICE:[];
+    if(!banco.length){sec.append(el('p',{class:'note'},'No hay banco cargado.'));return;}
+    let filtro='todos', lista=banco, i=0;
+    const tb=exToolbar(sec,v=>{filtro=v; lista=v==='todos'?banco:banco.filter(q=>q.tema===v); i=0; show();});
+    const host=el('div');sec.append(host);
+    function show(){
+      host.textContent='';
+      if(!lista.length){host.append(el('p',{class:'note'},'No hay preguntas de este tema todavía.'));return;}
+      const q=lista[i%lista.length];
+      const card=el('div',{class:'card exq'},exMeta(q),
+        el('h3',{},`Pregunta ${ (i%lista.length)+1} de ${lista.length}`));
+      const code=codeBox(card); code.textContent=q.code;
+      card.append(el('p',{class:'note'},'¿Qué imprime? Piensa tu respuesta antes de elegir.'));
+      const opts=el('div',{class:'exopts'});card.append(opts);
+      const reveal=el('div',{class:'exreveal'});card.append(reveal);
+      let done=false;
+      q.opciones.forEach((o,oi)=>{
+        const b=el('button',{class:'btn exopt',onclick:()=>{
+          if(done)return; done=true;
+          const ok=(oi===q.correcta);
+          tb.hit(ok);
+          [...opts.children].forEach((bb,bi)=>{
+            bb.disabled=true;
+            if(bi===q.correcta)bb.classList.add('good');
+            else if(bi===oi)bb.classList.add('bad');
+          });
+          reveal.append(el('div',{class:'msg '+(ok?'okc':'err')},
+            ok?'✔ ¡Correcto!':'✘ No era esa — mira por qué:'));
+          reveal.append(el('p',{class:'note',html:q.explica}));
+          if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+        }},el('pre',{class:'optcode'},o));
+        opts.append(b);
+      });
+      const nav=el('div',{class:'controls'},
+        el('button',{class:'btn',onclick:()=>{i=(i-1+lista.length)%lista.length;show();}},'◀ Anterior'),
+        el('button',{class:'btn primary',onclick:()=>{i=(i+1)%lista.length;show();}},'Siguiente ▶'),
+        el('button',{class:'btn',onclick:()=>{lista=exShuffle(lista);i=0;show();}},'🔀 Barajar'));
+      card.append(nav);
+      host.append(card);
+    }
+    show();
+  },
+});
+
+/* ---------------- Detective de bugs ---------------- */
+registerExercise({
+  id:'detective',
+  title:'Detective de bugs',
+  lead:'Cada código tiene UN error clásico plantado. Haz clic en la línea culpable '+
+       'y descubre qué pasa realmente al ejecutarlo.',
+  build(sec){
+    const banco=(typeof BANCO_BUGS!=='undefined')?BANCO_BUGS:[];
+    if(!banco.length){sec.append(el('p',{class:'note'},'No hay banco cargado.'));return;}
+    let lista=banco, i=0;
+    const tb=exToolbar(sec,v=>{lista=v==='todos'?banco:banco.filter(q=>q.tema===v); i=0; show();});
+    const host=el('div');sec.append(host);
+    function show(){
+      host.textContent='';
+      if(!lista.length){host.append(el('p',{class:'note'},'No hay casos de este tema todavía.'));return;}
+      const q=lista[i%lista.length];
+      const card=el('div',{class:'card exq'},exMeta(q),
+        el('h3',{},`Caso ${(i%lista.length)+1} de ${lista.length}: ¿dónde está el bug?`));
+      const pre=el('pre',{class:'code buglines'});card.append(pre);
+      const reveal=el('div',{class:'exreveal'});card.append(reveal);
+      let done=false, intentos=0;
+      q.lineas.forEach((ln,li)=>{
+        const d=el('div',{class:'bugline',onclick:()=>{
+          if(done)return;
+          if(li===q.bug){
+            done=true; tb.hit(intentos===0);
+            d.classList.add('bughit');
+            reveal.append(el('div',{class:'msg okc'},intentos===0?'✔ ¡Primer intento!':'✔ Encontrado.'));
+            reveal.append(el('p',{class:'note',html:q.explica}));
+            const fix=codeBox(reveal); fix.innerHTML='# corregido\n'+q.fix;
+            if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+          }else{
+            intentos++;
+            d.classList.add('bugmiss');
+            setTimeout(()=>d.classList.remove('bugmiss'),450);
+            if(intentos===2&&q.pista)reveal.append(el('p',{class:'note',html:'💡 <b>Pista:</b> '+q.pista}));
+          }
+        }},ln||' ');
+        pre.append(d);
+      });
+      const nav=el('div',{class:'controls'},
+        el('button',{class:'btn',onclick:()=>{i=(i-1+lista.length)%lista.length;show();}},'◀ Anterior'),
+        el('button',{class:'btn primary',onclick:()=>{i=(i+1)%lista.length;show();}},'Siguiente ▶'),
+        el('button',{class:'btn',onclick:()=>{lista=exShuffle(lista);i=0;show();}},'🔀 Barajar'));
+      card.append(nav);
+      host.append(card);
+    }
+    show();
+  },
+});
+
+</script>
+<script>
+'use strict';
+/* Boss final (idea 12): un DataFrame corrupto se sana con cada operación
+   correcta. 6 rondas = el pipeline del Certamen 2. Salidas verificadas
+   (mediana de monto 12990; mediana de edad con el 950 adentro = 34). */
+(function(){
+
+/* estados del df por ronda (before/after de cada curación) */
+const D0={columns:['id','fecha','ciudad','monto','edad'],
+  index:[0,1,2,3,4,5,6,7],
+  rows:[
+    [101,'15-03-2026','stgo',12990,34],
+    [102,'02-04-2026','CONCE',null,27],
+    [102,'02-04-2026','CONCE',null,27],
+    [103,'28-03-2026','stgo',8990,950],
+    [104,'10-05-2026','Conce  ',15990,41],
+    [105,'07-04-2026','STGO',null,19],
+    [106,'19-05-2026','conce',22990,33],
+    [107,'30-04-2026','stgo',7490,52]]};
+const D1={...D0,index:[0,1,3,4,5,6,7],
+  rows:D0.rows.filter((_,i)=>i!==2)};
+const D2={...D1,rows:D1.rows.map(r=>[r[0],r[1],r[2],r[3]??12990,r[4]])};
+const D3={...D2,rows:D2.rows.map(r=>[r[0],r[1],r[2],r[3],r[4]===950?34:r[4]])};
+const D4={...D3,rows:D3.rows.map(r=>[r[0],r[1],r[2].trim().toLowerCase(),r[3],r[4]])};
+const ISO=f=>f.split('-').reverse().join('-');
+const D5={...D4,rows:D4.rows.map(r=>[r[0],ISO(r[1]),r[2],r[3],r[4]])};
+const D6={columns:[...D5.columns,'nombre'],index:D5.index,
+  rows:D5.rows.map(r=>[...r,({101:'Ana',102:'Beto',103:'Carla',104:'Dani',105:'Elisa',107:'Gino'})[r[0]]??null])};
+
+const RONDAS=[
+ {mal:'🧟 El jefe clonó una boleta: la fila 2 es una copia exacta de la fila 1.',
+  meta:'Elimina los duplicados exactos sin tocar el resto.',
+  ops:["df.drop_duplicates()","df.duplicated()","df.dropna()"],ok:0,
+  explica:"<code>duplicated()</code> solo <b>marca</b> (devuelve booleanos, no limpia) y <code>dropna()</code> "+
+   "ataca nulos, no copias. <code>drop_duplicates()</code> conserva la primera aparición y bota el clon.",
+  before:D0,after:D1},
+ {mal:'👻 Quedan 2 montos NaN — el jefe se alimenta de nulos.',
+  meta:'Rellena los montos sin perder filas y sin inventar compras gratis.',
+  ops:["df['monto'] = df['monto'].fillna(df['monto'].median())","df = df.dropna()","df['monto'] = df['monto'].fillna(0)"],ok:0,
+  explica:"<code>dropna()</code> sacrificaría 2 de 7 filas (¡28%!) y <code>fillna(0)</code> inventa compras "+
+   "de $0 que hunden el promedio. La <b>mediana</b> (12 990) imputa sin distorsionar — el criterio del Control 3.",
+  before:D1,after:D2},
+ {mal:'👹 Un cliente dice tener 950 años. El jefe ruge con energía de outlier.',
+  meta:'Neutraliza la edad imposible sin eliminar al cliente.',
+  ops:["df.loc[df['edad'] > 120, 'edad'] = df['edad'].median()","df = df.sort_values('edad')","df['edad'] = df['edad'].fillna(34)"],ok:0,
+  explica:"Ordenar no cura nada y la edad no está nula (fillna no la toca: está <i>mal</i>, no <i>vacía</i>). "+
+   "Se detecta con una condición y se reemplaza por la mediana — que es 34 <b>incluso con el 950 adentro</b>: "+
+   "por eso la mediana es la métrica robusta del <a href='#outliers'>módulo Outliers</a>.",
+  before:D2,after:D3},
+ {mal:"🐍 'stgo', 'STGO', 'Conce  ' con espacios… el caos de mayúsculas alimenta al jefe.",
+  meta:'Deja todas las ciudades en un formato único.',
+  ops:["df['ciudad'] = df['ciudad'].str.strip().str.lower()","df['ciudad'] = df['ciudad'].map({'stgo': 'stgo'})","df['ciudad'] = df['ciudad'].replace('STGO', 'stgo')"],ok:0,
+  explica:"El <code>map</code> incompleto convierte en <b>NaN</b> todo lo que no esté en el diccionario "+
+   "(¡adiós conce!) y el <code>replace</code> puntual deja pasar 'CONCE' y 'Conce  '. "+
+   "<code>.str.strip().str.lower()</code> normaliza TODO de una pasada — clase 17 de cadenas.",
+  before:D3,after:D4},
+ {mal:'⏳ Las fechas son texto DD-MM-AAAA: el jefe distorsiona el tiempo (ordena alfabético).',
+  meta:'Convierte la columna a fechas de verdad.',
+  ops:["df['fecha'] = pd.to_datetime(df['fecha'], format='%d-%m-%Y')","df['fecha'] = df['fecha'].astype(str)","df = df.sort_values('fecha')"],ok:0,
+  explica:"Ya eran texto (astype(str) no hace nada) y ordenarlas como texto pone el 02-04 antes del 15-03 "+
+   "por pura suerte alfabética. <code>pd.to_datetime</code> con <code>format</code> las vuelve fechas "+
+   "reales — mira el <a href='#fechas'>módulo Fechas</a>.",
+  before:D4,after:D5},
+ {mal:'💀 Fase final: el jefe esconde los nombres de los clientes en otra tabla.',
+  meta:'Trae el nombre de cada cliente SIN perder ninguna boleta.',
+  ops:["df = pd.merge(df, clientes, on='id', how='left')","df = pd.merge(df, clientes, on='id', how='inner')","df = pd.concat([df, clientes])"],ok:0,
+  explica:"<code>concat</code> apila filas (no empareja llaves) y <code>inner</code> botaría la boleta del "+
+   "cliente 106, que no está en la tabla de clientes. <code>left</code> conserva las 7 boletas y deja "+
+   "NaN donde no hay nombre — el <a href='#merge'>módulo Joins</a> en acción.",
+  before:D5,after:D6},
+];
+
+registerExercise({
+  id:'boss',
+  title:'Boss final: el DataFrame corrupto',
+  lead:'Un dataset poseído por todos los males del semestre. Elige la operación correcta '+
+       'en cada ronda para sanarlo — el Certamen 2 como videojuego.',
+  build(sec){
+    const host=el('div');sec.append(host);
+    let ronda=0,vidas=3,fallos=0;
+    function barra(){
+      const hp=Math.round((RONDAS.length-ronda)/RONDAS.length*100);
+      return el('div',{class:'bosshdr'},
+        el('div',{},el('b',{},'🐉 DataFrame corrupto '),
+          el('div',{class:'bossbar'},el('div',{class:'bossfill',style:`width:${hp}%`})),
+          el('span',{class:'bosslbl'},`${RONDAS.length-ronda} males restantes`)),
+        el('div',{class:'bossvidas'},'❤️'.repeat(vidas)+'🖤'.repeat(3-vidas)));
+    }
+    function gameover(){
+      host.textContent='';
+      host.append(el('div',{class:'card exq',style:'text-align:center'},
+        el('h3',{},'💀 El jefe te venció'),
+        el('p',{class:'note'},'Los nulos y duplicados dominan la tabla… por ahora. Repasa los módulos y vuelve.'),
+        el('button',{class:'btn primary',onclick:()=>{ronda=0;vidas=3;fallos=0;show();}},'⚔️ Revancha')));
+    }
+    function victoria(){
+      host.textContent='';
+      const card=el('div',{class:'card exq'},
+        el('h3',{},'🏆 ¡DataFrame purificado!'),
+        el('p',{class:'note',html:`Venciste con <b>${vidas} vida${vidas===1?'':'s'}</b> y ${fallos} fallo${fallos===1?'':'s'}. `+
+          'La tabla quedó limpia, tipada y con su join listo — exactamente el estado en que debe llegar un dataset al análisis.'}));
+      new DfTable(card,{caption:'df final — limpio y enriquecido',...D6});
+      card.append(el('button',{class:'btn primary',style:'margin-top:.6rem',
+        onclick:()=>{ronda=0;vidas=3;fallos=0;show();}},'⚔️ Jugar de nuevo'));
+      host.append(card);
+      RELAYOUT.forEach(f=>f());
+    }
+    function show(){
+      host.textContent='';
+      const R=RONDAS[ronda];
+      const card=el('div',{class:'card exq'});
+      card.append(barra());
+      card.append(el('h3',{},`Ronda ${ronda+1} de ${RONDAS.length}`),
+        el('p',{class:'note',html:'<b>'+R.mal+'</b><br>🎯 '+R.meta}));
+      const mount=el('div');card.append(mount);
+      new DfTable(mount,{caption:'estado actual del df',...R.before});
+      const opts=el('div',{class:'exopts'});card.append(opts);
+      const reveal=el('div',{class:'exreveal'});card.append(reveal);
+      /* opciones barajadas para que la correcta no sea siempre la primera */
+      const orden=[...R.ops.keys()].sort(()=>Math.random()-.5);
+      let done=false;
+      orden.forEach(oi=>{
+        const b=el('button',{class:'btn exopt',onclick:()=>{
+          if(done)return;
+          if(oi===R.ok){
+            done=true;
+            [...opts.children].forEach(bb=>bb.disabled=true);
+            b.classList.add('good');
+            reveal.append(el('div',{class:'msg okc'},'✔ ¡Golpe crítico! El df sana:'));
+            const vm=el('div',{class:'exvisual'});reveal.append(vm);
+            dfDiff(vm,R.before,R.after,'antes → después');
+            reveal.append(el('p',{class:'note',html:R.explica}));
+            reveal.append(el('button',{class:'btn primary',onclick:()=>{ronda++; (ronda>=RONDAS.length)?victoria():show();}},
+              ronda===RONDAS.length-1?'🏆 Rematar al jefe':'▶ Siguiente ronda'));
+            RELAYOUT.forEach(f=>f());
+          }else{
+            fallos++;vidas--;
+            b.classList.add('bad');b.disabled=true;
+            card.querySelector('.bossvidas').textContent='❤️'.repeat(Math.max(0,vidas))+'🖤'.repeat(3-Math.max(0,vidas));
+            if(vidas<=0){gameover();return;}
+            reveal.append(el('p',{class:'note',html:'💥 El jefe contraataca (−1 vida). Pista: piensa qué hace '+
+              '<i>exactamente</i> esa línea… y qué NO hace.'}));
+          }
+        }},el('pre',{class:'optcode'},R.ops[oi]));
+        opts.append(b);
+      });
+      host.append(card);
+      RELAYOUT.forEach(f=>f());
+    }
+    show();
+  },
+});
+})();
+
+</script>
+<script>
+'use strict';
+/* Traductor de tracebacks (idea 14): pega un error real de NumPy/Pandas
+   y recibe la explicación en español + el arreglo típico + el módulo que lo ilustra. */
+(function(){
+
+const ERRORES=[
+ {re:/SettingWithCopyWarning/i,nombre:'SettingWithCopyWarning',
+  trad:'Estás escribiendo sobre una COPIA filtrada del DataFrame, no sobre el original.',
+  causa:'Encadenaste un filtro y luego una asignación: <code>df[df.x &gt; 0][\'y\'] = 1</code> o guardaste el filtro en una variable y escribiste ahí.',
+  fix:"df.loc[df['x'] > 0, 'y'] = 1   # filtrar y asignar EN UNA sola operación",
+  mod:['wrangling','Data wrangling']},
+ {re:/truth value of a (Series|DataFrame|array.*) is ambiguous/i,nombre:'ValueError: truth value is ambiguous',
+  trad:'Python intentó evaluar una Serie completa como si fuera un solo True/False.',
+  causa:'Máscaras combinadas sin paréntesis (el <code>&amp;</code> se evalúa antes que <code>&gt;</code>), o usaste <code>and/or</code> en vez de <code>&amp;</code>/<code>|</code>.',
+  fix:"df[(df['edad'] > 60) & (df['presion'] > 140)]   # paréntesis en CADA condición",
+  mod:['df','DataFrames']},
+ {re:/cannot reshape array of size (\d+) into shape/i,nombre:'ValueError: cannot reshape',
+  trad:'El número de celdas no calza: reshape nunca inventa ni bota datos.',
+  causa:'filas × columnas debe ser exactamente el tamaño del array (p. ej. 12 no se puede volver 5×3=15).',
+  fix:"a.reshape(3, 4)      # 3·4 = 12 ✓\na.reshape(2, -1)     # el -1 deja que numpy calcule la otra dimensión",
+  mod:['numpy','Arrays NumPy']},
+ {re:/operands could not be broadcast together/i,nombre:'ValueError: broadcast',
+  trad:'Las formas (shapes) de los arrays no son compatibles para operar elemento a elemento.',
+  causa:'Broadcasting solo estira dimensiones de tamaño 1 o iguales: (3,4) + (4,) funciona; (3,4) + (3,) no.',
+  fix:"A.shape, b.shape     # imprime las formas y compáralas\nb.reshape(-1, 1)     # a veces basta convertir b en columna",
+  mod:['numpy','Arrays NumPy']},
+ {re:/Can only use \.str accessor/i,nombre:'AttributeError: .str accessor',
+  trad:'Intentaste usar métodos de texto en una columna que no es de texto.',
+  causa:'La columna es numérica o mixta (por NaN o números colados entre los strings).',
+  fix:"df['col'] = df['col'].astype(str).str.lower()",
+  mod:['wrangling','Data wrangling']},
+ {re:/Can only use \.dt accessor/i,nombre:'AttributeError: .dt accessor',
+  trad:'La columna aún es texto: .dt solo funciona sobre fechas ya parseadas.',
+  causa:'Faltó <code>pd.to_datetime</code> antes de pedir .dt.month, .dt.days, etc.',
+  fix:"df['fecha'] = pd.to_datetime(df['fecha'])\ndf['fecha'].dt.month   # ahora sí",
+  mod:['fechas','Fechas']},
+ {re:/'Series' object has no attribute '(upper|lower|strip|split|replace\b|title)'/i,nombre:'AttributeError en Serie (método de string)',
+  trad:'Llamaste un método de string directo sobre la Serie completa.',
+  causa:'Los métodos de texto van tras el accesor <code>.str</code> cuando se aplican a toda la columna.',
+  fix:"df['comuna'].str.upper()   # con .str",
+  mod:['wrangling','Data wrangling']},
+ {re:/'DataFrame' object has no attribute 'append'/i,nombre:"AttributeError: append ya no existe",
+  trad:'df.append() se eliminó en pandas 2: las tablas se apilan con pd.concat.',
+  causa:'Material o tutoriales antiguos usan append; el pandas actual (Colab incluido) ya no lo tiene.',
+  fix:"df = pd.concat([df, df_nuevo], ignore_index=True)",
+  mod:['merge','Joins y concat']},
+ {re:/You are trying to merge on .* and .* columns|MergeError/i,nombre:'MergeError: llaves de tipos distintos',
+  trad:'Las columnas llave de ambas tablas no tienen el mismo tipo (una es texto, la otra número).',
+  causa:'Un CSV cargó el id como string y el otro como int — pasa mucho al combinar fuentes distintas.',
+  fix:"df1['id'] = df1['id'].astype(int)   # igualar tipos ANTES del merge\npd.merge(df1, df2, on='id')",
+  mod:['merge','Joins y concat']},
+ {re:/KeyError/i,nombre:'KeyError',
+  trad:'Pediste una columna o etiqueta que no existe en el DataFrame (o ya no existe).',
+  causa:'Un typo, espacios invisibles en el nombre (<code>\' monto\'</code>), o la columna se volvió índice después de un groupby / set_index.',
+  fix:"df.columns.tolist()          # 1) mira los nombres reales\ndf.columns = df.columns.str.strip()   # 2) limpia espacios\nresumen = resumen.reset_index()       # 3) si venía de un groupby",
+  mod:['groupby','GroupBy y pivoteo']},
+ {re:/single positional indexer is out-of-bounds|index \d+ is out of bounds/i,nombre:'IndexError: fuera de rango',
+  trad:'Pediste una posición que no existe (la tabla o el array es más corto de lo que crees).',
+  causa:'Un filtro dejó menos filas de las esperadas y luego <code>iloc[n]</code> apuntó al vacío.',
+  fix:"len(df)          # verifica el largo real antes de indexar\ndf.iloc[-1]      # o usa índices negativos para el final",
+  mod:['df','DataFrames']},
+ {re:/UnicodeDecodeError|codec can't decode/i,nombre:'UnicodeDecodeError',
+  trad:'El archivo no está en UTF-8: los acentos/eñes vienen en otra codificación.',
+  causa:'CSV exportado desde Excel en Windows (latin-1 / cp1252) — el caso típico de la clase 21.',
+  fix:"pd.read_csv('datos.csv', encoding='latin-1')",
+  mod:null},
+ {re:/FileNotFoundError|No such file or directory/i,nombre:'FileNotFoundError',
+  trad:'Python no encuentra el archivo en la carpeta donde está buscando.',
+  causa:'En Colab los archivos subidos viven en <code>/content/</code> y se borran al reiniciar el entorno; también puede ser un typo en el nombre.',
+  fix:"import os; os.listdir()      # mira qué archivos ve Python realmente",
+  mod:null},
+ {re:/NameError.*not defined/i,nombre:'NameError',
+  trad:'Usaste una variable que Python no conoce todavía.',
+  causa:'En un notebook: la celda que la define no se ejecutó (o el kernel se reinició). También puede ser un typo.',
+  fix:"# Ejecuta las celdas en orden (Entorno de ejecución → Ejecutar todo en Colab)",
+  mod:null},
+ {re:/TypeError.*(unsupported operand|can only concatenate str|not supported between instances)/i,nombre:'TypeError: tipos incompatibles',
+  trad:'Estás mezclando texto con números en una operación aritmética o comparación.',
+  causa:'La columna quedó como object (texto) al cargar el CSV — números con $, puntos de miles o espacios.',
+  fix:"df['monto'] = pd.to_numeric(df['monto'], errors='coerce')\n# los no convertibles quedan NaN: revísalos después",
+  mod:['nulos','Valores perdidos']},
+];
+
+const EJEMPLOS=[
+ ["KeyError: 'sucursal'","KeyError tras un groupby"],
+ ["ValueError: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().","máscara sin paréntesis"],
+ ["SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame.","asignar sobre una copia"],
+ ["AttributeError: Can only use .dt accessor with datetimelike values","fechas sin parsear"],
+ ["ValueError: cannot reshape array of size 12 into shape (5,3)","reshape imposible"],
+];
+
+registerExercise({
+  id:'traductor',
+  title:'Traductor de errores',
+  lead:'Pega el traceback tal cual te lo escupió Python y recibe qué significa, '+
+       'por qué pasa y cómo se arregla — en español.',
+  build(sec){
+    const card=el('div',{class:'card'},
+      el('h3',{},'Pega tu error aquí'),
+      el('p',{class:'note',html:'Consejo de lectura: en un traceback largo, la información útil está en la '+
+        '<b>última línea</b> (el tipo de error) y en la primera línea que apunte a <b>tu</b> código.'}));
+    sec.append(card);
+    const ta=el('textarea',{class:'tberror',rows:5,
+      placeholder:'KeyError: \'sucursal\'\n…o el traceback completo, da lo mismo'});
+    card.append(ta);
+    const ctr=el('div',{class:'controls'});card.append(ctr);
+    const out=el('div');card.append(out);
+    const chips=el('div',{class:'controls'},el('label',{},'o prueba uno: '));
+    EJEMPLOS.forEach(([txt,lbl])=>chips.append(
+      el('button',{class:'btn',onclick:()=>{ta.value=txt;traducir();}},lbl)));
+    card.append(chips);
+
+    function traducir(){
+      out.textContent='';
+      const txt=ta.value.trim();
+      if(!txt)return;
+      const hit=ERRORES.find(e=>e.re.test(txt));
+      if(!hit){
+        out.append(el('div',{class:'card',style:'margin:.6rem 0'},
+          el('h3',{},'🤷 No lo tengo catalogado (todavía)'),
+          el('p',{class:'note',html:'Pistas generales: ① lee la <b>última línea</b> del traceback — ahí está el tipo '+
+            'de error y el mensaje; ② ubica la flecha que apunta a una línea escrita por ti (no de las librerías); '+
+            '③ imprime <code>df.dtypes</code> y <code>df.columns</code> — la mitad de los errores del curso son '+
+            'una columna con el tipo o el nombre equivocado.'})));
+        return;
+      }
+      const c=el('div',{class:'card',style:'margin:.6rem 0'});
+      c.append(el('h3',{},'🔍 '+hit.nombre),
+        el('p',{class:'note',html:'<b>Qué significa:</b> '+hit.trad}),
+        el('p',{class:'note',html:'<b>Por qué pasa:</b> '+hit.causa}));
+      const fx=codeBox(c);fx.textContent=hit.fix;
+      if(hit.mod)c.append(el('p',{class:'note',html:
+        `📚 Está ilustrado en el <a href="#${hit.mod[0]}">módulo ${hit.mod[1]}</a>.`}));
+      out.append(c);
+    }
+    ctr.append(el('button',{class:'btn primary',onclick:traducir},'Traducir error'));
+    ta.addEventListener('input',()=>{ if(ta.value.length>8)traducir(); });
+  },
+});
+})();
+
+</script>
+<script>
+'use strict';
+/* Python real (idea 9): NumPy y Pandas de verdad corriendo en el navegador
+   vía Pyodide (WebAssembly). Carga diferida: no pesa nada hasta que se pide. */
+(function(){
+
+const EJEMPLOS={
+ numpy:"import numpy as np\n\ncasos = np.array([[10, 12, 8],\n                  [20, 25, 30]])\nprint(casos.sum(axis=0))\nprint(casos.mean(axis=1))",
+ pandas:"import pandas as pd\n\ndf = pd.DataFrame({\n  'sucursal': ['Centro','San Pedro','Centro','Talcahuano'],\n  'total': [4000, 3000, 2000, 9000]})\n\ndf.groupby('sucursal')['total'].sum().sort_values(ascending=False)",
+ fechas:"import pandas as pd\n\nf = pd.Series(pd.to_datetime(['2026-03-02','2026-04-15','2026-04-20']))\nprint(f.dt.month.tolist())\nprint((f.max() - f.min()).days, 'días de rango')",
+};
+
+registerExercise({
+  id:'python',
+  title:'Python real (Pyodide)',
+  lead:'NumPy y Pandas auténticos corriendo en tu navegador. Escribe código, ejecútalo '+
+       'y compara con lo que predijiste — sin instalar nada.',
+  build(sec){
+    const card=el('div',{class:'card'},
+      el('h3',{},'🐍 Sandbox de NumPy/Pandas'),
+      el('p',{class:'note',html:'La primera vez descarga el intérprete (~15 MB, <b>requiere internet</b>); '+
+        'después todo corre local en tu navegador. Nada sale de tu equipo.'}));
+    sec.append(card);
+    const ctr=el('div',{class:'controls'});card.append(ctr);
+    const bLoad=el('button',{class:'btn primary'},'⬇️ Cargar Python (una vez)');
+    const status=el('span',{class:'msg',style:'margin:0'},'');
+    ctr.append(bLoad,status);
+    const ta=el('textarea',{class:'pyin',rows:9,spellcheck:'false'});
+    ta.value=EJEMPLOS.pandas;
+    const run=el('button',{class:'btn primary',disabled:''},'▶ Ejecutar (Ctrl+Enter)');
+    const chips=el('div',{class:'controls'},el('label',{},'ejemplos: '));
+    Object.entries({numpy:'NumPy',pandas:'GroupBy',fechas:'Fechas'}).forEach(([k,lbl])=>
+      chips.append(el('button',{class:'btn',onclick:()=>{ta.value=EJEMPLOS[k];}},lbl)));
+    const out=el('pre',{class:'code',style:'min-height:3rem;white-space:pre-wrap'});
+    out.textContent='# la salida aparecerá aquí';
+    card.append(ta,el('div',{class:'controls'},run),chips,out);
+    card.append(el('p',{class:'note',html:'Tip de ayudantía: predice la salida ANTES de ejecutar '+
+      '(como en <a href="#predice">Predice la salida</a>). Si te lanza un error críptico, '+
+      'pásalo por el <a href="#traductor">Traductor de errores</a>.'}));
+
+    let py=null, cargando=false;
+    async function cargar(){
+      if(py||cargando)return; cargando=true;
+      bLoad.disabled=true;
+      try{
+        status.textContent='descargando intérprete…';
+        if(!window.loadPyodide){
+          await new Promise((res,rej)=>{
+            const sc=document.createElement('script');
+            sc.src='https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+            sc.onload=res; sc.onerror=()=>rej(new Error('sin conexión al CDN'));
+            document.head.append(sc);
+          });
+        }
+        py=await loadPyodide();
+        status.textContent='instalando numpy y pandas…';
+        await py.loadPackage(['numpy','pandas']);
+        py.runPython('import sys, io');
+        status.textContent='✅ listo — ejecuta tu código';
+        status.className='msg okc';
+        bLoad.style.display='none';
+        run.disabled=false;
+      }catch(e){
+        status.textContent='✘ no se pudo cargar ('+e.message+'). ¿Hay internet?';
+        status.className='msg err';
+        bLoad.disabled=false; cargando=false;
+      }
+    }
+    bLoad.onclick=cargar;
+
+    async function ejecutar(){
+      if(!py)return;
+      run.disabled=true; out.textContent='⏳ ejecutando…';
+      py.runPython('sys.stdout = io.StringIO(); sys.stderr = sys.stdout');
+      try{
+        const r=await py.runPythonAsync(ta.value);
+        let txt=py.runPython('sys.stdout.getvalue()');
+        if(r!==undefined&&r!==null){
+          txt+=(txt&&!txt.endsWith('\n')?'\n':'')+r.toString();
+          if(r.destroy)try{r.destroy();}catch(_){/* valores primitivos no tienen destroy */}
+        }
+        out.textContent=txt.trim()||'(sin salida — usa print() o deja una expresión al final)';
+      }catch(e){
+        const txt=py.runPython('sys.stdout.getvalue()');
+        /* del traceback de Pyodide, lo útil es de la línea del código del usuario hacia abajo */
+        const msg=String(e.message||e).split('\n').filter(l=>!/pyodide|_pyodide|<exec>"?, line 0/.test(l)).join('\n');
+        out.textContent=(txt?txt+'\n':'')+msg.trim();
+      }
+      run.disabled=false;
+    }
+    run.onclick=ejecutar;
+    ta.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();ejecutar();}
+    });
+  },
+});
+})();
+
+</script>
+<script>
+'use strict';
+/* Grabar animaciones (idea 13): captura la pestaña con getDisplayMedia +
+   MediaRecorder y descarga un .webm — listo para Canvas o para convertir a GIF.
+   Sin dependencias; el botón solo aparece si el navegador lo soporta. */
+(function(){
+  function init(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder)return;
+    const hdr=document.querySelector('.hdrbtns');
+    if(!hdr)return;
+    const btn=el('button',{id:'btnRec',
+      title:'Graba la pantalla mientras corres una animación y descarga un .webm '+
+            '(sirve para slides, Canvas o convertir a GIF)'},'🎥 Grabar');
+    hdr.append(btn);
+    let rec=null;
+
+    async function start(){
+      let stream;
+      try{
+        stream=await navigator.mediaDevices.getDisplayMedia({
+          video:{frameRate:30},
+          audio:false,
+          /* sugerir "esta pestaña" en el diálogo de Chrome/Edge */
+          preferCurrentTab:true,selfBrowserSurface:'include'});
+      }catch(_){return;/* canceló el diálogo */}
+      const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ?'video/webm;codecs=vp9':'video/webm';
+      const chunks=[];
+      rec=new MediaRecorder(stream,{mimeType:mime});
+      rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+      rec.onstop=()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        const blob=new Blob(chunks,{type:'video/webm'});
+        const mod=hashId()||'animacion';
+        const a=el('a',{href:URL.createObjectURL(blob),
+          download:`visualizador-${mod}-${new Date().toISOString().slice(0,10)}.webm`});
+        document.body.append(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+        rec=null;btn.textContent='🎥 Grabar';btn.classList.remove('rec-on');
+      };
+      /* si el usuario corta la compartición desde la barra del navegador */
+      stream.getVideoTracks()[0].addEventListener('ended',()=>{if(rec&&rec.state!=='inactive')rec.stop();});
+      rec.start();
+      btn.textContent='⏹ Detener';btn.classList.add('rec-on');
+    }
+    btn.onclick=()=>{ if(rec&&rec.state!=='inactive')rec.stop(); else start(); };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
 
 </script>
 </body>
