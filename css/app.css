@@ -104,6 +104,23 @@ nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); colo
   border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem; resize:vertical;}
 .tberror:focus,.pyin:focus{outline:2px solid color-mix(in srgb, var(--s1) 55%, transparent);}
 
+/* simulacro */
+.simhead{display:flex; gap:1rem; align-items:center; margin-bottom:.35rem;}
+.simreloj{font-variant-numeric:tabular-nums; font-weight:700; font-size:1.05rem;}
+.simreloj.err{color:var(--s8); animation:recpulse 1.2s infinite;}
+.simfill{background:linear-gradient(90deg, var(--s1), var(--s5));}
+.simhead .exscore{margin-left:auto;}
+.simhist,.simhrow{display:flex; flex-direction:column; gap:.25rem;}
+.simhrow{flex-direction:row; gap:.8rem; align-items:baseline; padding:.3rem .2rem;
+  border-bottom:1px dashed var(--border); flex-wrap:wrap;}
+.simhrow>span:first-child{min-width:9em;}
+.simnota{font-weight:700; font-variant-numeric:tabular-nums;}
+.simnotona{font-size:2.6rem; font-weight:800; text-align:center; margin:.3rem 0;
+  font-variant-numeric:tabular-nums;}
+.okc{color:var(--s2);} .err{color:var(--s8);}
+.simrev{margin:.4rem 0; border:1px solid var(--border); border-radius:10px; padding:.4rem .7rem;}
+.simrev summary{cursor:pointer; font-size:.9rem;}
+
 /* boss final */
 .bosshdr{display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:.5rem;}
 .bossbar{width:min(320px,60vw); height:12px; border-radius:999px; margin:.25rem 0;
