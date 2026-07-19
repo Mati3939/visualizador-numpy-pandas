@@ -25,7 +25,7 @@ registerModule({
     const fmt$=v=>'$'+Math.round(v).toLocaleString('es-CL');
 
     const card=el('div',{class:'card'},
-      el('h3',{},'Detectar outliers: IQR y z-score'),
+      el('h3',{},'Detectar outliers: IQR, z-score y MAD'),
       el('p',{class:'note',html:'Sueldos mensuales (miles de pesos) de 24 analistas de datos. '+
         'Mueve el umbral y observa qué puntos quedan marcados como outliers. '+
         'Fíjate cómo la <b>media se arrastra</b> hacia los valores extremos mientras la <b>mediana casi no se mueve</b>: '+
@@ -34,7 +34,10 @@ registerModule({
 
     /* controles */
     const ctr=el('div',{class:'controls'});card.append(ctr);
-    const selM=el('select',{},el('option',{value:'iqr'},'IQR (rango intercuartílico)'),el('option',{value:'z'},'z-score'));
+    const selM=el('select',{},
+      el('option',{value:'iqr'},'IQR (rango intercuartílico)'),
+      el('option',{value:'z'},'z-score'),
+      el('option',{value:'mad'},'MAD (desviación absoluta mediana)'));
     const rng=el('input',{type:'range',min:0.5,max:3,step:0.25,value:1.5,style:'width:140px'});
     const kLab=el('span',{style:'font-weight:700;min-width:2.4em;display:inline-block'},'k = 1,5');
     const bDrop=el('button',{class:'btn'},'🗑️ Eliminar outliers');
@@ -57,10 +60,12 @@ registerModule({
     const stats=el('div',{class:'msg'});card.append(stats);
     const chips=el('div');card.append(chips);
     const code=codeBox(card);
-    card.append(el('p',{class:'note',html:'<b>¿IQR o z-score?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
-      'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. Regla práctica del curso: '+
-      'boxplot/IQR primero, z-score solo si la variable es aproximadamente normal. Y antes de borrar un outlier pregúntate: '+
-      '¿es un error de digitación o un dato real e interesante?'}));
+    card.append(el('p',{class:'note',html:'<b>¿IQR, z-score o MAD?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
+      'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. El <b>MAD</b> es aún más duro de engañar: '+
+      'mediana de las distancias a la mediana — cambia el método aquí arriba y nota que sus cercas casi no se mueven al eliminar outliers. '+
+      'Regla práctica del curso: boxplot/IQR primero, z-score solo si la variable es aproximadamente normal, MAD cuando hay muchos extremos. '+
+      '(La clase 15 menciona además <i>Isolation Forest</i>, un método de ML fuera del alcance de este visualizador.) '+
+      'Y antes de borrar un outlier pregúntate: ¿es un error de digitación o un dato real e interesante?'}));
 
     /* puntos persistentes */
     let active=[...DATA]; // valores vigentes (tras eliminar)
@@ -75,7 +80,8 @@ registerModule({
 
     function config(){ /* reconfigura slider según método */
       if(selM.value==='iqr'){rng.min=0.5;rng.max=3;rng.step=0.25;rng.value=1.5;}
-      else{rng.min=1;rng.max=3.5;rng.step=0.25;rng.value=3;}
+      else if(selM.value==='z'){rng.min=1;rng.max=3.5;rng.step=0.25;rng.value=3;}
+      else{rng.min=2;rng.max=5;rng.step=0.25;rng.value=3.5;} /* MAD: umbral típico 3.5 */
       update();
     }
     function update(){
@@ -84,9 +90,12 @@ registerModule({
       const vals=circles.filter(p=>!p.removed).map(p=>p.v);
       const q1=quantile(vals,.25),q3=quantile(vals,.75),iqr=q3-q1;
       const m=mean(vals),sd=std(vals),med=quantile(vals,.5);
+      const mad=quantile(vals.map(v=>Math.abs(v-med)),.5);
       let lo,hi;
       if(selM.value==='iqr'){lo=q1-k*iqr;hi=q3+k*iqr;}
-      else{lo=m-k*sd;hi=m+k*sd;}
+      else if(selM.value==='z'){lo=m-k*sd;hi=m+k*sd;}
+      /* z modificado: 0.6745·(x−med)/MAD > k  ⇔  x fuera de med ± k·MAD/0.6745 */
+      else{lo=med-k*mad/0.6745;hi=med+k*mad/0.6745;}
       /* escala */
       const vmin=Math.min(...vals,lo),vmax=Math.max(...vals,hi);
       const pad=(vmax-vmin)*.05;
@@ -141,8 +150,10 @@ registerModule({
       outs.sort((a,b)=>a-b).forEach(v=>chips.append(el('span',{class:'chip',style:'border-color:var(--s8);color:var(--s8)'},fmt$(v))));
       if(selM.value==='iqr'){
         code.innerHTML=`Q1, Q3 = df['sueldo'].quantile([0.25, 0.75])\nIQR = Q3 - Q1                        # ${fmt$(iqr)}\nlim_inf = Q1 - <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(lo)}\nlim_sup = Q3 + <b>${String(k).replace('.',',')}</b>*IQR              # ${fmt$(hi)}\noutliers = df[(df['sueldo'] < lim_inf) | (df['sueldo'] > lim_sup)]   # ${outs.length} filas`;
-      }else{
+      }else if(selM.value==='z'){
         code.innerHTML=`z = (df['sueldo'] - df['sueldo'].mean()) / df['sueldo'].std()\noutliers = df[z.abs() > <b>${String(k).replace('.',',')}</b>]        # ${outs.length} filas`;
+      }else{
+        code.innerHTML=`med = df['sueldo'].median()                      # ${fmt$(med)}\nMAD = (df['sueldo'] - med).abs().median()        # ${fmt$(mad)}\nz_mod = 0.6745 * (df['sueldo'] - med) / MAD\noutliers = df[z_mod.abs() > <b>${String(k).replace('.',',')}</b>]      # ${outs.length} filas`;
       }
       return {lo,hi};
     }
