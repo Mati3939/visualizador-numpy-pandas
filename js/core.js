@@ -64,6 +64,7 @@ class CellGrid{
     if(cls!==undefined)c.className='cell '+cls;
   }
   layout(){
+    if(!this.stage.isConnected)return; // visuales de ejercicios ya descartados
     const {size,gap}=cellMetrics(); let mr=0, mc=0;
     for(const c of this.cells.values()){
       const [r,cc,w]=c._pos;
@@ -188,42 +189,122 @@ class Stepper{
 }
 
 /* ================= app shell ================= */
-const MODULES=[]; // {id, title, lead, build(section)}
+const MODULES=[];   // {id, title, lead, build(section)} — nav principal, teclas 1-9
+const EXERCISES=[]; // ídem, pero viven en el menú «Ejercicios» (estudio sin ruido)
 function registerModule(m){MODULES.push(m);}
+function registerExercise(m){EXERCISES.push(m);}
+const allSections=()=>MODULES.concat(EXERCISES);
+
+/* Estado en la URL: #merge?how=outer — compartible por WhatsApp.
+   hashId() da el id sin parámetros; hashParams() el objeto {k:v};
+   setHashParams(obj) los escribe sin recargar ni re-activar. */
+const hashId=()=>decodeURIComponent(location.hash.slice(1).split('?')[0]);
+function hashParams(){
+  const q=location.hash.split('?')[1]||'';
+  return Object.fromEntries(new URLSearchParams(q));
+}
+function setHashParams(obj){
+  const clean=Object.fromEntries(Object.entries(obj).filter(([,v])=>v!=null&&v!==''));
+  const q=new URLSearchParams(clean).toString();
+  history.replaceState(null,'','#'+hashId()+(q?'?'+q:''));
+}
 
 function buildShell(){
   const nav=$('#nav'), main=$('#main');
   if(!MODULES.length)return;
-  MODULES.forEach((m,i)=>{
-    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
-    b.dataset.mod=m.id; nav.append(b);
+  const mkSection=m=>{
     const sec=el('section',{class:'module',id:'mod-'+m.id},
       el('h2',{},m.title),
       el('p',{class:'lead'},m.lead||''));
     main.append(sec);
     m._built=false; m._sec=sec;
+  };
+  MODULES.forEach((m,i)=>{
+    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
+    b.dataset.mod=m.id; nav.append(b);
+    mkSection(m);
   });
+  EXERCISES.forEach(mkSection);
+  buildExMenu();
   /* #id en la URL abre ese módulo directamente (link compartible por tema) */
-  const wanted=location.hash.slice(1);
-  activate(MODULES.some(m=>m.id===wanted)?wanted:MODULES[0].id);
+  const wanted=hashId();
+  activate(allSections().some(m=>m.id===wanted)?wanted:MODULES[0].id);
   window.addEventListener('hashchange',()=>{
-    const id=location.hash.slice(1);
-    if(MODULES.some(m=>m.id===id))activate(id);
+    const id=hashId();
+    if(allSections().some(m=>m.id===id)&&!document.getElementById('mod-'+id).classList.contains('active'))
+      activate(id);
   });
 }
+
+/* Menú «Ejercicios»: botón en el header que despliega las secciones de práctica.
+   Escondido a propósito: la app se estudia limpia y los ejercicios aparecen al clic. */
+function buildExMenu(){
+  if(!EXERCISES.length)return;
+  const btn=el('button',{id:'btnEx',title:'Ejercicios y práctica'},'🎯 Ejercicios');
+  const panel=el('div',{id:'exmenu',class:'exmenu'});
+  EXERCISES.forEach(m=>{
+    panel.append(el('button',{class:'exitem',onclick:()=>{close(); activate(m.id);}},
+      el('b',{},m.title), el('span',{},m.lead||'')));
+  });
+  const close=()=>{panel.classList.remove('open'); btn.classList.remove('on');};
+  btn.onclick=e=>{e.stopPropagation(); panel.classList.toggle('open'); btn.classList.toggle('on');};
+  document.addEventListener('click',e=>{ if(!panel.contains(e.target))close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape')close(); });
+  const hdr=$('.hdrbtns'); hdr.prepend(btn);
+  document.querySelector('header').append(panel);
+}
+
 function activate(id){
   document.querySelectorAll('.module').forEach(s=>s.classList.toggle('active',s.id==='mod-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.mod===id));
+  const isEx=EXERCISES.some(m=>m.id===id);
+  const bEx=$('#btnEx'); if(bEx)bEx.classList.toggle('active-ex',isEx);
   /* en móvil el nav scrollea horizontal: dejar visible la pestaña activa */
   const on=document.querySelector('#nav button.on');
   if(on)on.scrollIntoView({inline:'center',block:'nearest'});
-  const m=MODULES.find(x=>x.id===id);
+  const m=allSections().find(x=>x.id===id);
+  const keep=(hashId()===id); // conservar ?params si ya estábamos en este módulo
+  if(!keep)history.replaceState(null,'','#'+id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
   RELAYOUT.forEach(f=>f());
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
-  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
   window.scrollTo({top:0});
+}
+
+/* Diff de DataFrames estilo git: filas eliminadas en rojo tachado, filas/columnas
+   nuevas en azul, celdas cambiadas (imputadas, reemplazadas…) en verde.
+   before/after: {columns, index, rows} como DfTable. Devuelve la DfTable. */
+function dfDiff(mount,before,after,caption){
+  const cols=[...before.columns, ...after.columns.filter(c=>!before.columns.includes(c))];
+  const index=[...before.index, ...after.index.filter(i=>!before.index.includes(i))];
+  const get=(o,ix,c)=>{
+    const r=o.index.indexOf(ix), k=o.columns.indexOf(c);
+    return (r<0||k<0)?undefined:o.rows[r][k];
+  };
+  const rows=index.map(ix=>cols.map(c=>{
+    const av=get(after,ix,c);
+    return av!==undefined?av:(get(before,ix,c)??null);
+  }));
+  const t=new DfTable(mount,{columns:cols,index,rows,caption});
+  index.forEach((ix,r)=>{
+    const inA=after.index.includes(ix), inB=before.index.includes(ix);
+    cols.forEach((c,ci)=>{
+      const cell=t.cell(r,ci);
+      const av=get(after,ix,c), bv=get(before,ix,c);
+      if(!inA||!after.columns.includes(c))cell.classList.add('ddel');
+      else if(!inB||!before.columns.includes(c))cell.classList.add('dnew');
+      else if(av!==bv)cell.classList.add('dchg');
+    });
+    if(!inA)t.rowEls[r]._idx.classList.add('ddel');
+    else if(!inB)t.rowEls[r]._idx.classList.add('dnew');
+  });
+  t.headEls.forEach((h,ci)=>{
+    const c=cols[ci];
+    if(!after.columns.includes(c))h.classList.add('ddel');
+    else if(!before.columns.includes(c))h.classList.add('dnew');
+  });
+  return t;
 }
 /* helpers UI */
 function codeBox(mount){const c=el('pre',{class:'code'});mount.append(c);return c;}

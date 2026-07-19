@@ -106,10 +106,12 @@ registerModule({
         code.innerHTML=`pd.merge(estudiantes, carreras,\n         on='id_carrera', how=<b>'${how}'</b>)   # ${rows.length} filas`;
         requestAnimationFrame(drawLinks);
       }
-      btnGroup(ctr,[
-        {label:'inner',value:'inner'},{label:'left',value:'left'},
-        {label:'right',value:'right'},{label:'outer',value:'outer'},
-      ],v=>{how=v;render();});
+      const HOWS=['inner','left','right','outer'];
+      /* #merge?how=outer abre directo con ese how (link compartible) */
+      if(HOWS.includes(hashParams().how))how=hashParams().how;
+      const howBtns=btnGroup(ctr,HOWS.map(h=>({label:h,value:h})),
+        v=>{how=v;setHashParams({how:v});render();},false);
+      howBtns[HOWS.indexOf(how)].classList.add('on');
       window.addEventListener('resize',drawLinks);
       RELAYOUT.push(drawLinks);
       render();

@@ -36,13 +36,19 @@ registerModule({
         render(r,c);
         code.innerHTML=`a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>${r}, ${c}</b>)          # shape (${r}, ${c})`;
       }
-      btnGroup(ctr,[
-        {label:'1 × 12',value:[1,12]},{label:'2 × 6',value:[2,6]},{label:'3 × 4',value:[3,4]},
-        {label:'4 × 3',value:[4,3]},{label:'6 × 2',value:[6,2]},{label:'12 × 1',value:[12,1]},
+      const SHAPES=[[1,12],[2,6],[3,4],[4,3],[6,2],[12,1]];
+      const shapeBtns=btnGroup(ctr,[
+        ...SHAPES.map(s=>({label:`${s[0]} × ${s[1]}`,value:s})),
         {label:'5 × 3 ✗',value:'bad'},
-      ],pick);
-      render(1,12);
-      code.innerHTML='a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>1, 12</b>)';
+      ],v=>{pick(v); setHashParams({shape:v==='bad'?'5x3':v.join('x')});},false);
+      /* #numpy?shape=4x3 abre directo con esa forma (link compartible) */
+      const si=SHAPES.findIndex(s=>s.join('x')===hashParams().shape);
+      shapeBtns[si<0?0:si].classList.add('on');
+      if(si>0){ pick(SHAPES[si]); }
+      else{
+        render(1,12);
+        code.innerHTML='a = np.arange(1, 13)      # shape (12,)\na.reshape(<b>1, 12</b>)';
+      }
     }
 
     /* ---------- Tarjeta 2: axis ---------- */
