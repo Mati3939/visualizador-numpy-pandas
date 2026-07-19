@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(e.target.matches('input,select,textarea'))return;
     if(e.key==='ArrowRight'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i+1);e.preventDefault();}
     else if(e.key==='ArrowLeft'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i-1);e.preventDefault();}
-    else if(/^[1-9]$/.test(e.key)){const m=MODULES[+e.key-1]; if(m)activate(m.id);}
+    else if(/^[0-9]$/.test(e.key)){const m=MODULES[e.key==='0'?9:+e.key-1]; if(m)activate(m.id);}
   });
   buildShell();
 });
