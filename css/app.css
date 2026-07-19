@@ -57,9 +57,6 @@ main{max-width:1150px; margin:0 auto; padding:1rem 1.2rem 4rem;}
 .module.active{display:block; animation:fadein .25s ease;}
 @keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
 .module>h2{margin:.9rem 0 .1rem; font-size:1.45rem;}
-.week{display:inline-block; font-size:.72rem; font-weight:600; color:var(--ink2);
-  background:color-mix(in srgb, var(--s7) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--s7) 35%, transparent);
-  border-radius:999px; padding:.1rem .55rem; vertical-align:middle; margin-left:.5rem;}
 .lead{color:var(--ink2); margin:.2rem 0 1rem; max-width:70ch;}
 
 /* ============ Tarjetas y controles ============ */

@@ -7,7 +7,6 @@
   registerModule({
     id:'wrangling',
     title:'Data wrangling',
-    week:'Semanas 9–10',
     lead:'Limpiar y transformar: duplicados, reemplazos, discretización y ordenamiento.',
     build(section){
       buildDuplicados(section);

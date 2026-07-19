@@ -299,7 +299,6 @@ function build(section){
 registerModule({
   id:'nulos',
   title:'Valores perdidos',
-  week:'Semana 4',
   lead:'Los datos reales llegan con huecos. Antes de modelar hay que decidir: ¿dónde están los NaN, los elimino o los relleno? Cada decisión cambia lo que tus datos dicen.',
   build
 });

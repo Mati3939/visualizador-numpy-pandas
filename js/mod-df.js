@@ -19,7 +19,6 @@
   registerModule({
     id:'df',
     title:'DataFrames',
-    week:'Semana 3',
     lead:'Un DataFrame es una tabla: cada columna es una Serie con un tipo, y cada fila tiene una etiqueta en el índice.',
     build(section){
       buildAnatomia(section);

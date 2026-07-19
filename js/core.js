@@ -2,7 +2,7 @@
 /* =====================================================================
    Núcleo del Visualizador TOPD
    API para módulos:
-     registerModule({id, title, week, lead, build(section)})
+     registerModule({id, title, lead, build(section)})
      el(tag, attrs, ...hijos)  $(sel)  fmt(x)  sleep(ms)
      CellGrid(mount)           — rejilla de celdas animadas (arrays NumPy)
      DfTable(mount, opts)      — tabla estilo DataFrame (divs animables)
@@ -188,7 +188,7 @@ class Stepper{
 }
 
 /* ================= app shell ================= */
-const MODULES=[]; // {id, title, week, lead, build(section)}
+const MODULES=[]; // {id, title, lead, build(section)}
 function registerModule(m){MODULES.push(m);}
 
 function buildShell(){
@@ -198,7 +198,7 @@ function buildShell(){
     const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
     b.dataset.mod=m.id; nav.append(b);
     const sec=el('section',{class:'module',id:'mod-'+m.id},
-      el('h2',{},m.title,el('span',{class:'week'},m.week)),
+      el('h2',{},m.title),
       el('p',{class:'lead'},m.lead||''));
     main.append(sec);
     m._built=false; m._sec=sec;

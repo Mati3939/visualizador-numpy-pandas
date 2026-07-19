@@ -3,7 +3,6 @@
 registerModule({
   id:'groupby',
   title:'GroupBy y pivoteo',
-  week:'Semana 11',
   lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
        'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
   build(sec){

@@ -19,7 +19,6 @@ const mqMovil=window.matchMedia('(max-width:700px)');
 registerModule({
   id:'inicio',
   title:'Visualizador TOPD',
-  week:'portada',
   lead:'Aprende NumPy y Pandas viendo qué celda va a dónde. Y como corresponde, '+
        'el menú también es un DataFrame: toca una celda para ir a ese contenido.',
   build(sec){

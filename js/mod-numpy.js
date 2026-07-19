@@ -3,7 +3,6 @@
 registerModule({
   id:'numpy',
   title:'Arrays NumPy',
-  week:'Semanas 1–2',
   lead:'Un array es una grilla de valores del mismo tipo. Aquí puedes ver cómo se mueven '+
        'las celdas al cambiar la forma, qué recorre realmente el axis y cómo filtra una máscara booleana.',
   build(sec){

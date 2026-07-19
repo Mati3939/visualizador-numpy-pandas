@@ -3,7 +3,6 @@
 registerModule({
   id:'outliers',
   title:'Outliers',
-  week:'Semanas 8–9',
   lead:'Un outlier es un valor anómalamente lejos del resto. Detectarlo es fácil; '+
        'la decisión difícil es qué hacer con él — y para eso hay que mirar los datos.',
   build(sec){

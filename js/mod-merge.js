@@ -3,7 +3,6 @@
 registerModule({
   id:'merge',
   title:'Joins y concat',
-  week:'Semana 12',
   lead:'merge une dos tablas emparejando filas por una llave común. El parámetro how decide '+
        'qué pasa con las filas que no encuentran pareja.',
   build(sec){
