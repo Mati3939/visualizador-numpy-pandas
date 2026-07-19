@@ -53,6 +53,9 @@ nav button.on{background:color-mix(in srgb, var(--s1) 15%, var(--surface)); colo
 .hdrbtns button:hover{color:var(--ink);}
 #btnEx.on,#btnEx.active-ex{background:color-mix(in srgb, var(--s7) 16%, var(--surface));
   border-color:color-mix(in srgb, var(--s7) 50%, transparent); color:var(--ink); font-weight:600;}
+#btnRec.rec-on{background:color-mix(in srgb, var(--s8) 18%, var(--surface));
+  border-color:var(--s8); color:var(--ink); font-weight:600; animation:recpulse 1.2s infinite;}
+@keyframes recpulse{50%{box-shadow:0 0 0 4px color-mix(in srgb, var(--s8) 25%, transparent);}}
 
 /* ============ Menú «Ejercicios» (desplegable del header) ============ */
 .exmenu{
