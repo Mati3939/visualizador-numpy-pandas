@@ -1,4 +1,4 @@
-# Extensión de VS Code: animar celdas de notebook paso a paso
+ Extensión de VS Code: animar celdas de notebook paso a paso
 
 Fecha: 2026-07-25
 
@@ -94,6 +94,12 @@ el resto (ver "Riesgos").
    estilo `bugmiss`), sin las partes específicas del sandbox del navegador
    (textarea, ejemplos, carga de Pyodide). Recibe los pasos por
    `window.addEventListener('message', ...)`.
+   `DfTable`/`dfDiff` dependen enteramente de las clases y variables CSS de
+   `css/app.css` (no solo del JS) — sin vendorear ese archivo también, el
+   panel se vería sin estilo. `app.css` no tiene `@import`/`url()` externos,
+   así que se puede copiar tal cual sin violar el CSP del Webview. Se apoya
+   en `prefers-color-scheme` para claro/oscuro automático; no hace falta
+   portar el botón de tema (v1).
 
 ## Flujo de datos
 
@@ -145,12 +151,21 @@ clic "Animar celda"
 
 ## Riesgos
 
-- **Principal**: la API exportada de `ms-toolsai.jupyter` para ejecutar
-  código en un kernel desde otra extensión no es una API pública estable de
-  VS Code. El plan de implementación debe empezar con un spike de un día
-  que confirme que se puede: (a) obtener el kernel activo de un notebook y
-  de un Interactive Window, y (b) ejecutar código en él y leer su stdout,
-  antes de construir el resto de los componentes. Si no es viable, hay que
-  rediseñar el mecanismo de ejecución (por ejemplo, que "Animar" reemplace
-  la corrida normal de la celda usando únicamente APIs públicas de
-  Notebook, leyendo el resultado desde `cell.outputs`).
+- **Principal — RESUELTO por el spike (2026-07-25)**: se confirmó, contra
+  una instalación real de `ms-toolsai.jupyter` (v2026.x) y un kernel vivo
+  de `notebooks/04_dataframes.ipynb`, que el mecanismo funciona. Forma real
+  de la API (distinta en dos puntos a la aproximación original del `.d.ts`):
+  - `api.kernels.getKernel(uri)` es **async** y devuelve el **kernel
+    directamente** (`language, status, onDidChangeStatus,
+    onDidReceiveDisplayUpdate, executeCode, shutdown`), no envuelto en
+    `{kernel, metadata}` como sugería la wiki.
+  - `kernel.executeCode(code, token)` es un `AsyncGenerator` que entrega
+    **una `Output` a la vez** (cada una con `.items: [{mime, data}]`), no
+    un array de outputs por iteración.
+  - Los `print()` del código ejecutado salen con mime
+    `application/vnd.code.notebook.stdout`.
+  - Verificado solo contra `.ipynb`; el caso Interactive Window (`.py` con
+    `# %%`) usa el mismo `vscode.window.activeNotebookEditor` en teoría
+    (el Interactive Window es un notebook especial por debajo), pero no se
+    verificó manualmente — la Fase 2 debe incluir un chequeo puntual
+    equivalente al del spike antes de dar por buena esa ruta.
