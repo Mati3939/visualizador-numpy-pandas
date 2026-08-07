@@ -7,11 +7,13 @@
 const TEMAS=[
   {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3]]},
   {col:'DataFrames',mod:'df',       items:[['anatomía',0],['loc vs iloc',1]]},
+  {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['plt vs ax',2]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['boxplot',0],['IQR / z-score',0]]},
   {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
   {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
+  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
@@ -26,7 +28,7 @@ registerModule({
     sec.append(card);
     const mount=el('div');card.append(mount);
     const code=codeBox(card);
-    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
+    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–9</b> y <b>0</b> cambian de módulo, '+
       '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
       'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
 

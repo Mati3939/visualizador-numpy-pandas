@@ -65,7 +65,10 @@
     card.append(msg);
     const code = codeBox(card);
 
+    /* token de corrida: cualquier botón invalida la animación en vuelo */
+    let run1=0;
     function marcar(){
+      run1++;
       table.clearMarks();
       const keep = selectKeep.value;
       const rows = dupRows(keep);
@@ -78,6 +81,7 @@
     }
 
     async function dropDup(){
+      const t = ++run1;
       table.clearMarks();
       const keep = selectKeep.value;
       const rows = dupRows(keep);
@@ -87,11 +91,12 @@
         table.rowEls[i]._idx.classList.add('dupe');
         table.cellEls[i].forEach(c=>c.classList.add('dupe'));
         table.rowEls[i].classList.add('roff');
-        await sleep(180);
+        await sleep(180); if(t!==run1) return;
       }
     }
 
     function restaurar(){
+      run1++;
       table.clearMarks();
       msg.textContent = '.duplicated().sum() = —';
       code.textContent = '# elige "keep" y presiona un botón ↑';
@@ -129,12 +134,15 @@
     const code = codeBox(card);
     code.textContent = '# elige un botón arriba ↑';
 
+    /* token de corrida compartido por replace/map/restaurar */
+    let run2=0;
     async function doReplace(){
+      const t = ++run2;
       table.render();
       for(let i=0;i<DATA.rows.length;i++){
         const cell = table.cellEls[i][0];
         cell.classList.add('hl');
-        await sleep(350);
+        await sleep(350); if(t!==run2) return;
         const val = DATA.rows[i][0];
         cell.classList.remove('hl');
         if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
@@ -146,11 +154,12 @@
     }
 
     async function doMap(){
+      const t = ++run2;
       table.render();
       for(let i=0;i<DATA.rows.length;i++){
         const cell = table.cellEls[i][0];
         cell.classList.add('hl');
-        await sleep(350);
+        await sleep(350); if(t!==run2) return;
         const val = DATA.rows[i][0];
         cell.classList.remove('hl');
         if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
@@ -162,6 +171,7 @@
     }
 
     function restaurar(){
+      run2++;
       table.render();
       note.textContent = 'Elige una operación para ver cómo transforma la columna «respuesta».';
       code.textContent = '# elige un botón arriba ↑';

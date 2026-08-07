@@ -170,7 +170,8 @@ function build(section){
   ));
   section.append(c2);
 
-  let busy2=false;
+  /* token de corrida: Restaurar aborta la animación en vuelo en vez de ignorarse */
+  let run2=0;
   function readDropnaParams(){
     const axis=Number(axisSel.value), how=howSel.value;
     const raw=threshInput.value, thresh = raw===''? null : Number(raw);
@@ -187,30 +188,28 @@ function build(section){
     msg2.className='msg'; msg2.textContent='';
   }
   async function onAplicarDropna(){
-    if(busy2) return; busy2=true;
-    try{
-      resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
-      const {axis,how,thresh}=readDropnaParams();
-      const flags = computeDropna(axis,how,thresh);
-      const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
-      for(const i of dropIdx){
-        if(axis===0){
-          t2.rowEls[i].classList.add('roff');
-        } else {
-          t2.headEls[i].classList.add('roff'); t2.headEls[i].style.opacity='.16';
-          t2.cellEls.forEach(row=>{ row[i].classList.add('roff'); row[i].style.opacity='.16'; });
-        }
-        await sleep(120);
+    const t = ++run2;
+    resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
+    const {axis,how,thresh}=readDropnaParams();
+    const flags = computeDropna(axis,how,thresh);
+    const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
+    for(const i of dropIdx){
+      if(axis===0){
+        t2.rowEls[i].classList.add('roff');
+      } else {
+        t2.headEls[i].classList.add('roff'); t2.headEls[i].style.opacity='.16';
+        t2.cellEls.forEach(row=>{ row[i].classList.add('roff'); row[i].style.opacity='.16'; });
       }
-      const total = axis===0? NULOS_ROWS.length : NULOS_COLS.length;
-      const noun = axis===0? 'filas':'columnas';
-      const verbo = dropIdx.length===1? 'Se elimina':'Se eliminan';
-      msg2.className='msg okc';
-      msg2.textContent = `${verbo} ${dropIdx.length} de ${total} ${noun}`;
-      updateCode2();
-    } finally { busy2=false; }
+      await sleep(120); if(t!==run2) return;
+    }
+    const total = axis===0? NULOS_ROWS.length : NULOS_COLS.length;
+    const noun = axis===0? 'filas':'columnas';
+    const verbo = dropIdx.length===1? 'Se elimina':'Se eliminan';
+    msg2.className='msg okc';
+    msg2.textContent = `${verbo} ${dropIdx.length} de ${total} ${noun}`;
+    updateCode2();
   }
-  function onRestaurarDropna(){ if(busy2) return; resetCard2(); }
+  function onRestaurarDropna(){ run2++; resetCard2(); }
   updateCode2();
 
   /* ===================== Tarjeta 3: fillna() ===================== */
@@ -248,7 +247,7 @@ function build(section){
   ));
   section.append(c3);
 
-  let busy3=false;
+  let run3=0;
   function updateNote3(strategy, plan){
     let txt='';
     if(strategy==='zero'){
@@ -272,24 +271,22 @@ function build(section){
     note3.textContent='';
   }
   async function onAplicarFill(){
-    if(busy3) return; busy3=true;
-    try{
-      resetCard3(); // evita mezclar el resultado con una estrategia aplicada antes, sin pasar por Restaurar
-      const strategy = stratSel.value;
-      const plan = computeFillPlan(strategy);
-      for(const {r,c,val} of plan){
-        const cell = t3.cellEls[r][c];
-        cell.textContent = fmt(val);
-        cell.classList.remove('nan');
-        cell.classList.add('fill');
-        await sleep(150);
-      }
-      updateNote3(strategy, plan);
-      updateCode3(strategy);
-    } finally { busy3=false; }
+    const t = ++run3;
+    resetCard3(); // evita mezclar el resultado con una estrategia aplicada antes, sin pasar por Restaurar
+    const strategy = stratSel.value;
+    const plan = computeFillPlan(strategy);
+    for(const {r,c,val} of plan){
+      const cell = t3.cellEls[r][c];
+      cell.textContent = fmt(val);
+      cell.classList.remove('nan');
+      cell.classList.add('fill');
+      await sleep(150); if(t!==run3) return;
+    }
+    updateNote3(strategy, plan);
+    updateCode3(strategy);
   }
   function onRestaurarFill(){
-    if(busy3) return;
+    run3++;
     resetCard3();
     updateCode3(stratSel.value);
   }

@@ -9,6 +9,8 @@
      Stepper(mount, steps, reset) — animación paso a paso (← → en teclado)
      flipRows(container, mutate)  — anima reordenación de filas
      codeBox(mount)  btnGroup(mount, items, onpick)
+     addRelayout(nodo, fn, dispose?) / relayout() — recalcular medidas; las
+       entradas cuyo nodo ya salió del DOM se descartan solas (sin fugas)
    Convenciones CSS: ver css/app.css (.cell .hl .ok .res .off …, .dfc .nan …)
    ===================================================================== */
 const $=(s,r=document)=>r.querySelector(s);
@@ -26,7 +28,19 @@ function el(tag,attrs={},...kids){
   return n;
 }
 const fmt=x=>(typeof x==='number'&&!Number.isInteger(x))?x.toFixed(1).replace('.',','):String(x);
+/* Relayout: los módulos se construyen ocultos (las medidas dan 0), así que hay
+   que recalcular al activarlos. Cada entrada queda ligada a un nodo; cuando ese
+   nodo sale del DOM (ejercicio ya descartado) se elimina junto con su observer,
+   para que recorrer muchas preguntas no acumule closures ni MutationObservers. */
 const RELAYOUT=[];
+function addRelayout(node,fn,dispose){ RELAYOUT.push({node,fn,dispose}); }
+function relayout(){
+  for(let i=RELAYOUT.length-1;i>=0;i--){
+    const e=RELAYOUT[i];
+    if(!e.node.isConnected){ if(e.dispose)e.dispose(); RELAYOUT.splice(i,1); continue; }
+    e.fn();
+  }
+}
 function cellMetrics(){
   const cs=getComputedStyle(document.documentElement);
   return {size:parseFloat(cs.getPropertyValue('--cell')), gap:parseFloat(cs.getPropertyValue('--cellgap'))};
@@ -38,7 +52,7 @@ class CellGrid{
     this.stage=el('div',{class:'stage'});
     mount.append(this.stage);
     this.cells=new Map();
-    RELAYOUT.push(()=>this.layout());
+    addRelayout(this.stage,()=>this.layout());
   }
   /* defs: [{id, text, r, c, cls, w}] — w = ancho en unidades de celda */
   setCells(defs){
@@ -97,7 +111,7 @@ class DfTable{
       this._raf=requestAnimationFrame(()=>{this._raf=0; this._align();});
     });
     this._mo.observe(this.root,{childList:true,characterData:true,subtree:true});
-    RELAYOUT.push(()=>this._align());
+    addRelayout(this.root,()=>this._align(),()=>this._mo.disconnect());
   }
   /* columnas uniformes tipo planilla: todas las filas comparten el ancho máximo de cada columna */
   _align(){
@@ -267,7 +281,7 @@ function activate(id){
   if(!keep)history.replaceState(null,'','#'+id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
-  RELAYOUT.forEach(f=>f());
+  relayout();
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
   window.scrollTo({top:0});
 }
@@ -321,17 +335,25 @@ function btnGroup(mount,items,onpick,activeFirst=true){
 document.addEventListener('DOMContentLoaded',()=>{
   const btnTheme=$('#btnTheme'), btnPres=$('#btnPres');
   const THEMES=[['','🌗 Auto'],['light','☀️ Claro'],['dark','🌙 Oscuro']];
-  let themeIdx=0;
+  const TKEY='topd_tema';
+  const leerTema=()=>{try{return localStorage.getItem(TKEY)||'';}catch(_){return '';}};
+  const guardarTema=v=>{try{localStorage.setItem(TKEY,v);}catch(_){/* modo incógnito */}};
+  const aplicarTema=v=>{
+    if(v)document.documentElement.dataset.theme=v; else delete document.documentElement.dataset.theme;
+    btnTheme.textContent=(THEMES.find(t=>t[0]===v)||THEMES[0])[1];
+  };
+  /* el tema elegido sobrevive a la recarga: en una sala clara no hay que reclicar */
+  let themeIdx=Math.max(0,THEMES.findIndex(t=>t[0]===leerTema()));
+  aplicarTema(THEMES[themeIdx][0]);
   btnTheme.onclick=()=>{
     themeIdx=(themeIdx+1)%3;
-    const [v,label]=THEMES[themeIdx];
-    if(v)document.documentElement.dataset.theme=v; else delete document.documentElement.dataset.theme;
-    btnTheme.textContent=label;
+    const v=THEMES[themeIdx][0];
+    aplicarTema(v); guardarTema(v);
   };
   btnPres.onclick=()=>{
     const on=document.documentElement.classList.toggle('presenta');
     btnPres.textContent=on?'🖥️ Normal':'🖥️ Presentar';
-    RELAYOUT.forEach(f=>f());
+    relayout();
   };
   document.addEventListener('keydown',e=>{
     if(e.target.matches('input,select,textarea'))return;

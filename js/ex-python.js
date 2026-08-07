@@ -224,7 +224,7 @@ registerExercise({
         }
         if(!algo&&!p.out&&!p.err)
           visor.append(el('p',{class:'note'},'Este paso no cambió ningún DataFrame ni imprimió nada.'));
-        RELAYOUT.forEach(f=>f());
+        relayout();
       }
       ir(0);
     }

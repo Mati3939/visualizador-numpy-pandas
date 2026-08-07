@@ -103,7 +103,7 @@ registerExercise({
       card.append(el('button',{class:'btn primary',style:'margin-top:.6rem',
         onclick:()=>{ronda=0;vidas=3;fallos=0;show();}},'⚔️ Jugar de nuevo'));
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
     function show(){
       host.textContent='';
@@ -132,7 +132,7 @@ registerExercise({
             reveal.append(el('p',{class:'note',html:R.explica}));
             reveal.append(el('button',{class:'btn primary',onclick:()=>{ronda++; (ronda>=RONDAS.length)?victoria():show();}},
               ronda===RONDAS.length-1?'🏆 Rematar al jefe':'▶ Siguiente ronda'));
-            RELAYOUT.forEach(f=>f());
+            relayout();
           }else{
             fallos++;vidas--;
             b.classList.add('bad');b.disabled=true;
@@ -145,7 +145,7 @@ registerExercise({
         opts.append(b);
       });
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
     show();
   },

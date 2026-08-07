@@ -47,7 +47,7 @@ function alumno(host,qid){
     reveal.append(el('div',{class:'msg okc'},
       `✔ Respuesta: ${COLORES[q.correcta][0]} — ${q.opciones[q.correcta]}`));
     reveal.append(el('p',{class:'note',html:q.explica}));
-    if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+    if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
   }},'👀 Ver la respuesta'));
   host.append(card);
 
@@ -107,7 +107,7 @@ function proyector(host){
         reveal.textContent='';
         botones.forEach((b,bi)=>b.classList.add(bi===q.correcta?'good':'bad'));
         reveal.append(el('p',{class:'note',html:q.explica}));
-        if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+        if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
       }},'🎭 Revelar respuesta')));
   }
   sel.onchange=mostrar;

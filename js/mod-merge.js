@@ -113,7 +113,7 @@ registerModule({
         v=>{how=v;setHashParams({how:v});render();},false);
       howBtns[HOWS.indexOf(how)].classList.add('on');
       window.addEventListener('resize',drawLinks);
-      RELAYOUT.push(drawLinks);
+      addRelayout(card,drawLinks);
       render();
     }
 

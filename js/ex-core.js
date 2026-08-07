@@ -46,7 +46,7 @@ function exMeta(q){
 function exDatos(q,mount){
   if(!q.datos)return;
   const vm=el('div',{class:'exvisual exdatos'});
-  mount.append(vm); q.datos(vm); RELAYOUT.forEach(f=>f());
+  mount.append(vm); q.datos(vm); relayout();
 }
 const EX_ENUNCIADO='¿Qué imprime? Piensa tu respuesta antes de elegir.';
 
@@ -90,7 +90,7 @@ registerExercise({
           reveal.append(el('div',{class:'msg '+(ok?'okc':'err')},
             ok?'✔ ¡Correcto!':'✘ No era esa — mira por qué:'));
           reveal.append(el('p',{class:'note',html:q.explica}));
-          if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+          if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
         }},el('pre',{class:'optcode'},o));
         opts.append(b);
       });
@@ -135,7 +135,7 @@ registerExercise({
             reveal.append(el('div',{class:'msg okc'},intentos===0?'✔ ¡Primer intento!':'✔ Encontrado.'));
             reveal.append(el('p',{class:'note',html:q.explica}));
             const fix=codeBox(reveal); fix.innerHTML='# corregido\n'+q.fix;
-            if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+            if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
           }else{
             intentos++;
             d.classList.add('bugmiss');

@@ -206,7 +206,7 @@ registerExercise({
         el('button',{class:'btn',onclick:config},'↩ Elegir otro ensayo'),
         bCopy));
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
 
     config();
