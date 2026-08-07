@@ -1,6 +1,6 @@
 'use strict';
 /* Módulo: Visualización — qué gráfico usar, anatomía de la figura matplotlib
-   e interfaz pyplot vs OO. Unidad III de 2026-1 (clase 09, Control 2, C5).
+   e interfaz pyplot vs OO.
    Mini-gráficos según las specs del skill dataviz: un solo tono para magnitud,
    rampa secuencial para el heatmap (tinta fija sobre la rampa), grilla recesiva. */
 (function(){
@@ -24,7 +24,7 @@ registerModule({
   id:'viz',
   title:'Visualización',
   lead:'Antes de elegir colores o estilos, la pregunta es qué quieres mostrar: '+
-       'esa respuesta elige el gráfico. Aquí está el mapa del curso y la anatomía '+
+       'esa respuesta elige el gráfico. Aquí está el mapa completo y la anatomía '+
        'de una figura de Matplotlib.',
   build(sec){
 
@@ -32,8 +32,8 @@ registerModule({
     {
       const card=el('div',{class:'card'},
         el('h3',{},'¿Qué gráfico uso?'),
-        el('p',{class:'note',html:'Elige tu <b>objetivo</b> y mira el gráfico que el curso recomienda '+
-          '(sección 3 del Control 5: cada pregunta de negocio pide una forma distinta).'}));
+        el('p',{class:'note',html:'Elige tu <b>objetivo</b> y mira el gráfico que le corresponde: '+
+          'cada pregunta de negocio pide una forma distinta.'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
       const holder=el('div',{style:'display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start'});
@@ -133,10 +133,10 @@ registerModule({
       const INFO={
         hist:{t:'Distribución de una variable numérica',c:"plt.hist(df['precio'], bins=20)\nplt.xlabel('precio del tour')",
           n:'El histograma muestra <b>cómo se reparte</b> una variable: ¿simétrica, sesgada, con dos grupos? '+
-            'Es la pregunta 3.1 del Control 5. Su hermano resumido es el boxplot del <a href="#outliers">módulo Outliers</a>.'},
+            'Su hermano resumido es el boxplot del <a href="#outliers">módulo Outliers</a>.'},
         linea:{t:'Evolución en el tiempo',c:"df_mes = df.resample('ME')['ventas'].sum()\nplt.plot(df_mes.index, df_mes.values)",
           n:'La línea es para <b>series temporales</b>: meses, semanas, años en el eje x. '+
-            'Pregunta 3.4 del Control 5 («¿se recuperó el turismo tras la pandemia?»). '+
+            'Responde preguntas del tipo «¿subió o bajó?». '+
             'El eje temporal sale de <a href="#fechas">resample</a>.'},
         barras:{t:'Comparar categorías',c:"conteo = df['actividad'].value_counts()\nplt.barh(conteo.index, conteo.values)",
           n:'Barras para <b>comparar cantidades entre categorías</b> — ordénalas de mayor a menor '+
@@ -145,11 +145,11 @@ registerModule({
         scatter:{t:'Relación entre dos numéricas',c:"plt.scatter(df['duracion'], df['precio'], alpha=0.6)",
           n:'La dispersión revela <b>correlaciones</b>: ¿a más duración, más precio? '+
             'Con muchos puntos usa <code>alpha</code> para ver la densidad. Es el paso previo '+
-            'a la matriz de correlación del Control 5.'},
+            'a medir la relación con una matriz de correlación.'},
         heatmap:{t:'Dos categorías × una magnitud',c:"tabla = pd.pivot_table(df, values='ventas',\n        index='sucursal', columns='trimestre')\nsns.heatmap(tabla, annot=True, cmap='Blues')",
           n:'El heatmap pinta una <b>tabla cruzada</b>: el color codifica magnitud con UNA rampa '+
             '(claro→oscuro), nunca un arcoíris. Es el pivote del <a href="#groupby">módulo GroupBy</a> con color, '+
-            'y la pregunta 3.2 del Control 5 (matriz de correlación).'},
+            'y la forma habitual de mirar una matriz de correlación.'},
         torta:{t:'Composición (pocas partes)',c:"plt.pie(partes, labels=nombres, autopct='%1.0f%%')",
           n:'La torta solo funciona con <b>pocas categorías</b> (≤4) que suman 100%. '+
             'Con más partes o valores parecidos, el ojo compara mal ángulos: prefiere barras. '+
@@ -237,7 +237,7 @@ registerModule({
     {
       const card=el('div',{class:'card'},
         el('h3',{html:'<code>plt.plot</code> vs <code>fig, ax</code> (interfaz OO)'}),
-        el('p',{class:'note',html:'Las dos interfaces dibujan lo mismo. La clase 09 recomienda la '+
+        el('p',{class:'note',html:'Las dos interfaces dibujan lo mismo, pero conviene la '+
           '<b>orientada a objetos</b>: cada gráfico vive en su <code>ax</code> y los subgráficos son triviales.'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
@@ -274,7 +274,7 @@ registerModule({
             'confusa cuando hay varios.'},
         oo:{draw:mini,c:"fig, ax = plt.subplots()\nax.plot(meses, ventas)\nax.set_title('Ventas')\nax.set_xlabel('mes')",
           n:'La interfaz <b>OO</b>: pides la figura y sus ejes, y cada orden va dirigida a un <code>ax</code> '+
-            'específico. Es la forma recomendada del curso — y nota que los métodos cambian a <code>set_*</code>.'},
+            'específico. Es la forma recomendada — y nota que los métodos cambian a <code>set_*</code>.'},
         sub:{draw:panel4,c:"fig, axs = plt.subplots(2, 2, figsize=(10, 6))\naxs[0, 0].plot(x, ventas)\naxs[0, 1].plot(x, costos)\naxs[1, 0].plot(x, clientes)\naxs[1, 1].plot(x, margen)",
           n:'Con OO los <b>subgráficos</b> son una grilla de axes: <code>axs[fila, columna]</code>. '+
             'Cuatro medidas distintas = cuatro paneles, jamás dos escalas en un mismo eje.'},

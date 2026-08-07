@@ -61,7 +61,7 @@ const ERRORES=[
   mod:['df','DataFrames']},
  {re:/UnicodeDecodeError|codec can't decode/i,nombre:'UnicodeDecodeError',
   trad:'El archivo no está en UTF-8: los acentos/eñes vienen en otra codificación.',
-  causa:'CSV exportado desde Excel en Windows (latin-1 / cp1252) — el caso típico de la clase 21.',
+  causa:'CSV exportado desde Excel en Windows (latin-1 / cp1252), el caso más típico.',
   fix:"pd.read_csv('datos.csv', encoding='latin-1')",
   mod:null},
  {re:/FileNotFoundError|No such file or directory/i,nombre:'FileNotFoundError',
@@ -120,7 +120,7 @@ registerExercise({
           el('h3',{},'🤷 No lo tengo catalogado (todavía)'),
           el('p',{class:'note',html:'Pistas generales: ① lee la <b>última línea</b> del traceback — ahí está el tipo '+
             'de error y el mensaje; ② ubica la flecha que apunta a una línea escrita por ti (no de las librerías); '+
-            '③ imprime <code>df.dtypes</code> y <code>df.columns</code> — la mitad de los errores del curso son '+
+            '③ imprime <code>df.dtypes</code> y <code>df.columns</code> — la mitad de los errores son '+
             'una columna con el tipo o el nombre equivocado.'})));
         return;
       }

@@ -6,9 +6,13 @@
      · Detective de bugs (idea 2): código con UN error plantado → el
        estudiante hace clic en la línea culpable.
    Los bancos viven en js/ex-banco.js (BANCO_PREDICE, BANCO_BUGS):
-     predice: {tema, origen, nivel, code, opciones[], correcta, explica, visual?}
+     predice: {tema, origen, nivel, code, opciones[], correcta, explica,
+               datos?, enunciado?, visual?}
      bug:     {tema, origen, nivel, lineas[], bug, pista, explica, fix, visual?}
    `visual(mount)` es opcional y dibuja la respuesta con DfTable/CellGrid/dfDiff.
+   `datos(mount)` dibuja una tabla ANTES de responder (preguntas de gráfico:
+   el alumno mira las columnas y elige la forma). `enunciado` reemplaza el
+   «¿Qué imprime?» por defecto.
    ===================================================================== */
 
 const EX_TEMAS=[
@@ -38,6 +42,14 @@ function exMeta(q){
     el('span',{class:'exbadge'},q.origen),
     el('span',{class:'exnivel',title:'dificultad'},NIVEL(q.nivel||1)));
 }
+/* tabla de datos mostrada ANTES de responder (preguntas de «elige el gráfico») */
+function exDatos(q,mount){
+  if(!q.datos)return;
+  const vm=el('div',{class:'exvisual exdatos'});
+  mount.append(vm); q.datos(vm); RELAYOUT.forEach(f=>f());
+}
+const EX_ENUNCIADO='¿Qué imprime? Piensa tu respuesta antes de elegir.';
+
 /* baraja sin mutar el banco */
 const exShuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 
@@ -46,7 +58,7 @@ registerExercise({
   id:'predice',
   title:'Predice la salida',
   lead:'Lee el código, decide qué imprime y recién entonces revela la respuesta. '+
-       'Preguntas basadas en los controles y certámenes reales del curso.',
+       'Predecir antes de ejecutar es lo que separa entender de adivinar.',
   build(sec){
     const banco=(typeof BANCO_PREDICE!=='undefined')?BANCO_PREDICE:[];
     if(!banco.length){sec.append(el('p',{class:'note'},'No hay banco cargado.'));return;}
@@ -60,7 +72,8 @@ registerExercise({
       const card=el('div',{class:'card exq'},exMeta(q),
         el('h3',{},`Pregunta ${ (i%lista.length)+1} de ${lista.length}`));
       const code=codeBox(card); code.textContent=q.code;
-      card.append(el('p',{class:'note'},'¿Qué imprime? Piensa tu respuesta antes de elegir.'));
+      exDatos(q,card);
+      card.append(el('p',{class:'note'},q.enunciado||EX_ENUNCIADO));
       const opts=el('div',{class:'exopts'});card.append(opts);
       const reveal=el('div',{class:'exreveal'});card.append(reveal);
       let done=false;

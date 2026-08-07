@@ -1,19 +1,19 @@
 'use strict';
-/* Modo Simulacro: ensayo cronometrado por evaluación, con nota chilena
-   (exigencia 60%), diagnóstico por tema e historial en localStorage. */
+/* Modo Simulacro: ensayo cronometrado, con nota chilena (exigencia 60%),
+   diagnóstico por tema e historial en localStorage. */
 (function(){
 
 const URL_PUB='https://mati3939.github.io/visualizador-numpy-pandas/';
 const TODOS=['numpy','df','viz','nulos','outliers','wrangling','groupby','merge','fechas'];
 const EVALS=[
- {id:'c1',label:'Control 1 · NumPy',temas:['numpy']},
- {id:'c2',label:'Control 2 · NumPy + Pandas',temas:['numpy','df']},
- {id:'c3',label:'Control 3 · Valores faltantes',temas:['nulos','df']},
- {id:'c4',label:'Control 4 · Data wrangling',temas:['wrangling','outliers']},
- {id:'c5',label:'Control 5 · EDA completo',temas:['viz','fechas','groupby']},
- {id:'cert1',label:'Certamen 1 · NumPy, Pandas y visualización',temas:['numpy','df','viz']},
- {id:'cert2',label:'Certamen 2 · de nulos a fechas',temas:['nulos','outliers','wrangling','groupby','merge','fechas']},
- {id:'examen',label:'Examen · todo el curso',temas:TODOS},
+ {id:'c1',label:'Ensayo 1 · NumPy',temas:['numpy']},
+ {id:'c2',label:'Ensayo 2 · NumPy + Pandas',temas:['numpy','df']},
+ {id:'c3',label:'Ensayo 3 · Valores faltantes',temas:['nulos','df']},
+ {id:'c4',label:'Ensayo 4 · Data wrangling',temas:['wrangling','outliers']},
+ {id:'c5',label:'Ensayo 5 · EDA completo',temas:['viz','fechas','groupby']},
+ {id:'cert1',label:'Ensayo integral · NumPy, Pandas y visualización',temas:['numpy','df','viz']},
+ {id:'cert2',label:'Ensayo integral · de nulos a fechas',temas:['nulos','outliers','wrangling','groupby','merge','fechas']},
+ {id:'examen',label:'Ensayo completo · todos los temas',temas:TODOS},
 ];
 const NOMBRE_TEMA={numpy:'NumPy',df:'DataFrames',viz:'Visualización',nulos:'Nulos',
   outliers:'Outliers',wrangling:'Wrangling',groupby:'GroupBy',merge:'Joins',fechas:'Fechas'};
@@ -54,7 +54,7 @@ function muestrear(temas,n){
 registerExercise({
   id:'simulacro',
   title:'🎓 Simulacro de prueba',
-  lead:'Ensayo cronometrado con preguntas del temario de cada evaluación. '+
+  lead:'Ensayo cronometrado sobre un recorte del temario. '+
        'Nota al final, diagnóstico por tema y links para repasar justo lo que fallaste.',
   build(sec){
     const host=el('div');sec.append(host);
@@ -65,7 +65,7 @@ registerExercise({
       pararTimer();
       host.textContent='';
       const card=el('div',{class:'card exq'},
-        el('h3',{},'Elige tu evaluación'),
+        el('h3',{},'Elige tu ensayo'),
         el('p',{class:'note',html:'Preguntas al azar del temario (2 minutos por pregunta, sin feedback '+
           'hasta el final — como la prueba real). El diagnóstico te dice exactamente qué repasar.'}));
       const lista=el('div',{class:'exopts'});
@@ -128,6 +128,8 @@ registerExercise({
         const avanzar=()=>{i++;pregunta();};
         if(q.opciones){ /* predice: opción múltiple */
           const code=codeBox(cuerpo);code.textContent=q.code;
+          exDatos(q,cuerpo);
+          if(q.enunciado)cuerpo.append(el('p',{class:'note'},q.enunciado));
           const opts=el('div',{class:'exopts'});cuerpo.append(opts);
           q.opciones.forEach((o,oi)=>opts.append(
             el('button',{class:'btn exopt',onclick:()=>{resp[i]=oi;avanzar();}},
@@ -201,7 +203,7 @@ registerExercise({
       }},'📋 Copiar resultado (WhatsApp)');
       card.append(el('div',{class:'controls',style:'margin-top:1rem'},
         el('button',{class:'btn primary',onclick:()=>correr(ev)},'⚔️ Otro intento'),
-        el('button',{class:'btn',onclick:config},'↩ Elegir otra evaluación'),
+        el('button',{class:'btn',onclick:config},'↩ Elegir otro ensayo'),
         bCopy));
       host.append(card);
       RELAYOUT.forEach(f=>f());

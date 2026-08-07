@@ -30,6 +30,8 @@ function alumno(host,qid){
   const card=el('div',{class:'card exq'},exMeta(q),
     el('h3',{},'Elige tu respuesta y alza el celular 📱'));
   const code=codeBox(card);code.textContent=q.code;
+  exDatos(q,card);
+  if(q.enunciado)card.append(el('p',{class:'note'},q.enunciado));
   const opts=el('div',{class:'exopts'});card.append(opts);
   q.opciones.forEach((o,oi)=>{
     const [letra,nombre,color]=COLORES[oi];
@@ -84,6 +86,8 @@ function proyector(host){
     const izq=el('div',{class:'vivoizq'});
     izq.append(exMeta(q));
     const code=codeBox(izq);code.textContent=q.code;
+    exDatos(q,izq);
+    if(q.enunciado)izq.append(el('p',{class:'note'},q.enunciado));
     const opts=el('div',{class:'exopts'});izq.append(opts);
     const botones=q.opciones.map((o,oi)=>{
       const [letra,,color]=COLORES[oi];

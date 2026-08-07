@@ -1,6 +1,6 @@
 'use strict';
 /* Boss final (idea 12): un DataFrame corrupto se sana con cada operación
-   correcta. 6 rondas = el pipeline del Certamen 2. Salidas verificadas
+   correcta. 6 rondas = el pipeline completo de limpieza. Salidas verificadas
    (mediana de monto 12990; mediana de edad con el 950 adentro = 34). */
 (function(){
 
@@ -37,7 +37,8 @@ const RONDAS=[
   meta:'Rellena los montos sin perder filas y sin inventar compras gratis.',
   ops:["df['monto'] = df['monto'].fillna(df['monto'].median())","df = df.dropna()","df['monto'] = df['monto'].fillna(0)"],ok:0,
   explica:"<code>dropna()</code> sacrificaría 2 de 7 filas (¡28%!) y <code>fillna(0)</code> inventa compras "+
-   "de $0 que hunden el promedio. La <b>mediana</b> (12 990) imputa sin distorsionar — el criterio del Control 3.",
+   "de $0 que hunden el promedio. La <b>mediana</b> (12 990) imputa sin distorsionar: es el criterio "+
+   "por defecto en variables de magnitud.",
   before:D1,after:D2},
  {mal:'👹 Un cliente dice tener 950 años. El jefe ruge con energía de outlier.',
   meta:'Neutraliza la edad imposible sin eliminar al cliente.',
@@ -51,7 +52,7 @@ const RONDAS=[
   ops:["df['ciudad'] = df['ciudad'].str.strip().str.lower()","df['ciudad'] = df['ciudad'].map({'stgo': 'stgo'})","df['ciudad'] = df['ciudad'].replace('STGO', 'stgo')"],ok:0,
   explica:"El <code>map</code> incompleto convierte en <b>NaN</b> todo lo que no esté en el diccionario "+
    "(¡adiós conce!) y el <code>replace</code> puntual deja pasar 'CONCE' y 'Conce  '. "+
-   "<code>.str.strip().str.lower()</code> normaliza TODO de una pasada — clase 17 de cadenas.",
+   "<code>.str.strip().str.lower()</code> normaliza TODO de una pasada, sin ir caso por caso.",
   before:D3,after:D4},
  {mal:'⏳ Las fechas son texto DD-MM-AAAA: el jefe distorsiona el tiempo (ordena alfabético).',
   meta:'Convierte la columna a fechas de verdad.',
@@ -72,8 +73,8 @@ const RONDAS=[
 registerExercise({
   id:'boss',
   title:'Boss final: el DataFrame corrupto',
-  lead:'Un dataset poseído por todos los males del semestre. Elige la operación correcta '+
-       'en cada ronda para sanarlo — el Certamen 2 como videojuego.',
+  lead:'Un dataset poseído por todos los males posibles: nulos, outliers, texto sucio, '+
+       'fechas de mentira. Elige la operación correcta en cada ronda para sanarlo.',
   build(sec){
     const host=el('div');sec.append(host);
     let ronda=0,vidas=3,fallos=0;

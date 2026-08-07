@@ -1,11 +1,11 @@
 'use strict';
-/* Módulo: Fechas — to_datetime, accesor .dt, Timedelta, resample y date_range
-   (clase 22 de 2026-1 y Ejercicio Integrador 2). Datos verificados con pandas. */
+/* Módulo: Fechas — to_datetime, accesor .dt, Timedelta, resample y date_range.
+   Datos verificados con pandas. */
 (function(){
 registerModule({
   id:'fechas',
   title:'Fechas',
-  lead:'Una fecha guardada como texto ordena mal y no se puede restar. El flujo del curso: '+
+  lead:'Una fecha guardada como texto ordena mal y no se puede restar. El flujo es siempre el mismo: '+
        'parsear con to_datetime, extraer componentes con .dt, restar para obtener Timedelta '+
        'y agrupar en el tiempo con resample.',
   build(sec){
@@ -73,7 +73,7 @@ registerModule({
         el('h3',{html:'Restar fechas: <code>Timedelta</code>'}),
         el('p',{class:'note',html:'Pedido y entrega de 4 despachos. Restar dos columnas de fecha '+
           'da un <b>Timedelta</b> («3 days») y <code>.dt.days</code> lo convierte en número — '+
-          'así se calculan demoras y atrasos en el Ejercicio Integrador 2.'}));
+          'así se calculan demoras, atrasos y duraciones.'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
       const mount=el('div');card.append(mount);
@@ -176,8 +176,8 @@ registerModule({
       };
       const card=el('div',{class:'card'},
         el('h3',{html:'<code>pd.date_range</code>: fabricar fechas'}),
-        el('p',{class:'note',html:'Genera secuencias regulares de fechas. En el Ejercicio Integrador 2 se usa '+
-          'para armar el calendario completo y descubrir días sin pedidos.'}));
+        el('p',{class:'note',html:'Genera secuencias regulares de fechas. Sirve para armar el calendario '+
+          'completo y descubrir los días en que no pasó nada (los que faltan en los datos).'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
       const chips=el('div');card.append(chips);

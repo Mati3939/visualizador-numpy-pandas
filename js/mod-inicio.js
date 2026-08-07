@@ -1,5 +1,5 @@
 'use strict';
-/* Portada: el menú del curso es, como corresponde, un DataFrame.
+/* Portada: el menú del visualizador es, como corresponde, un DataFrame.
    En pantallas angostas se muestra transpuesto (df_menu.T) — y eso también enseña. */
 (function(){
 

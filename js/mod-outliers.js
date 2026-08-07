@@ -12,7 +12,7 @@ registerModule({
       for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
       return n;
     };
-    /* sueldos mensuales (miles de CLP) de analistas de datos — inspirado en DataAnalyst.csv del curso */
+    /* sueldos mensuales (miles de CLP) de analistas de datos */
     const DATA=[650,720,780,810,690,850,920,880,760,730,990,1050,840,910,700,880,820,950,1100,760,890,3900,4800,150];
 
     const quantile=(arr,q)=>{ /* interpolación lineal, como numpy/pandas */
@@ -63,8 +63,8 @@ registerModule({
     card.append(el('p',{class:'note',html:'<b>¿IQR, z-score o MAD?</b> El z-score usa media y desviación estándar, que los mismos outliers '+
       'distorsionan (¡el outlier se esconde a sí mismo!). El IQR usa cuartiles, robustos. El <b>MAD</b> es aún más duro de engañar: '+
       'mediana de las distancias a la mediana — cambia el método aquí arriba y nota que sus cercas casi no se mueven al eliminar outliers. '+
-      'Regla práctica del curso: boxplot/IQR primero, z-score solo si la variable es aproximadamente normal, MAD cuando hay muchos extremos. '+
-      '(La clase 15 menciona además <i>Isolation Forest</i>, un método de ML fuera del alcance de este visualizador.) '+
+      'Regla práctica: boxplot/IQR primero, z-score solo si la variable es aproximadamente normal, MAD cuando hay muchos extremos. '+
+      '(Existen además métodos de ML como <i>Isolation Forest</i>, fuera del alcance de este visualizador.) '+
       'Y antes de borrar un outlier pregúntate: ¿es un error de digitación o un dato real e interesante?'}));
 
     /* puntos persistentes */

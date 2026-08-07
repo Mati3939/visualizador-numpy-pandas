@@ -6,7 +6,7 @@ registerModule({
   lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
        'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
   build(sec){
-    /* ventas de una cafetería universitaria — inspirado en cafe_sales.csv del curso */
+    /* ventas de una cafetería universitaria */
     const COLS=['producto','sucursal','monto'];
     const ROWS=[
       ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
