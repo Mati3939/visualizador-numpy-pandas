@@ -425,11 +425,11 @@ const BANCO_BUGS=[
          "                   'tarifa': [1000, 900, 1200]})",
          "activos = df[df['estado'] == 'activo']",
          "activos['tarifa'] = 1500",
-         "print(df)   # df sigue igual… y salta un warning"],
+         "print(df)   # df sigue igual"],
  bug:3,pista:"¿activos es el DataFrame original o una copia?",
- explica:"<code>activos</code> es una <b>copia filtrada</b>: escribir sobre ella dispara el "+
-  "<i>SettingWithCopyWarning</i> y el df original no cambia. Para modificar el original se filtra y asigna "+
-  "en una sola operación con <code>loc</code>.",
+ explica:"<code>activos</code> es una <b>copia filtrada</b>: escribir sobre ella no toca el df original. "+
+  "Pandas 2 avisaba con un <i>SettingWithCopyWarning</i>; desde pandas 3 el cambio se pierde <b>en silencio</b>, "+
+  "así que el hábito correcto es filtrar y asignar en una sola operación con <code>loc</code>.",
  fix:"df.loc[df['estado'] == 'activo', 'tarifa'] = 1500"},
 
 {id:'b05',tema:'nulos',origen:'Datos faltantes',nivel:1,

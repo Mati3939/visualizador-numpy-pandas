@@ -1,6 +1,6 @@
 'use strict';
 /* Generador de códigos QR en JS puro (sin dependencias) para el modo ayudantía.
-   Modo byte, corrección L, versiones 1–9, máscara 0 fija.
+   Modo byte, corrección L, versiones 1–9; elige la máscara de menor penalización.
    Verificado módulo a módulo contra python-qrcode (misma versión/EC/máscara):
    matrices idénticas ⇒ escaneable. Uso: qrCanvas('https://…', 6) → <canvas>. */
 (function(){
@@ -122,7 +122,8 @@ function qrMatrix(text){
       set(N-11+(i%3),Math.floor(i/3),b);
     }
   }
-  /* --- colocar datos en zigzag con máscara 0: (r+c)%2===0 invierte --- */
+  /* --- colocar datos en zigzag, todavía sin máscara --- */
+  const datos=[]; // posiciones de los módulos de datos, en orden de colocación
   let bitIdx=0;
   const total=cw.length*8;
   const bitAt=k=>(cw[Math.floor(k/8)]>>(7-(k%8)))&1;
@@ -133,25 +134,71 @@ function qrMatrix(text){
       const r=up?N-1-k:k;
       for(const c of [col,col-1]){
         if(M[r][c]!==null)continue;
-        let b=bitIdx<total?bitAt(bitIdx):0;
-        bitIdx++;
-        if((r+c)%2===0)b^=1; // máscara 0
-        M[r][c]=b;
+        M[r][c]=bitIdx<total?bitAt(bitIdx):0;
+        datos.push([r,c]); bitIdx++;
       }
     }
     up=!up; col-=2;
   }
-  /* --- info de formato: EC L (01) + máscara 000, BCH(15,5), XOR 0x5412 --- */
-  const fmt=bch(0b01000,0x537,5,15)^0x5412;
-  const fbit=i=>(fmt>>(14-i))&1;
-  /* copia 1: alrededor del finder superior izquierdo */
-  const c1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
-  c1.forEach(([r,c],i)=>set(r,c,fbit(i)));
-  /* copia 2: bajo el finder inferior izq + derecha del superior derecho */
-  const c2=[[N-1,8],[N-2,8],[N-3,8],[N-4,8],[N-5,8],[N-6,8],[N-7,8],
-            [8,N-8],[8,N-7],[8,N-6],[8,N-5],[8,N-4],[8,N-3],[8,N-2],[8,N-1]];
-  c2.forEach(([r,c],i)=>set(r,c,fbit(i)));
-  return M;
+  /* --- las 8 máscaras del estándar --- */
+  const MASCARAS=[
+    (r,c)=>(r+c)%2===0,               (r,c)=>r%2===0,
+    (r,c)=>c%3===0,                   (r,c)=>(r+c)%3===0,
+    (r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,
+    (r,c)=>((r*c)%2+(r*c)%3)===0,     (r,c)=>(((r*c)%2+(r*c)%3)%2)===0,
+    (r,c)=>(((r+c)%2+(r*c)%3)%2)===0,
+  ];
+  /* info de formato: EC L (01) + nº de máscara, BCH(15,5), XOR 0x5412 */
+  const escribeFormato=(G,m)=>{
+    const f=bch(0b01000|m,0x537,5,15)^0x5412;
+    const fbit=i=>(f>>(14-i))&1;
+    /* copia 1: alrededor del finder superior izquierdo */
+    [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]]
+      .forEach(([r,c],i)=>{G[r][c]=fbit(i);});
+    /* copia 2: bajo el finder inferior izq + derecha del superior derecho */
+    [[N-1,8],[N-2,8],[N-3,8],[N-4,8],[N-5,8],[N-6,8],[N-7,8],
+     [8,N-8],[8,N-7],[8,N-6],[8,N-5],[8,N-4],[8,N-3],[8,N-2],[8,N-1]]
+      .forEach(([r,c],i)=>{G[r][c]=fbit(i);});
+  };
+  /* penalización del estándar (ISO/IEC 18004 §8.8.2): a menor puntaje,
+     menos zonas confusas y más fácil de leer para la cámara de un celular */
+  const penaliza=G=>{
+    let p=0;
+    for(let i=0;i<N;i++){
+      for(const linea of [G[i],G.map(f=>f[i])]){
+        let run=1; // N1: rachas de 5 o más del mismo color
+        for(let j=1;j<N;j++){
+          if(linea[j]===linea[j-1])run++;
+          else{ if(run>=5)p+=3+(run-5); run=1; }
+        }
+        if(run>=5)p+=3+(run-5);
+      }
+    }
+    for(let r=0;r<N-1;r++)for(let c=0;c<N-1;c++){ // N2: bloques 2×2 iguales
+      const v=G[r][c];
+      if(v===G[r][c+1]&&v===G[r+1][c]&&v===G[r+1][c+1])p+=3;
+    }
+    const A=[1,0,1,1,1,0,1,0,0,0,0], B=[0,0,0,0,1,0,1,1,1,0,1]; // N3: falso finder
+    const igual=(l,j,pat)=>pat.every((v,k)=>l[j+k]===v);
+    for(let i=0;i<N;i++){
+      const fila=G[i], colu=G.map(f=>f[i]);
+      for(let j=0;j+11<=N;j++){
+        if(igual(fila,j,A)||igual(fila,j,B))p+=40;
+        if(igual(colu,j,A)||igual(colu,j,B))p+=40;
+      }
+    }
+    let osc=0; for(const f of G)for(const v of f)osc+=v; // N4: desbalance claro/oscuro
+    return p+10*Math.floor(Math.abs(osc*100/(N*N)-50)/5);
+  };
+  let mejorM=null, mejorP=Infinity;
+  for(let m=0;m<8;m++){
+    const G=M.map(f=>f.slice());
+    for(const [r,c] of datos)if(MASCARAS[m](r,c))G[r][c]^=1;
+    escribeFormato(G,m);
+    const p=penaliza(G);
+    if(p<mejorP){mejorP=p; mejorM=G;}
+  }
+  return mejorM;
 }
 
 function qrCanvas(text,scale=6,quiet=4){

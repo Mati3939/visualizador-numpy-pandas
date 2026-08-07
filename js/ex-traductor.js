@@ -4,8 +4,10 @@
 (function(){
 
 const ERRORES=[
- {re:/SettingWithCopyWarning/i,nombre:'SettingWithCopyWarning',
-  trad:'Estás escribiendo sobre una COPIA filtrada del DataFrame, no sobre el original.',
+ {re:/SettingWithCopyWarning|ChainedAssignmentError/i,nombre:'SettingWithCopyWarning',
+  trad:'Estás escribiendo sobre una COPIA filtrada del DataFrame, no sobre el original. '+
+       'Desde pandas 3 el aviso desaparece y el cambio simplemente se pierde: el síntoma pasa a ser '+
+       '«modifiqué el df y quedó igual».',
   causa:'Encadenaste un filtro y luego una asignación: <code>df[df.x &gt; 0][\'y\'] = 1</code> o guardaste el filtro en una variable y escribiste ahí.',
   fix:"df.loc[df['x'] > 0, 'y'] = 1   # filtrar y asignar EN UNA sola operación",
   mod:['wrangling','Data wrangling']},

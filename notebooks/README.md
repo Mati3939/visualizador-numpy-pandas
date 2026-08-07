@@ -16,10 +16,10 @@ en [`soluciones/`](soluciones/).
 | 04 | [DataFrames](04_dataframes.ipynb) | Laboratorio II | loc/iloc, filtros, exploración |
 | 05 | [Matplotlib](05_visualizacion.ipynb) | Turismo aventura | hist, línea, barras, scatter |
 | 06 | [Valores faltantes](06_valores_faltantes.ipynb) | Telemedicina | isnull, dropna, imputación |
-| 07 | [Outliers y limpieza](07_outliers_wrangling.ipynb) | VeloCity (bicicletas) | IQR, duplicados, cut, map |
+| 07 | [Outliers y limpieza](07_outliers_wrangling.ipynb) | Arriendo de bicicletas | IQR, duplicados, cut, map |
 | 08 | [GroupBy y pivoteo](08_groupby_pivoteo.ipynb) | Cafetería de Concepción | groupby, agg, pivot_table |
 | 09 | [Joins y concat](09_joins.ipynb) | Ciclovías de Concepción | merge, how, suffixes, concat |
-| 10 | [Fechas + integrador](10_fechas_integrador.ipynb) | App de delivery | to_datetime, .dt, resample |
+| 10 | [Fechas](10_fechas_integrador.ipynb) | App de delivery | to_datetime, .dt, resample |
 
 **Cómo usarlos**: ábrelos en [Google Colab](https://colab.research.google.com/github/Mati3939/visualizador-numpy-pandas/)
 (cada notebook trae su botón), o localmente con Jupyter. Se recomienda seguirlos

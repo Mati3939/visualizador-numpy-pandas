@@ -8,7 +8,7 @@
 /* ============ Paleta y temas ============ */
 :root{
   color-scheme:light;
-  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#6b6a65;
   --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
   --s1:#2a78d6; --s2:#008300; --s3:#e87ba4; --s4:#eda100; --s5:#1baf7a; --s6:#eb6834; --s7:#4a3aa7; --s8:#e34948;
   --seq100:#cde2fb; --seq200:#9ec5f4; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95; --seq700:#0d366b;
@@ -32,6 +32,8 @@
 :root.presenta{ font-size:20px; --cell:64px; --cellgap:8px; }
 
 *{box-sizing:border-box}
+/* foco visible: la app se maneja con teclado (1–9, 0, ←/→) y hay que ver dónde se está */
+:focus-visible{outline:2px solid var(--s1); outline-offset:2px; border-radius:4px;}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -337,6 +339,8 @@ kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; 
      Stepper(mount, steps, reset) — animación paso a paso (← → en teclado)
      flipRows(container, mutate)  — anima reordenación de filas
      codeBox(mount)  btnGroup(mount, items, onpick)
+     addRelayout(nodo, fn, dispose?) / relayout() — recalcular medidas; las
+       entradas cuyo nodo ya salió del DOM se descartan solas (sin fugas)
    Convenciones CSS: ver css/app.css (.cell .hl .ok .res .off …, .dfc .nan …)
    ===================================================================== */
 const $=(s,r=document)=>r.querySelector(s);
@@ -354,7 +358,19 @@ function el(tag,attrs={},...kids){
   return n;
 }
 const fmt=x=>(typeof x==='number'&&!Number.isInteger(x))?x.toFixed(1).replace('.',','):String(x);
+/* Relayout: los módulos se construyen ocultos (las medidas dan 0), así que hay
+   que recalcular al activarlos. Cada entrada queda ligada a un nodo; cuando ese
+   nodo sale del DOM (ejercicio ya descartado) se elimina junto con su observer,
+   para que recorrer muchas preguntas no acumule closures ni MutationObservers. */
 const RELAYOUT=[];
+function addRelayout(node,fn,dispose){ RELAYOUT.push({node,fn,dispose}); }
+function relayout(){
+  for(let i=RELAYOUT.length-1;i>=0;i--){
+    const e=RELAYOUT[i];
+    if(!e.node.isConnected){ if(e.dispose)e.dispose(); RELAYOUT.splice(i,1); continue; }
+    e.fn();
+  }
+}
 function cellMetrics(){
   const cs=getComputedStyle(document.documentElement);
   return {size:parseFloat(cs.getPropertyValue('--cell')), gap:parseFloat(cs.getPropertyValue('--cellgap'))};
@@ -366,7 +382,7 @@ class CellGrid{
     this.stage=el('div',{class:'stage'});
     mount.append(this.stage);
     this.cells=new Map();
-    RELAYOUT.push(()=>this.layout());
+    addRelayout(this.stage,()=>this.layout());
   }
   /* defs: [{id, text, r, c, cls, w}] — w = ancho en unidades de celda */
   setCells(defs){
@@ -425,7 +441,7 @@ class DfTable{
       this._raf=requestAnimationFrame(()=>{this._raf=0; this._align();});
     });
     this._mo.observe(this.root,{childList:true,characterData:true,subtree:true});
-    RELAYOUT.push(()=>this._align());
+    addRelayout(this.root,()=>this._align(),()=>this._mo.disconnect());
   }
   /* columnas uniformes tipo planilla: todas las filas comparten el ancho máximo de cada columna */
   _align(){
@@ -595,7 +611,7 @@ function activate(id){
   if(!keep)history.replaceState(null,'','#'+id);
   if(!m._built){ m.build(m._sec); m._built=true; }
   /* siempre re-layout: el módulo pudo construirse oculto o cambió la tipografía */
-  RELAYOUT.forEach(f=>f());
+  relayout();
   ACTIVE_STEPPER=(STEPPERS_BY_MOD[id]||[null])[0];
   window.scrollTo({top:0});
 }
@@ -649,17 +665,25 @@ function btnGroup(mount,items,onpick,activeFirst=true){
 document.addEventListener('DOMContentLoaded',()=>{
   const btnTheme=$('#btnTheme'), btnPres=$('#btnPres');
   const THEMES=[['','🌗 Auto'],['light','☀️ Claro'],['dark','🌙 Oscuro']];
-  let themeIdx=0;
+  const TKEY='topd_tema';
+  const leerTema=()=>{try{return localStorage.getItem(TKEY)||'';}catch(_){return '';}};
+  const guardarTema=v=>{try{localStorage.setItem(TKEY,v);}catch(_){/* modo incógnito */}};
+  const aplicarTema=v=>{
+    if(v)document.documentElement.dataset.theme=v; else delete document.documentElement.dataset.theme;
+    btnTheme.textContent=(THEMES.find(t=>t[0]===v)||THEMES[0])[1];
+  };
+  /* el tema elegido sobrevive a la recarga: en una sala clara no hay que reclicar */
+  let themeIdx=Math.max(0,THEMES.findIndex(t=>t[0]===leerTema()));
+  aplicarTema(THEMES[themeIdx][0]);
   btnTheme.onclick=()=>{
     themeIdx=(themeIdx+1)%3;
-    const [v,label]=THEMES[themeIdx];
-    if(v)document.documentElement.dataset.theme=v; else delete document.documentElement.dataset.theme;
-    btnTheme.textContent=label;
+    const v=THEMES[themeIdx][0];
+    aplicarTema(v); guardarTema(v);
   };
   btnPres.onclick=()=>{
     const on=document.documentElement.classList.toggle('presenta');
     btnPres.textContent=on?'🖥️ Normal':'🖥️ Presentar';
-    RELAYOUT.forEach(f=>f());
+    relayout();
   };
   document.addEventListener('keydown',e=>{
     if(e.target.matches('input,select,textarea'))return;
@@ -681,11 +705,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 const TEMAS=[
   {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3]]},
   {col:'DataFrames',mod:'df',       items:[['anatomía',0],['loc vs iloc',1]]},
+  {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['plt vs ax',2]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['boxplot',0],['IQR / z-score',0]]},
   {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
   {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
+  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
@@ -700,7 +726,7 @@ registerModule({
     sec.append(card);
     const mount=el('div');card.append(mount);
     const code=codeBox(card);
-    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–8</b> cambia de módulo, '+
+    card.append(el('p',{class:'note',html:'También puedes navegar con el teclado: <b>1–9</b> y <b>0</b> cambian de módulo, '+
       '<b>←/→</b> avanza las animaciones paso a paso. El botón <b>«🖥️ Presentar»</b> agranda todo para el proyector, '+
       'y cada módulo tiene un link directo (por ejemplo <code>#groupby</code>) para compartir un tema puntual.'}));
 
@@ -1615,7 +1641,8 @@ function build(section){
   ));
   section.append(c2);
 
-  let busy2=false;
+  /* token de corrida: Restaurar aborta la animación en vuelo en vez de ignorarse */
+  let run2=0;
   function readDropnaParams(){
     const axis=Number(axisSel.value), how=howSel.value;
     const raw=threshInput.value, thresh = raw===''? null : Number(raw);
@@ -1632,30 +1659,28 @@ function build(section){
     msg2.className='msg'; msg2.textContent='';
   }
   async function onAplicarDropna(){
-    if(busy2) return; busy2=true;
-    try{
-      resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
-      const {axis,how,thresh}=readDropnaParams();
-      const flags = computeDropna(axis,how,thresh);
-      const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
-      for(const i of dropIdx){
-        if(axis===0){
-          t2.rowEls[i].classList.add('roff');
-        } else {
-          t2.headEls[i].classList.add('roff'); t2.headEls[i].style.opacity='.16';
-          t2.cellEls.forEach(row=>{ row[i].classList.add('roff'); row[i].style.opacity='.16'; });
-        }
-        await sleep(120);
+    const t = ++run2;
+    resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
+    const {axis,how,thresh}=readDropnaParams();
+    const flags = computeDropna(axis,how,thresh);
+    const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
+    for(const i of dropIdx){
+      if(axis===0){
+        t2.rowEls[i].classList.add('roff');
+      } else {
+        t2.headEls[i].classList.add('roff'); t2.headEls[i].style.opacity='.16';
+        t2.cellEls.forEach(row=>{ row[i].classList.add('roff'); row[i].style.opacity='.16'; });
       }
-      const total = axis===0? NULOS_ROWS.length : NULOS_COLS.length;
-      const noun = axis===0? 'filas':'columnas';
-      const verbo = dropIdx.length===1? 'Se elimina':'Se eliminan';
-      msg2.className='msg okc';
-      msg2.textContent = `${verbo} ${dropIdx.length} de ${total} ${noun}`;
-      updateCode2();
-    } finally { busy2=false; }
+      await sleep(120); if(t!==run2) return;
+    }
+    const total = axis===0? NULOS_ROWS.length : NULOS_COLS.length;
+    const noun = axis===0? 'filas':'columnas';
+    const verbo = dropIdx.length===1? 'Se elimina':'Se eliminan';
+    msg2.className='msg okc';
+    msg2.textContent = `${verbo} ${dropIdx.length} de ${total} ${noun}`;
+    updateCode2();
   }
-  function onRestaurarDropna(){ if(busy2) return; resetCard2(); }
+  function onRestaurarDropna(){ run2++; resetCard2(); }
   updateCode2();
 
   /* ===================== Tarjeta 3: fillna() ===================== */
@@ -1693,7 +1718,7 @@ function build(section){
   ));
   section.append(c3);
 
-  let busy3=false;
+  let run3=0;
   function updateNote3(strategy, plan){
     let txt='';
     if(strategy==='zero'){
@@ -1717,24 +1742,22 @@ function build(section){
     note3.textContent='';
   }
   async function onAplicarFill(){
-    if(busy3) return; busy3=true;
-    try{
-      resetCard3(); // evita mezclar el resultado con una estrategia aplicada antes, sin pasar por Restaurar
-      const strategy = stratSel.value;
-      const plan = computeFillPlan(strategy);
-      for(const {r,c,val} of plan){
-        const cell = t3.cellEls[r][c];
-        cell.textContent = fmt(val);
-        cell.classList.remove('nan');
-        cell.classList.add('fill');
-        await sleep(150);
-      }
-      updateNote3(strategy, plan);
-      updateCode3(strategy);
-    } finally { busy3=false; }
+    const t = ++run3;
+    resetCard3(); // evita mezclar el resultado con una estrategia aplicada antes, sin pasar por Restaurar
+    const strategy = stratSel.value;
+    const plan = computeFillPlan(strategy);
+    for(const {r,c,val} of plan){
+      const cell = t3.cellEls[r][c];
+      cell.textContent = fmt(val);
+      cell.classList.remove('nan');
+      cell.classList.add('fill');
+      await sleep(150); if(t!==run3) return;
+    }
+    updateNote3(strategy, plan);
+    updateCode3(strategy);
   }
   function onRestaurarFill(){
-    if(busy3) return;
+    run3++;
     resetCard3();
     updateCode3(stratSel.value);
   }
@@ -1992,7 +2015,10 @@ registerModule({
     card.append(msg);
     const code = codeBox(card);
 
+    /* token de corrida: cualquier botón invalida la animación en vuelo */
+    let run1=0;
     function marcar(){
+      run1++;
       table.clearMarks();
       const keep = selectKeep.value;
       const rows = dupRows(keep);
@@ -2005,6 +2031,7 @@ registerModule({
     }
 
     async function dropDup(){
+      const t = ++run1;
       table.clearMarks();
       const keep = selectKeep.value;
       const rows = dupRows(keep);
@@ -2014,11 +2041,12 @@ registerModule({
         table.rowEls[i]._idx.classList.add('dupe');
         table.cellEls[i].forEach(c=>c.classList.add('dupe'));
         table.rowEls[i].classList.add('roff');
-        await sleep(180);
+        await sleep(180); if(t!==run1) return;
       }
     }
 
     function restaurar(){
+      run1++;
       table.clearMarks();
       msg.textContent = '.duplicated().sum() = —';
       code.textContent = '# elige "keep" y presiona un botón ↑';
@@ -2056,12 +2084,15 @@ registerModule({
     const code = codeBox(card);
     code.textContent = '# elige un botón arriba ↑';
 
+    /* token de corrida compartido por replace/map/restaurar */
+    let run2=0;
     async function doReplace(){
+      const t = ++run2;
       table.render();
       for(let i=0;i<DATA.rows.length;i++){
         const cell = table.cellEls[i][0];
         cell.classList.add('hl');
-        await sleep(350);
+        await sleep(350); if(t!==run2) return;
         const val = DATA.rows[i][0];
         cell.classList.remove('hl');
         if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
@@ -2073,11 +2104,12 @@ registerModule({
     }
 
     async function doMap(){
+      const t = ++run2;
       table.render();
       for(let i=0;i<DATA.rows.length;i++){
         const cell = table.cellEls[i][0];
         cell.classList.add('hl');
-        await sleep(350);
+        await sleep(350); if(t!==run2) return;
         const val = DATA.rows[i][0];
         cell.classList.remove('hl');
         if(val==='sí'){ cell.textContent='1'; cell.classList.add('fill'); }
@@ -2089,6 +2121,7 @@ registerModule({
     }
 
     function restaurar(){
+      run2++;
       table.render();
       note.textContent = 'Elige una operación para ver cómo transforma la columna «respuesta».';
       code.textContent = '# elige un botón arriba ↑';
@@ -2479,7 +2512,7 @@ registerModule({
         v=>{how=v;setHashParams({how:v});render();},false);
       howBtns[HOWS.indexOf(how)].classList.add('on');
       window.addEventListener('resize',drawLinks);
-      RELAYOUT.push(drawLinks);
+      addRelayout(card,drawLinks);
       render();
     }
 
@@ -3165,11 +3198,11 @@ const BANCO_BUGS=[
          "                   'tarifa': [1000, 900, 1200]})",
          "activos = df[df['estado'] == 'activo']",
          "activos['tarifa'] = 1500",
-         "print(df)   # df sigue igual… y salta un warning"],
+         "print(df)   # df sigue igual"],
  bug:3,pista:"¿activos es el DataFrame original o una copia?",
- explica:"<code>activos</code> es una <b>copia filtrada</b>: escribir sobre ella dispara el "+
-  "<i>SettingWithCopyWarning</i> y el df original no cambia. Para modificar el original se filtra y asigna "+
-  "en una sola operación con <code>loc</code>.",
+ explica:"<code>activos</code> es una <b>copia filtrada</b>: escribir sobre ella no toca el df original. "+
+  "Pandas 2 avisaba con un <i>SettingWithCopyWarning</i>; desde pandas 3 el cambio se pierde <b>en silencio</b>, "+
+  "así que el hábito correcto es filtrar y asignar en una sola operación con <code>loc</code>.",
  fix:"df.loc[df['estado'] == 'activo', 'tarifa'] = 1500"},
 
 {id:'b05',tema:'nulos',origen:'Datos faltantes',nivel:1,
@@ -3305,7 +3338,7 @@ function exMeta(q){
 function exDatos(q,mount){
   if(!q.datos)return;
   const vm=el('div',{class:'exvisual exdatos'});
-  mount.append(vm); q.datos(vm); RELAYOUT.forEach(f=>f());
+  mount.append(vm); q.datos(vm); relayout();
 }
 const EX_ENUNCIADO='¿Qué imprime? Piensa tu respuesta antes de elegir.';
 
@@ -3349,7 +3382,7 @@ registerExercise({
           reveal.append(el('div',{class:'msg '+(ok?'okc':'err')},
             ok?'✔ ¡Correcto!':'✘ No era esa — mira por qué:'));
           reveal.append(el('p',{class:'note',html:q.explica}));
-          if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+          if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
         }},el('pre',{class:'optcode'},o));
         opts.append(b);
       });
@@ -3394,7 +3427,7 @@ registerExercise({
             reveal.append(el('div',{class:'msg okc'},intentos===0?'✔ ¡Primer intento!':'✔ Encontrado.'));
             reveal.append(el('p',{class:'note',html:q.explica}));
             const fix=codeBox(reveal); fix.innerHTML='# corregido\n'+q.fix;
-            if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+            if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
           }else{
             intentos++;
             d.classList.add('bugmiss');
@@ -3419,7 +3452,7 @@ registerExercise({
 <script>
 'use strict';
 /* Generador de códigos QR en JS puro (sin dependencias) para el modo ayudantía.
-   Modo byte, corrección L, versiones 1–9, máscara 0 fija.
+   Modo byte, corrección L, versiones 1–9; elige la máscara de menor penalización.
    Verificado módulo a módulo contra python-qrcode (misma versión/EC/máscara):
    matrices idénticas ⇒ escaneable. Uso: qrCanvas('https://…', 6) → <canvas>. */
 (function(){
@@ -3541,7 +3574,8 @@ function qrMatrix(text){
       set(N-11+(i%3),Math.floor(i/3),b);
     }
   }
-  /* --- colocar datos en zigzag con máscara 0: (r+c)%2===0 invierte --- */
+  /* --- colocar datos en zigzag, todavía sin máscara --- */
+  const datos=[]; // posiciones de los módulos de datos, en orden de colocación
   let bitIdx=0;
   const total=cw.length*8;
   const bitAt=k=>(cw[Math.floor(k/8)]>>(7-(k%8)))&1;
@@ -3552,25 +3586,71 @@ function qrMatrix(text){
       const r=up?N-1-k:k;
       for(const c of [col,col-1]){
         if(M[r][c]!==null)continue;
-        let b=bitIdx<total?bitAt(bitIdx):0;
-        bitIdx++;
-        if((r+c)%2===0)b^=1; // máscara 0
-        M[r][c]=b;
+        M[r][c]=bitIdx<total?bitAt(bitIdx):0;
+        datos.push([r,c]); bitIdx++;
       }
     }
     up=!up; col-=2;
   }
-  /* --- info de formato: EC L (01) + máscara 000, BCH(15,5), XOR 0x5412 --- */
-  const fmt=bch(0b01000,0x537,5,15)^0x5412;
-  const fbit=i=>(fmt>>(14-i))&1;
-  /* copia 1: alrededor del finder superior izquierdo */
-  const c1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
-  c1.forEach(([r,c],i)=>set(r,c,fbit(i)));
-  /* copia 2: bajo el finder inferior izq + derecha del superior derecho */
-  const c2=[[N-1,8],[N-2,8],[N-3,8],[N-4,8],[N-5,8],[N-6,8],[N-7,8],
-            [8,N-8],[8,N-7],[8,N-6],[8,N-5],[8,N-4],[8,N-3],[8,N-2],[8,N-1]];
-  c2.forEach(([r,c],i)=>set(r,c,fbit(i)));
-  return M;
+  /* --- las 8 máscaras del estándar --- */
+  const MASCARAS=[
+    (r,c)=>(r+c)%2===0,               (r,c)=>r%2===0,
+    (r,c)=>c%3===0,                   (r,c)=>(r+c)%3===0,
+    (r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,
+    (r,c)=>((r*c)%2+(r*c)%3)===0,     (r,c)=>(((r*c)%2+(r*c)%3)%2)===0,
+    (r,c)=>(((r+c)%2+(r*c)%3)%2)===0,
+  ];
+  /* info de formato: EC L (01) + nº de máscara, BCH(15,5), XOR 0x5412 */
+  const escribeFormato=(G,m)=>{
+    const f=bch(0b01000|m,0x537,5,15)^0x5412;
+    const fbit=i=>(f>>(14-i))&1;
+    /* copia 1: alrededor del finder superior izquierdo */
+    [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]]
+      .forEach(([r,c],i)=>{G[r][c]=fbit(i);});
+    /* copia 2: bajo el finder inferior izq + derecha del superior derecho */
+    [[N-1,8],[N-2,8],[N-3,8],[N-4,8],[N-5,8],[N-6,8],[N-7,8],
+     [8,N-8],[8,N-7],[8,N-6],[8,N-5],[8,N-4],[8,N-3],[8,N-2],[8,N-1]]
+      .forEach(([r,c],i)=>{G[r][c]=fbit(i);});
+  };
+  /* penalización del estándar (ISO/IEC 18004 §8.8.2): a menor puntaje,
+     menos zonas confusas y más fácil de leer para la cámara de un celular */
+  const penaliza=G=>{
+    let p=0;
+    for(let i=0;i<N;i++){
+      for(const linea of [G[i],G.map(f=>f[i])]){
+        let run=1; // N1: rachas de 5 o más del mismo color
+        for(let j=1;j<N;j++){
+          if(linea[j]===linea[j-1])run++;
+          else{ if(run>=5)p+=3+(run-5); run=1; }
+        }
+        if(run>=5)p+=3+(run-5);
+      }
+    }
+    for(let r=0;r<N-1;r++)for(let c=0;c<N-1;c++){ // N2: bloques 2×2 iguales
+      const v=G[r][c];
+      if(v===G[r][c+1]&&v===G[r+1][c]&&v===G[r+1][c+1])p+=3;
+    }
+    const A=[1,0,1,1,1,0,1,0,0,0,0], B=[0,0,0,0,1,0,1,1,1,0,1]; // N3: falso finder
+    const igual=(l,j,pat)=>pat.every((v,k)=>l[j+k]===v);
+    for(let i=0;i<N;i++){
+      const fila=G[i], colu=G.map(f=>f[i]);
+      for(let j=0;j+11<=N;j++){
+        if(igual(fila,j,A)||igual(fila,j,B))p+=40;
+        if(igual(colu,j,A)||igual(colu,j,B))p+=40;
+      }
+    }
+    let osc=0; for(const f of G)for(const v of f)osc+=v; // N4: desbalance claro/oscuro
+    return p+10*Math.floor(Math.abs(osc*100/(N*N)-50)/5);
+  };
+  let mejorM=null, mejorP=Infinity;
+  for(let m=0;m<8;m++){
+    const G=M.map(f=>f.slice());
+    for(const [r,c] of datos)if(MASCARAS[m](r,c))G[r][c]^=1;
+    escribeFormato(G,m);
+    const p=penaliza(G);
+    if(p<mejorP){mejorP=p; mejorM=G;}
+  }
+  return mejorM;
 }
 
 function qrCanvas(text,scale=6,quiet=4){
@@ -3799,7 +3879,7 @@ registerExercise({
         el('button',{class:'btn',onclick:config},'↩ Elegir otro ensayo'),
         bCopy));
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
 
     config();
@@ -3858,7 +3938,7 @@ function alumno(host,qid){
     reveal.append(el('div',{class:'msg okc'},
       `✔ Respuesta: ${COLORES[q.correcta][0]} — ${q.opciones[q.correcta]}`));
     reveal.append(el('p',{class:'note',html:q.explica}));
-    if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+    if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
   }},'👀 Ver la respuesta'));
   host.append(card);
 
@@ -3918,7 +3998,7 @@ function proyector(host){
         reveal.textContent='';
         botones.forEach((b,bi)=>b.classList.add(bi===q.correcta?'good':'bad'));
         reveal.append(el('p',{class:'note',html:q.explica}));
-        if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);RELAYOUT.forEach(f=>f());}
+        if(q.visual){const vm=el('div',{class:'exvisual'});reveal.append(vm);q.visual(vm);relayout();}
       }},'🎭 Revelar respuesta')));
   }
   sel.onchange=mostrar;
@@ -4033,7 +4113,7 @@ registerExercise({
       card.append(el('button',{class:'btn primary',style:'margin-top:.6rem',
         onclick:()=>{ronda=0;vidas=3;fallos=0;show();}},'⚔️ Jugar de nuevo'));
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
     function show(){
       host.textContent='';
@@ -4062,7 +4142,7 @@ registerExercise({
             reveal.append(el('p',{class:'note',html:R.explica}));
             reveal.append(el('button',{class:'btn primary',onclick:()=>{ronda++; (ronda>=RONDAS.length)?victoria():show();}},
               ronda===RONDAS.length-1?'🏆 Rematar al jefe':'▶ Siguiente ronda'));
-            RELAYOUT.forEach(f=>f());
+            relayout();
           }else{
             fallos++;vidas--;
             b.classList.add('bad');b.disabled=true;
@@ -4075,7 +4155,7 @@ registerExercise({
         opts.append(b);
       });
       host.append(card);
-      RELAYOUT.forEach(f=>f());
+      relayout();
     }
     show();
   },
@@ -4090,8 +4170,10 @@ registerExercise({
 (function(){
 
 const ERRORES=[
- {re:/SettingWithCopyWarning/i,nombre:'SettingWithCopyWarning',
-  trad:'Estás escribiendo sobre una COPIA filtrada del DataFrame, no sobre el original.',
+ {re:/SettingWithCopyWarning|ChainedAssignmentError/i,nombre:'SettingWithCopyWarning',
+  trad:'Estás escribiendo sobre una COPIA filtrada del DataFrame, no sobre el original. '+
+       'Desde pandas 3 el aviso desaparece y el cambio simplemente se pierde: el síntoma pasa a ser '+
+       '«modifiqué el df y quedó igual».',
   causa:'Encadenaste un filtro y luego una asignación: <code>df[df.x &gt; 0][\'y\'] = 1</code> o guardaste el filtro en una variable y escribiste ahí.',
   fix:"df.loc[df['x'] > 0, 'y'] = 1   # filtrar y asignar EN UNA sola operación",
   mod:['wrangling','Data wrangling']},
@@ -4453,7 +4535,7 @@ registerExercise({
         }
         if(!algo&&!p.out&&!p.err)
           visor.append(el('p',{class:'note'},'Este paso no cambió ningún DataFrame ni imprimió nada.'));
-        RELAYOUT.forEach(f=>f());
+        relayout();
       }
       ir(0);
     }

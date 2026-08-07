@@ -17,17 +17,23 @@ dónde*, no solo el resultado final.
 - **Portada**: el menú es un DataFrame — columnas = temas, filas = contenidos;
   cada celda navega a su tarjeta (y las celdas `NaN` también enseñan algo).
 
-## Módulos (siguen el orden del curso)
+## Módulos (en orden de dificultad)
 
-| # | Módulo | Semana | Qué se visualiza |
-|---|--------|--------|------------------|
-| 1 | Arrays NumPy | 1–2 | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting |
-| 2 | DataFrames | 3 | anatomía (índice/columnas/Series), `loc` vs `iloc` |
-| 3 | Valores perdidos | 4 | matriz de nulos estilo missingno, `dropna`, `fillna` |
-| 4 | Outliers | 8–9 | boxplot interactivo, umbral IQR/z-score, media vs mediana |
-| 5 | Data wrangling | 9–10 | duplicados, `replace`/`map`, `pd.cut`, `sort_values` |
-| 6 | GroupBy y pivoteo | 11 | split-apply-combine animado, `pivot_table` como heatmap |
-| 7 | Joins y concat | 12 | `merge` con llaves conectadas, Venn por `how`, `concat` |
+| # | Módulo | Qué se visualiza |
+|---|--------|------------------|
+| 2 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting |
+| 3 | DataFrames | anatomía (índice/columnas/Series), `loc` vs `iloc` |
+| 4 | Visualización | qué gráfico usar según la pregunta, anatomía de la figura, `plt` vs `ax` |
+| 5 | Valores perdidos | matriz de nulos estilo missingno, `dropna`, `fillna` |
+| 6 | Outliers | boxplot interactivo, umbral IQR/z-score, media vs mediana |
+| 7 | Data wrangling | duplicados, `replace`/`map`, `pd.cut`, `sort_values` |
+| 8 | GroupBy y pivoteo | split-apply-combine animado, `pivot_table` como heatmap |
+| 9 | Joins y concat | `merge` con llaves conectadas, Venn por `how`, `concat` |
+| 0 | Fechas | `to_datetime`, accesor `.dt`, `Timedelta`, `resample`, `date_range` |
+
+El número es la tecla que abre cada módulo (el 1 es la portada). Además hay una
+sección **🎯 Ejercicios** con predice-la-salida, detective de bugs, simulacro
+cronometrado, boss final, traductor de errores, Python real y modo en vivo.
 
 Cada tarjeta muestra el **código pandas/numpy equivalente**, que se actualiza al
 cambiar los parámetros (el parámetro que cambió queda destacado).
@@ -42,5 +48,5 @@ js/mod-*.js       un archivo por módulo (se registran con registerModule)
 tools/build.py    genera dist/visualizador-topd.html (archivo único)
 ```
 
-Los datasets son pequeños y están inspirados en los del curso (estudiantes y
+Los datasets son pequeños e inventados para el visualizador (estudiantes y
 carreras, ventas de cafetería, sueldos de analistas, bicicletas de Concepción).
