@@ -45,6 +45,75 @@ const BANCO_PREDICE=[
  explica:"5 × 3 = 15 celdas pero el array tiene 12: <code>cannot reshape array of size 12 into shape (5,3)</code>. "+
   "reshape <b>nunca inventa ni bota datos</b>. Prueba el caso 5×3 ✗ en el <a href='#numpy'>módulo Arrays NumPy</a>."},
 
+{id:'p48',tema:'numpy',origen:'Call center',nivel:1,
+ code:"duracion = np.array([3.5, 12.0, 7.8, 1.2, 15.4])\nprint(np.where(duracion >= 10))",
+ opciones:['(array([1, 4]),)','[1, 4]','(array([12.0, 15.4]),)','[False True False False True]'],correcta:0,
+ explica:"Con un solo argumento, <code>np.where(cond)</code> devuelve una <b>tupla de arrays de índices</b> (uno por dimensión), "+
+  "no los valores ni la máscara. En 1D se extrae con <code>[0]</code> — distinto del ternario de tres argumentos, que sí arma "+
+  "un array de valores. Compáralos en el <a href='#numpy'>módulo Arrays NumPy</a>."},
+
+{id:'p49',tema:'numpy',origen:'Notas',nivel:2,
+ code:"notas = np.array([55, 68, 82, 91])\nletra = np.where(notas >= 90, 'A',\n         np.where(notas >= 70, 'B', 'C'))\nprint(letra)",
+ opciones:["['C' 'C' 'B' 'A']","['B' 'B' 'B' 'A']","['A' 'B' 'C' 'C']","['C' 'C' 'C' 'A']"],correcta:0,
+ explica:"Cada <code>np.where</code> evalúa <b>todo el array a la vez</b>: primero separa quién llega a 90 (el 91 → 'A') y el "+
+  "resto cae al <code>where</code> interior, que separa quién llega a 70 (el 82 → 'B') dejando el resto en 'C' (55 y 68). "+
+  "Anidar así arma tramos sin repetir la condición anterior."},
+
+{id:'p50',tema:'numpy',origen:'Mesa de ayuda',nivel:2,
+ code:"tiempos = np.array([48, 12, 95, 30])\ntecnico = np.array(['Ana','Beto','Caro','Dan'])\nidx = np.argsort(tiempos)\nprint(tecnico[idx])",
+ opciones:["['Beto' 'Dan' 'Ana' 'Caro']","['Ana' 'Beto' 'Caro' 'Dan']","[1 3 0 2]","['Caro' 'Ana' 'Dan' 'Beto']"],correcta:0,
+ explica:"<code>argsort</code> no ordena <code>tiempos</code>: entrega los <b>índices</b> que lo ordenarían (menor a mayor). "+
+  "Usar esos mismos índices para indexar <code>tecnico</code> reordena el segundo array <b>en paralelo</b>, sin perder la "+
+  "relación entre ambos."},
+
+{id:'p51',tema:'numpy',origen:'Dólar observado',nivel:1,
+ code:"precio_dolar = np.array([905, 912, 898, 940])\nprint(np.argmin(precio_dolar))",
+ opciones:['2','898','0','3'],correcta:0,
+ explica:"<code>argmin</code> devuelve la <b>posición</b> del valor mínimo (898 está en el índice 2), no el valor mismo. "+
+  "Para el precio real hay que volver a indexar: <code>precio_dolar[np.argmin(precio_dolar)]</code>."},
+
+{id:'p52',tema:'numpy',origen:'Inventario',nivel:1,
+ code:"disponible = np.array([True, False, True])\nbarato = np.array([True, True, False])\nprint(disponible and barato)",
+ opciones:['ValueError','[True, False, False]','True','[True, True, True]'],correcta:0,
+ explica:"<code>and</code> exige reducir el array a un único booleano y no sabe cómo hacerlo con más de un elemento: "+
+  "truena con <i>«the truth value of an array...is ambiguous»</i>. Para combinar máscaras elemento a elemento se usa "+
+  "<code>&amp;</code> — nunca <code>and</code>/<code>or</code> entre arrays."},
+
+{id:'p53',tema:'numpy',origen:'Arrays',nivel:1,
+ code:"a = np.arange(0, 20, 5)\nb = np.linspace(0, 20, num=5)\nprint(a[-1], b[-1])",
+ opciones:['15 20.0','20 20.0','15 16.0','20 16.0'],correcta:0,
+ explica:"<code>arange</code> usa el tercer número como <b>paso</b> y <b>excluye</b> el límite superior (se queda en 15); "+
+  "<code>linspace</code> usa el tercer número como <b>cantidad de valores</b> e <b>incluye</b> ambos extremos por defecto, "+
+  "así que sí llega a 20.0."},
+
+{id:'p54',tema:'numpy',origen:'Turnos',nivel:2,
+ code:"horas = np.array([8, 9, 10, 11, 12, 13, 14, 15, 16])\nprint(horas[7:1:-1])",
+ opciones:['[15 14 13 12 11 10]','[16 15 14 13 12 11 10]','[ 9 10 11 12 13 14]','[16 15 14 13 12 11 10  9  8]'],correcta:0,
+ explica:"Con paso negativo el recorrido va <b>de atrás hacia adelante</b>: parte en el índice 7 (15) y avanza hasta "+
+  "<b>justo después</b> del índice 1 (se detiene en 10, sin incluir el 9). Igual que en positivo, el <code>fin</code> "+
+  "queda excluido."},
+
+{id:'p55',tema:'numpy',origen:'Arrays',nivel:2,
+ code:"a = np.array([[1, 2], [3, 4]])\nb = a.ravel()\nb[0] = 99\nprint(a[0, 0])",
+ opciones:['99','1','TypeError: assignment destination is read-only','2'],correcta:0,
+ explica:"<code>ravel()</code> devuelve, siempre que puede, una <b>vista</b> que comparte memoria con el original: "+
+  "modificar <code>b</code> modifica <code>a</code>. <code>flatten()</code> en cambio <b>siempre copia</b>, así que el "+
+  "mismo truco sobre su resultado dejaría <code>a</code> intacto."},
+
+{id:'p56',tema:'numpy',origen:'Flota vehicular',nivel:2,
+ code:"fallas = np.array([301, 204, 301, 105, 204, 301])\nvalores, conteos = np.unique(fallas, return_counts=True)\nprint(valores[np.argmax(conteos)])",
+ opciones:['301','2','204','105'],correcta:0,
+ explica:"<code>unique(..., return_counts=True)</code> entrega los códigos distintos <b>ordenados</b> junto con cuántas "+
+  "veces aparece cada uno; <code>argmax(conteos)</code> ubica la posición del conteo más alto, que hay que usar para "+
+  "indexar <code>valores</code> (no <code>conteos</code>) y recuperar el código real."},
+
+{id:'p57',tema:'numpy',origen:'Matrices',nivel:1,
+ code:"m = np.array([[1, 2], [3, 4]])\nn = np.array([[2, 0], [1, 3]])\nprint((m @ n)[0, 1])",
+ opciones:['6','0','4','ValueError'],correcta:0,
+ explica:"<code>@</code> es <b>producto matricial</b>: la celda [0,1] sale de la fila 0 de <code>m</code> por la columna "+
+  "1 de <code>n</code> (1×0 + 2×3 = 6). <code>m * n</code> en cambio multiplica <b>elemento a elemento</b> y en esa "+
+  "misma posición daría 0 (2×0)."},
+
 /* ===== DataFrames ===== */
 {id:'p06',tema:'df',origen:'Series',nivel:2,
  code:"s1 = pd.Series([10, 20, 30], index=['a', 'b', 'c'])\ns2 = pd.Series([1, 2, 3], index=['b', 'c', 'd'])\nprint((s1 + s2)['a'])",
@@ -513,4 +582,45 @@ const BANCO_BUGS=[
  explica:"<code>duplicated()</code> compara la <b>fila completa</b> y el id_viaje distinto hace única "+
   "cada fila. Para buscar patentes repetidas hay que mirar solo esa columna con <code>subset</code>.",
  fix:"repetidos = df.duplicated(subset='patente').sum()   # 1"},
+
+{id:'b13',tema:'numpy',origen:'Inventario',nivel:1,
+ lineas:["disponible = np.array([True, False, True])",
+         "barato = np.array([True, True, False])",
+         "buena_oferta = disponible and barato",
+         "print(buena_oferta)   # ¿cuáles cumplen ambas condiciones?"],
+ bug:2,pista:"¿and reduce el array a un solo booleano, o lo recorre elemento a elemento?",
+ explica:"<code>and</code> necesita <b>un solo valor de verdad</b> y no sabe qué hacer con un array de varios "+
+  "elementos: lanza <i>ValueError: the truth value of an array...is ambiguous</i>. El Y lógico elemento a "+
+  "elemento es <code>&amp;</code>.",
+ fix:"buena_oferta = disponible & barato"},
+
+{id:'b14',tema:'numpy',origen:'Dólar observado',nivel:1,
+ lineas:["precio_dolar = np.array([905, 912, 898, 940])",
+         "fecha = np.array(['02-06','03-06','04-06','05-06'])",
+         "dia_mas_caro = np.argmax(precio_dolar)",
+         "print(f\"El día más caro tuvo un precio de {dia_mas_caro}\")"],
+ bug:3,pista:"¿dia_mas_caro guarda un precio o una posición?",
+ explica:"<code>np.argmax()</code> devuelve el <b>índice</b> del máximo (acá, 3), no el precio. El mensaje "+
+  "imprime «un precio de 3» en vez del valor real: falta volver a indexar <code>precio_dolar</code> con ese índice.",
+ fix:"print(f\"El día más caro tuvo un precio de {precio_dolar[dia_mas_caro]}\")"},
+
+{id:'b15',tema:'numpy',origen:'Arrays',nivel:2,
+ lineas:["datos = np.array([10, 20, 30, 40, 50])",
+         "copia = datos[1:4]",
+         "copia[0] = 999",
+         "print(datos)   # esperaba que datos no cambiara"],
+ bug:1,pista:"¿Un slice de NumPy es una copia independiente o comparte memoria?",
+ explica:"Un slice básico de NumPy es una <b>vista</b>: comparte memoria con el array original. Modificar "+
+  "<code>copia</code> modifica <code>datos</code> en el mismo lugar. Para una copia real hace falta pedirla "+
+  "explícitamente.",
+ fix:"copia = datos[1:4].copy()"},
+
+{id:'b16',tema:'numpy',origen:'Arrays',nivel:1,
+ lineas:["datos = np.arange(10)",
+         "matriz = datos.reshape(3, 4)",
+         "print(matriz)   # ValueError inesperado"],
+ bug:1,pista:"¿3 × 4 coincide con cuántos elementos tiene datos?",
+ explica:"<code>reshape</code> exige que el nuevo <code>shape</code> tenga el <b>mismo total de elementos</b>: "+
+  "3×4 = 12, pero <code>datos</code> tiene 10. reshape nunca inventa ni descarta datos.",
+ fix:"matriz = datos.reshape(2, 5)   # o (5, 2), (10, 1)…"},
 ];

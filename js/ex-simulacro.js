@@ -4,7 +4,7 @@
 (function(){
 
 const URL_PUB='https://mati3939.github.io/visualizador-numpy-pandas/';
-const TODOS=['numpy','df','viz','nulos','outliers','wrangling','groupby','merge','fechas'];
+const TODOS=['numpy','df','fechas','viz','nulos','outliers','wrangling','merge','groupby'];
 const EVALS=[
  {id:'c1',label:'Ensayo 1 · NumPy',temas:['numpy']},
  {id:'c2',label:'Ensayo 2 · NumPy + Pandas',temas:['numpy','df']},

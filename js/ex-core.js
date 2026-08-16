@@ -16,9 +16,9 @@
    ===================================================================== */
 
 const EX_TEMAS=[
-  ['todos','Todos'],['numpy','NumPy'],['df','DataFrames'],['viz','Visualización'],
-  ['nulos','Nulos'],['outliers','Outliers'],['wrangling','Wrangling'],
-  ['groupby','GroupBy'],['merge','Joins'],['fechas','Fechas'],
+  ['todos','Todos'],['numpy','NumPy'],['df','DataFrames'],['fechas','Fechas'],
+  ['viz','Visualización'],['nulos','Nulos'],['outliers','Outliers'],
+  ['wrangling','Wrangling'],['merge','Joins'],['groupby','GroupBy'],
 ];
 const NIVEL=n=>'●'.repeat(n)+'○'.repeat(3-n);
 

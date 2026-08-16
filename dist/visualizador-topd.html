@@ -703,15 +703,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 /* columnas = temas (módulos); filas = contenidos. null → NaN (no hay contenido ahí) */
 const TEMAS=[
-  {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3]]},
+  {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3],['where / argsort',4]]},
   {col:'DataFrames',mod:'df',       items:[['anatomía',0],['loc vs iloc',1]]},
+  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
   {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['plt vs ax',2]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['boxplot',0],['IQR / z-score',0]]},
   {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
-  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
-  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
+  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
@@ -800,7 +800,8 @@ registerModule({
   id:'numpy',
   title:'Arrays NumPy',
   lead:'Un array es una grilla de valores del mismo tipo. Aquí puedes ver cómo se mueven '+
-       'las celdas al cambiar la forma, qué recorre realmente el axis y cómo filtra una máscara booleana.',
+       'las celdas al cambiar la forma, qué recorre realmente el axis, cómo filtra una máscara '+
+       'booleana y por qué las funciones arg… devuelven posiciones y no valores.',
   build(sec){
 
     /* ---------- Tarjeta 1: reshape ---------- */
@@ -1006,6 +1007,136 @@ registerModule({
       new Stepper(card,steps,reset,'numpy');
       reset();
     }
+
+    /* ---------- Tarjeta 5: np.where ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Buscar y decidir: <code>np.where</code>'}),
+        el('p',{class:'note',html:'Con <b>tres argumentos</b> es un if/else vectorizado: recorre el array y devuelve '+
+          'otro <b>del mismo largo</b>. Con <b>un solo argumento</b> cambia de oficio: devuelve las <b>posiciones</b> '+
+          'donde la condición se cumple, no los valores.'}));
+      sec.append(card);
+      const ctr=el('div');card.append(ctr);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const msg=el('div',{class:'msg'});card.append(msg);
+      const code=codeBox(card);
+      const n=[12,45,8,60,33,5,27,51], L=n.length;
+      const lbl=(id,text,r)=>({id,text,r,c:L+0.35,w:2,cls:'hd'});
+      const filaIdx=()=>[...n.map((v,i)=>({id:'wi'+i,text:i,r:0,c:i,cls:'hd'})),lbl('lw0','posición',0)];
+      const filaVal=cls=>[...n.map((v,i)=>({id:'wn'+i,text:v,r:1,c:i,cls:cls(v)})),lbl('lw1','ventas',1)];
+
+      function ternario(){
+        grid.setCells([...filaIdx(),...filaVal(v=>v>=30?'ok':'off'),
+          ...n.map((v,i)=>({id:'wr'+i,text:v>=30?'alta':'baja',r:2,c:i,cls:'res'})),
+          lbl('lw2','resultado',2)]);
+        msg.className='msg okc';
+        msg.textContent='8 valores entran, 8 salen: np.where no filtra, reemplaza.';
+        code.innerHTML="np.where(ventas >= 30, <b>'alta'</b>, <b>'baja'</b>)\n"+
+          "# array(['baja', 'alta', 'baja', 'alta', 'alta', 'baja', 'baja', 'alta'])";
+      }
+      function posiciones(){
+        const pos=n.map((v,i)=>v>=30?i:null).filter(i=>i!==null);
+        grid.setCells([...filaIdx(),...filaVal(v=>v>=30?'ok':'off'),
+          ...pos.map(i=>({id:'wp'+i,text:i,r:2,c:i,cls:'res'})),
+          lbl('lw2','np.where',2)]);
+        msg.className='msg okc';
+        msg.textContent=`quedaron ${pos.length} posiciones, no ${pos.length} ventas`;
+        code.innerHTML="np.where(ventas >= 30)\n"+
+          `# (array([${pos.join(', ')}]),)   ← <b>índices</b>, y viene dentro de una tupla\n`+
+          `ventas[np.where(ventas >= 30)]   # array([${pos.map(i=>n[i]).join(', ')}])`;
+      }
+      function anidado(){
+        const cat=v=>v>=50?'A':v>=30?'B':'C';
+        const clsCat=v=>v>=50?'hl':v>=30?'ok':'off';
+        grid.setCells([...filaIdx(),...filaVal(clsCat),
+          ...n.map((v,i)=>({id:'wr'+i,text:cat(v),r:2,c:i,cls:'res'})),
+          lbl('lw2','tramo',2)]);
+        msg.className='msg';
+        msg.textContent='El tercer argumento es otro np.where: se evalúa solo donde el primero dio False.';
+        code.innerHTML="np.where(ventas >= 50, 'A',\n"+
+          "         np.where(ventas >= 30, <b>'B'</b>, <b>'C'</b>))\n"+
+          "# el np.where de adentro decide el resto: primero se pregunta por A";
+      }
+      btnGroup(ctr,[
+        {label:'if/else (3 argumentos)',value:ternario},
+        {label:'solo condición → posiciones',value:posiciones},
+        {label:'anidado (3 tramos)',value:anidado},
+      ],f=>f());
+      ternario();
+    }
+
+    /* ---------- Tarjeta 6: argsort, argmin y argmax ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Ordenar por índices: <code>argsort</code>, <code>argmin</code>, <code>argmax</code>'}),
+        el('p',{class:'note',html:'Las funciones que empiezan con <b>arg</b> no devuelven valores: devuelven '+
+          '<b>posiciones</b>. Por eso sirven para arrastrar otro array — ordenas los tiempos y los nombres '+
+          'los siguen.'}));
+      sec.append(card);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const code=codeBox(card);
+      const nom=['Ana','Beto','Cata','Dani','Eli'], t=[42,35,51,38,47], L=nom.length;
+      const orden=t.map((v,i)=>i).sort((a,b)=>t[a]-t[b]);   // argsort = [1,3,0,4,2]
+      const lbl=(id,text,r)=>({id,text,r,c:L+0.35,w:2,cls:'hd'});
+      const cabecera=()=>[...nom.map((v,i)=>({id:'ai'+i,text:i,r:0,c:i,cls:'hd'})),lbl('la0','posición',0)];
+      /* col(i) = dónde se dibuja el corredor i: orig lo deja en la largada, dest lo lleva al podio */
+      const cuerpo=(col,clsT)=>[
+        ...nom.map((v,i)=>({id:'an'+i,text:v,r:1,c:col(i),cls:'hd'})),
+        ...t.map((v,i)=>({id:'at'+i,text:v,r:2,c:col(i),cls:clsT?clsT(i):''})),
+        lbl('la1','corredor',1),lbl('la2','tiempo',2)];
+      const orig=i=>i, dest=i=>orden.indexOf(i);
+
+      function reset(){
+        grid.setCells([...cabecera(),...cuerpo(orig)]);
+        code.textContent="nombres = np.array(['Ana', 'Beto', 'Cata', 'Dani', 'Eli'])\n"+
+          "tiempos = np.array([42, 35, 51, 38, 47])";
+      }
+      const steps=[
+        {d:'<b>Dos arrays paralelos.</b> La posición 0 es Ana con 42 minutos, la 1 es Beto con 35… '+
+           'El vínculo entre nombre y tiempo es la posición: si ordeno solo los tiempos, lo rompo.',
+         async run(){ reset(); }},
+        {d:'<b><code>np.argsort</code> responde «¿de dónde saco el que va aquí?».</b> En la posición 0 del '+
+           'resultado va un 1: el tiempo más bajo (35) está en la posición 1. Después el 3 (38), el 0 (42)… '+
+           'No es el array ordenado, es la <b>receta</b> para ordenarlo.',
+         async run(){
+           grid.setCells([...cabecera(),...cuerpo(orig),
+             ...orden.map((i,j)=>({id:'ao'+j,text:i,r:3,c:j,cls:'res'})),
+             lbl('la3','argsort',3)]);
+           code.innerHTML="orden = np.argsort(tiempos)\n"+
+             `# array([${orden.join(', ')}])   ← posiciones, no tiempos`;
+           await sleep(400);
+         }},
+        {d:'<b>Indexar con esa receta reordena de verdad.</b> Cada corredor viaja a su lugar en el podio, '+
+           'y como uso los <b>mismos índices</b> en ambos arrays, cada nombre llega con su tiempo.',
+         async run(){
+           grid.setCells([...cabecera(),...cuerpo(dest),
+             ...orden.map((i,j)=>({id:'ao'+j,text:i,r:3,c:j,cls:'res'})),
+             lbl('la3','argsort',3)]);
+           code.innerHTML="tiempos[orden]   # array([35, 38, 42, 47, 51])\n"+
+             "nombres[orden]   # array(['Beto', 'Dani', 'Ana', 'Eli', 'Cata'])";
+           await sleep(600);
+         }},
+        {d:'<b><code>argmin</code> y <code>argmax</code> son los extremos de esa receta:</b> el primero y el '+
+           'último índice del argsort. Ojo con la confusión clásica: <code>min()</code> devuelve el tiempo (35) '+
+           'y <code>argmin()</code> devuelve <b>dónde está</b> (1).',
+         async run(){
+           const mn=orden[0], mx=orden[L-1];
+           grid.setCells([...cabecera(),
+             ...cuerpo(orig,i=>i===mn?'hl':i===mx?'ok':'off'),
+             {id:'ao0',text:mn,r:3,c:0,cls:'res'},{id:'ao'+(L-1),text:mx,r:3,c:L-1,cls:'res'},
+             lbl('la3','argsort',3)]);
+           code.innerHTML="tiempos.min()      # 35   ← el valor\n"+
+             `np.argmin(tiempos) # <b>${mn}</b>    ← la posición de Beto\n`+
+             `np.argmax(tiempos) # <b>${mx}</b>    ← la posición de Cata\n`+
+             "nombres[np.argmin(tiempos)]   # 'Beto'";
+           await sleep(300);
+         }},
+      ];
+      new Stepper(card,steps,reset,'numpy');
+      reset();
+    }
   }
 });
 
@@ -1168,6 +1299,209 @@ registerModule({
     }
   }
 
+})();
+
+</script>
+<script>
+'use strict';
+/* Módulo: Fechas — to_datetime, accesor .dt, Timedelta, resample y date_range.
+   Datos verificados con pandas. */
+(function(){
+registerModule({
+  id:'fechas',
+  title:'Fechas',
+  lead:'Una fecha guardada como texto ordena mal y no se puede restar. El flujo es siempre el mismo: '+
+       'parsear con to_datetime, extraer componentes con .dt, restar para obtener Timedelta '+
+       'y agrupar en el tiempo con resample.',
+  build(sec){
+
+    /* ---------- Tarjeta 1: to_datetime + .dt ---------- */
+    {
+      const FECHAS=['2026-03-02','2026-03-15','2026-04-01','2026-04-18','2026-05-05'];
+      const MONTOS=[8990,12500,7490,15990,9990];
+      /* salidas reales de pandas para cada accesor */
+      const DT={
+        month:{col:'mes',vals:[3,3,4,4,5],code:".dt.month"},
+        day:{col:'dia',vals:[2,15,1,18,5],code:".dt.day"},
+        year:{col:'año',vals:[2026,2026,2026,2026,2026],code:".dt.year"},
+        day_name:{col:'dia_sem',vals:['Monday','Sunday','Wednesday','Saturday','Tuesday'],code:".dt.day_name()"},
+      };
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pd.to_datetime</code> y el accesor <code>.dt</code>'}),
+        el('p',{class:'note',html:'Pedidos de una app de delivery. La columna llega como <b>texto</b>: '+
+          'primero se parsea y recién entonces <code>.dt</code> puede extraer componentes.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      const note=el('p',{class:'note'});card.append(note);
+      let parsed=false, acc=null;
+      function render(){
+        mount.textContent='';
+        const cols=['fecha','monto'], rows=FECHAS.map((f,i)=>[f,MONTOS[i]]);
+        if(acc){cols.push(DT[acc].col); rows.forEach((r,i)=>r.push(DT[acc].vals[i]));}
+        const t=new DfTable(mount,{caption:parsed
+          ?'df — fecha: datetime64[ns] ✓':'df — fecha: object (texto) ⚠️',
+          columns:cols,index:[0,1,2,3,4],rows});
+        if(acc)rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
+        if(parsed)FECHAS.forEach((_,i)=>t.cell(i,0).classList.add('sel'));
+        if(!parsed){
+          code.textContent="df['fecha'].dtype   # object — solo texto disfrazado de fecha";
+          note.innerHTML='Como texto, <code>.dt</code> no existe y el orden es alfabético. Parsea primero.';
+        }else if(!acc){
+          code.innerHTML="df['fecha'] = <b>pd.to_datetime</b>(df['fecha'])\ndf['fecha'].dtype   # datetime64[ns] ✓";
+          note.innerHTML='Ahora sí: la columna es una fecha de verdad. Prueba los accesores <code>.dt</code>.';
+        }else{
+          code.innerHTML=`df['${DT[acc].col}'] = df['fecha']<b>${DT[acc].code}</b>`;
+          note.innerHTML=acc==='day_name'
+            ?'<b>day_name() habla inglés</b> por defecto — el clásico «¿por qué me salió Monday?». '+
+             'Para español: <code>day_name(locale=\'es_CL\')</code> (si el sistema lo tiene instalado).'
+            :'La columna nueva (azul) es numérica: sirve para filtrar y agrupar por periodo.';
+        }
+      }
+      const bParse=el('button',{class:'btn primary',onclick:()=>{parsed=true;bParse.disabled=true;accBtns.forEach(b=>b.disabled=false);render();}},'pd.to_datetime(df[\'fecha\'])');
+      ctr.append(bParse);
+      const accBtns=btnGroup(ctr,[
+        {label:'.dt.month',value:'month'},{label:'.dt.day',value:'day'},
+        {label:'.dt.year',value:'year'},{label:'.dt.day_name()',value:'day_name'},
+      ],v=>{acc=v;render();},false);
+      accBtns.forEach(b=>b.disabled=true);
+      render();
+    }
+
+    /* ---------- Tarjeta 2: Timedelta ---------- */
+    {
+      const PED=['2026-03-02','2026-03-15','2026-04-01','2026-04-18'];
+      const ENT=['2026-03-05','2026-03-26','2026-04-02','2026-04-30'];
+      const DIAS=[3,11,1,12]; /* (entrega - pedido).dt.days verificado */
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Restar fechas: <code>Timedelta</code>'}),
+        el('p',{class:'note',html:'Pedido y entrega de 4 despachos. Restar dos columnas de fecha '+
+          'da un <b>Timedelta</b> («3 days») y <code>.dt.days</code> lo convierte en número — '+
+          'así se calculan demoras, atrasos y duraciones.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      let conDias=false;
+      function render(){
+        mount.textContent='';
+        const cols=['pedido','entrega']; const rows=PED.map((p,i)=>[p,ENT[i]]);
+        if(conDias){cols.push('demora'); rows.forEach((r,i)=>r.push(DIAS[i]));}
+        const t=new DfTable(mount,{columns:cols,index:[0,1,2,3],rows});
+        if(conDias){
+          rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
+          const max=Math.max(...DIAS), maxI=DIAS.indexOf(max);
+          t.cell(maxI,2).classList.add('hl');
+          code.innerHTML="df['demora'] = (df['entrega'] - df['pedido'])<b>.dt.days</b>\ndf['demora'].max()   # "+max+" días — el despacho más lento";
+        }else{
+          code.textContent="df['entrega'] - df['pedido']   # Serie de Timedelta: '3 days', '11 days', …";
+        }
+      }
+      btnGroup(ctr,[
+        {label:'restar fechas',value:false},
+        {label:"+ columna demora (.dt.days)",value:true},
+      ],v=>{conDias=v;render();});
+      render();
+    }
+
+    /* ---------- Tarjeta 3: resample (groupby en el tiempo) ---------- */
+    {
+      /* boletas desordenadas, como llegan en la vida real */
+      const ROWS=[['2026-03-03',1200],['2026-04-05',900],['2026-03-18',800],['2026-05-10',700],
+                  ['2026-04-22',1100],['2026-03-29',1500],['2026-05-19',1300],['2026-05-30',600]];
+      const MESCLS={3:'g0',4:'g1',5:'g2'};
+      const MESNOM={3:'marzo',4:'abril',5:'mayo'};
+      const SUMS=[['2026-03-31',3500],['2026-04-30',2000],['2026-05-31',2600]]; /* verificado */
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>resample</code>: groupby en el tiempo'}),
+        el('p',{class:'note',html:'Ventas sueltas de la cafetería → total por mes. '+
+          '<code>resample(\'ME\')</code> agrupa por periodo calendario (ME = fin de mes; '+
+          'en versiones antiguas de pandas se escribía <code>\'M\'</code>).'}));
+      sec.append(card);
+      const holder=el('div',{style:'display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start'});
+      card.append(holder);
+      const mLeft=el('div'),mRight=el('div');holder.append(mLeft,mRight);
+      const code=codeBox(card);
+      let t=null;
+      const mes=f=>+f.slice(5,7);
+      function reset(){
+        mLeft.textContent='';mRight.textContent='';
+        t=new DfTable(mLeft,{caption:'ventas (como llegaron)',columns:['fecha','monto'],
+          index:[...ROWS.keys()],rows:ROWS.map(r=>[...r])});
+        code.textContent="serie = df.set_index('fecha').resample('ME')['monto'].sum()";
+      }
+      const steps=[
+        {d:'<b>Etiquetar.</b> <code>set_index(\'fecha\')</code> + <code>resample(\'ME\')</code> asignan cada boleta '+
+           'a su periodo: un color por mes.',
+         async run(){
+           ROWS.forEach((r,i)=>{
+             t.cell(i,0).classList.add(MESCLS[mes(r[0])]);
+             t.cell(i,1).classList.add(MESCLS[mes(r[0])]);
+           });
+         }},
+        {d:'<b>Ordenar.</b> El índice temporal ordena cronológicamente — las boletas de cada mes quedan juntas.',
+         async run(){
+           const order=[...ROWS.keys()].sort((a,b)=>ROWS[a][0]<ROWS[b][0]?-1:1);
+           flipRows(t.root,()=>{
+             order.forEach(i=>t.root.append(t.rowEls[i]));
+           });
+           await sleep(650);
+         }},
+        {d:'<b>Colapsar.</b> Cada grupo se reduce a UNA fila con la suma del mes. Ojo: la etiqueta es el '+
+           '<b>fin de mes</b> (2026-03-31), no el inicio.',
+         async run(){
+           mRight.textContent='';
+           const tr=new DfTable(mRight,{caption:"resample('ME')['monto'].sum()",
+             columns:['monto'],index:SUMS.map(s=>s[0]),rows:SUMS.map(s=>[s[1]])});
+           SUMS.forEach((s,i)=>tr.cell(i,0).classList.add(MESCLS[mes(s[0])]));
+           code.innerHTML="serie = df.set_index('fecha').resample(<b>'ME'</b>)['monto'].sum()\n# 2026-03-31    3500   ← marzo\n# 2026-04-30    2000   ← abril\n# 2026-05-31    2600   ← mayo";
+         }},
+      ];
+      reset();
+      new Stepper(card,steps,reset,'fechas');
+      card.append(el('p',{class:'note',html:'La agrupación por mes también se logra con '+
+        '<code>df.groupby(df[\'fecha\'].dt.month)</code> — pero resample respeta el calendario '+
+        '(meses sin ventas aparecen con 0) y permite frecuencias como \'W\' o \'D\'.'}));
+    }
+
+    /* ---------- Tarjeta 4: date_range ---------- */
+    {
+      const RANGES={ /* pd.date_range('2026-01-01', periods=6, freq=…) verificado */
+        'D':  ['2026-01-01','2026-01-02','2026-01-03','2026-01-04','2026-01-05','2026-01-06'],
+        'W':  ['2026-01-04','2026-01-11','2026-01-18','2026-01-25','2026-02-01','2026-02-08'],
+        'ME': ['2026-01-31','2026-02-28','2026-03-31','2026-04-30','2026-05-31','2026-06-30'],
+        '12h':['01-01 00:00','01-01 12:00','01-02 00:00','01-02 12:00','01-03 00:00','01-03 12:00'],
+      };
+      const NOTAS={
+        'D':'Un día tras otro: la base para construir calendarios completos y detectar días sin datos.',
+        'W':'<b>\'W\' ancla al domingo</b>: la primera fecha no es el 1 de enero sino el primer domingo (2026-01-04).',
+        'ME':'Fin de cada mes — las mismas etiquetas que produce <code>resample(\'ME\')</code>.',
+        '12h':'También hay frecuencias con hora: cada 12 horas, \'6h\', \'30min\'…',
+      };
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pd.date_range</code>: fabricar fechas'}),
+        el('p',{class:'note',html:'Genera secuencias regulares de fechas. Sirve para armar el calendario '+
+          'completo y descubrir los días en que no pasó nada (los que faltan en los datos).'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const chips=el('div');card.append(chips);
+      const code=codeBox(card);
+      const note=el('p',{class:'note'});card.append(note);
+      function render(freq){
+        chips.textContent='';
+        RANGES[freq].forEach(f=>chips.append(el('span',{class:'chip'},f)));
+        code.innerHTML=`pd.date_range('2026-01-01', periods=6, freq=<b>'${freq}'</b>)`;
+        note.innerHTML=NOTAS[freq];
+      }
+      btnGroup(ctr,[
+        {label:"freq='D' (diaria)",value:'D'},{label:"'W' (semanal)",value:'W'},
+        {label:"'ME' (mensual)",value:'ME'},{label:"'12h'",value:'12h'},
+      ],render);
+      render('D');
+    }
+  }
+});
 })();
 
 </script>
@@ -2248,156 +2582,6 @@ registerModule({
 </script>
 <script>
 'use strict';
-/* Módulo: GroupBy y pivoteo — split-apply-combine animado y pivot_table como heatmap */
-registerModule({
-  id:'groupby',
-  title:'GroupBy y pivoteo',
-  lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
-       'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
-  build(sec){
-    /* ventas de una cafetería universitaria */
-    const COLS=['producto','sucursal','monto'];
-    const ROWS=[
-      ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
-      ['Jugo','Centro',2200],['Té','Centro',1900],['Café','Centro',2400],
-      ['Jugo','Campus',2100],['Té','Campus',1700],['Café','Campus',2700]];
-    const KEYS=['Café','Té','Jugo'];               // orden de aparición → orden de grupos
-    const GCLS={ 'Café':'g0','Té':'g1','Jugo':'g2' };
-    const AGG={
-      sum:  {label:'sum',  f:a=>a.reduce((x,y)=>x+y,0)},
-      mean: {label:'mean', f:a=>a.reduce((x,y)=>x+y,0)/a.length},
-      count:{label:'count',f:a=>a.length},
-      max:  {label:'max',  f:a=>Math.max(...a)},
-    };
-    const groupsOf=key=>ROWS.map((r,i)=>[r,i]).filter(([r])=>r[0]===key);
-
-    /* ---------- Tarjeta 1: split-apply-combine ---------- */
-    {
-      const card=el('div',{class:'card'},
-        el('h3',{html:'<code>groupby</code> paso a paso'}),
-        el('p',{class:'note',html:'9 boletas de una cafetería. Vamos a calcular el total vendido por producto: '+
-          '<code>df.groupby(\'producto\')[\'monto\'].sum()</code>'}));
-      sec.append(card);
-      const ctr=el('div',{class:'controls'});card.append(ctr);
-      const selA=el('select',{},Object.keys(AGG).map(k=>el('option',{value:k},AGG[k].label)));
-      ctr.append(el('label',{},'función de agregación: '),selA);
-      const cols=el('div',{class:'flexcols'});card.append(cols);
-      const left=el('div'),right=el('div');cols.append(left,right);
-      const table=new DfTable(left,{caption:'df (boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
-      const resMount=el('div');right.append(resMount);
-      const code=codeBox(card);
-      const origOrder=[...table.rowEls];
-
-      let resTable=null;
-      function clearResult(){resMount.textContent='';resTable=null;}
-      function showResult(upTo /* nº de grupos listos */){
-        clearResult();
-        const agg=AGG[selA.value];
-        const rows=KEYS.slice(0,upTo).map(k=>[agg.f(groupsOf(k).map(([r])=>r[2]))]);
-        resTable=new DfTable(resMount,{caption:`resultado (${agg.label})`,columns:['monto'],
-          index:KEYS.slice(0,upTo),rows});
-        rows.forEach((_,ri)=>{
-          resTable.cell(ri,0).classList.add(GCLS[KEYS[ri]]);
-          resTable.rowEls[ri]._idx.classList.add(GCLS[KEYS[ri]]);
-        });
-      }
-      function colorRows(){
-        ROWS.forEach((r,ri)=>{
-          table.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]]));
-        });
-      }
-      function reset(){
-        table.clearMarks();clearResult();
-        origOrder.forEach(r=>table.root.append(r));
-        code.innerHTML=`df.groupby('producto')['monto'].<b>${AGG[selA.value].label}</b>()`;
-      }
-      const steps=[
-        {d:'<b>La llave.</b> <code>groupby(\'producto\')</code> etiqueta cada fila según su valor '+
-           'en la columna <code>producto</code>. Cada color es un grupo: todavía no se movió nada.',
-         async run(){ colorRows(); }},
-        {d:'<b>Split.</b> Conceptualmente, las filas se separan en un mini-DataFrame por grupo '+
-           '(4 boletas de Café, 3 de Té, 2 de Jugo). El orden original deja de importar.',
-         async run(last){
-           colorRows();
-           flipRows(table.root,()=>{
-             KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           });
-           if(last)await sleep(600);
-         }},
-        {d:'<b>Apply.</b> A la columna <code>monto</code> de cada grupo se le aplica la función. '+
-           'Cada grupo completo colapsa en un único valor.',
-         async run(last){
-           colorRows();
-           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           for(let g=0;g<KEYS.length;g++){
-             if(last){
-               groupsOf(KEYS[g]).forEach(([,ri])=>table.cell(ri,2).classList.add('hl'));
-               await sleep(420);
-             }
-             showResult(g+1);
-           }
-         }},
-        {d:'<b>Combine.</b> Los tres valores se recombinan en una Serie cuyo <b>índice es la llave</b> '+
-           '(ya no 0…8, sino Café/Té/Jugo). Eso es todo groupby: split → apply → combine.',
-         async run(){
-           colorRows();
-           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           table.rowEls.forEach(r=>r.classList.add('roff'));
-           showResult(3);
-           const agg=AGG[selA.value];
-           const vals=KEYS.map(k=>fmt(agg.f(groupsOf(k).map(([r])=>r[2]))));
-           code.innerHTML=`df.groupby('producto')['monto'].<b>${agg.label}</b>()\n# producto\n`+
-             KEYS.map((k,i)=>`# ${k.padEnd(8)}${vals[i]}`).join('\n')+`\n# Name: monto, dtype: ${agg.label==='mean'?'float64':'int64'}`;
-         }},
-      ];
-      const st=new Stepper(card,steps,reset,'groupby');
-      selA.onchange=()=>st.go(st.i);
-      reset();
-    }
-
-    /* ---------- Tarjeta 2: pivot_table ---------- */
-    {
-      const card=el('div',{class:'card'},
-        el('h3',{html:'<code>pivot_table</code>: groupby en dos dimensiones'}),
-        el('p',{class:'note',html:'Un pivote agrupa por <b>dos llaves a la vez</b>: una queda como índice (filas) '+
-          'y la otra se convierte en columnas. La celda (Café, Centro) contiene la agregación de las boletas '+
-          'que cumplen ambas condiciones. El color codifica la magnitud (más oscuro = más alto).'}));
-      sec.append(card);
-      const ctr=el('div',{class:'controls'});card.append(ctr);
-      const selA=el('select',{},['sum','mean','count'].map(k=>el('option',{value:k},k)));
-      ctr.append(el('label',{},'aggfunc: '),selA);
-      const mount=el('div');card.append(mount);
-      const code=codeBox(card);
-      const SUC=['Campus','Centro'];
-      const RAMP=['--seq100','--seq200','--seq300','--seq400','--seq500','--seq600','--seq700'];
-      function render(){
-        mount.textContent='';
-        const agg=AGG[selA.value];
-        const rows=KEYS.map(k=>SUC.map(s=>{
-          const sub=ROWS.filter(r=>r[0]===k&&r[1]===s).map(r=>r[2]);
-          return agg.f(sub);
-        }));
-        const t=new DfTable(mount,{caption:'pivot (producto × sucursal)',columns:SUC,index:KEYS,rows});
-        const flat=rows.flat(),lo=Math.min(...flat),hi=Math.max(...flat);
-        rows.forEach((row,ri)=>row.forEach((v,ci)=>{
-          const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
-          const c=t.cell(ri,ci);
-          c.style.background=`var(${RAMP[k]})`;
-          /* la rampa es fija en ambos temas: la tinta también debe serlo */
-          c.style.color=k>=3?'#fff':'#0b0b0b';
-          c.style.fontWeight='600';
-        }));
-        code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;
-      }
-      selA.onchange=render;
-      render();
-    }
-  }
-});
-
-</script>
-<script>
-'use strict';
 /* Módulo: Joins y concatenación — merge con llaves conectadas, Venn y concat */
 registerModule({
   id:'merge',
@@ -2569,205 +2753,152 @@ registerModule({
 </script>
 <script>
 'use strict';
-/* Módulo: Fechas — to_datetime, accesor .dt, Timedelta, resample y date_range.
-   Datos verificados con pandas. */
-(function(){
+/* Módulo: GroupBy y pivoteo — split-apply-combine animado y pivot_table como heatmap */
 registerModule({
-  id:'fechas',
-  title:'Fechas',
-  lead:'Una fecha guardada como texto ordena mal y no se puede restar. El flujo es siempre el mismo: '+
-       'parsear con to_datetime, extraer componentes con .dt, restar para obtener Timedelta '+
-       'y agrupar en el tiempo con resample.',
+  id:'groupby',
+  title:'GroupBy y pivoteo',
+  lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
+       'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
   build(sec){
+    /* ventas de una cafetería universitaria */
+    const COLS=['producto','sucursal','monto'];
+    const ROWS=[
+      ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
+      ['Jugo','Centro',2200],['Té','Centro',1900],['Café','Centro',2400],
+      ['Jugo','Campus',2100],['Té','Campus',1700],['Café','Campus',2700]];
+    const KEYS=['Café','Té','Jugo'];               // orden de aparición → orden de grupos
+    const GCLS={ 'Café':'g0','Té':'g1','Jugo':'g2' };
+    const AGG={
+      sum:  {label:'sum',  f:a=>a.reduce((x,y)=>x+y,0)},
+      mean: {label:'mean', f:a=>a.reduce((x,y)=>x+y,0)/a.length},
+      count:{label:'count',f:a=>a.length},
+      max:  {label:'max',  f:a=>Math.max(...a)},
+    };
+    const groupsOf=key=>ROWS.map((r,i)=>[r,i]).filter(([r])=>r[0]===key);
 
-    /* ---------- Tarjeta 1: to_datetime + .dt ---------- */
+    /* ---------- Tarjeta 1: split-apply-combine ---------- */
     {
-      const FECHAS=['2026-03-02','2026-03-15','2026-04-01','2026-04-18','2026-05-05'];
-      const MONTOS=[8990,12500,7490,15990,9990];
-      /* salidas reales de pandas para cada accesor */
-      const DT={
-        month:{col:'mes',vals:[3,3,4,4,5],code:".dt.month"},
-        day:{col:'dia',vals:[2,15,1,18,5],code:".dt.day"},
-        year:{col:'año',vals:[2026,2026,2026,2026,2026],code:".dt.year"},
-        day_name:{col:'dia_sem',vals:['Monday','Sunday','Wednesday','Saturday','Tuesday'],code:".dt.day_name()"},
-      };
       const card=el('div',{class:'card'},
-        el('h3',{html:'<code>pd.to_datetime</code> y el accesor <code>.dt</code>'}),
-        el('p',{class:'note',html:'Pedidos de una app de delivery. La columna llega como <b>texto</b>: '+
-          'primero se parsea y recién entonces <code>.dt</code> puede extraer componentes.'}));
+        el('h3',{html:'<code>groupby</code> paso a paso'}),
+        el('p',{class:'note',html:'9 boletas de una cafetería. Vamos a calcular el total vendido por producto: '+
+          '<code>df.groupby(\'producto\')[\'monto\'].sum()</code>'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
-      const mount=el('div');card.append(mount);
+      const selA=el('select',{},Object.keys(AGG).map(k=>el('option',{value:k},AGG[k].label)));
+      ctr.append(el('label',{},'función de agregación: '),selA);
+      const cols=el('div',{class:'flexcols'});card.append(cols);
+      const left=el('div'),right=el('div');cols.append(left,right);
+      const table=new DfTable(left,{caption:'df (boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
+      const resMount=el('div');right.append(resMount);
       const code=codeBox(card);
-      const note=el('p',{class:'note'});card.append(note);
-      let parsed=false, acc=null;
-      function render(){
-        mount.textContent='';
-        const cols=['fecha','monto'], rows=FECHAS.map((f,i)=>[f,MONTOS[i]]);
-        if(acc){cols.push(DT[acc].col); rows.forEach((r,i)=>r.push(DT[acc].vals[i]));}
-        const t=new DfTable(mount,{caption:parsed
-          ?'df — fecha: datetime64[ns] ✓':'df — fecha: object (texto) ⚠️',
-          columns:cols,index:[0,1,2,3,4],rows});
-        if(acc)rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
-        if(parsed)FECHAS.forEach((_,i)=>t.cell(i,0).classList.add('sel'));
-        if(!parsed){
-          code.textContent="df['fecha'].dtype   # object — solo texto disfrazado de fecha";
-          note.innerHTML='Como texto, <code>.dt</code> no existe y el orden es alfabético. Parsea primero.';
-        }else if(!acc){
-          code.innerHTML="df['fecha'] = <b>pd.to_datetime</b>(df['fecha'])\ndf['fecha'].dtype   # datetime64[ns] ✓";
-          note.innerHTML='Ahora sí: la columna es una fecha de verdad. Prueba los accesores <code>.dt</code>.';
-        }else{
-          code.innerHTML=`df['${DT[acc].col}'] = df['fecha']<b>${DT[acc].code}</b>`;
-          note.innerHTML=acc==='day_name'
-            ?'<b>day_name() habla inglés</b> por defecto — el clásico «¿por qué me salió Monday?». '+
-             'Para español: <code>day_name(locale=\'es_CL\')</code> (si el sistema lo tiene instalado).'
-            :'La columna nueva (azul) es numérica: sirve para filtrar y agrupar por periodo.';
-        }
-      }
-      const bParse=el('button',{class:'btn primary',onclick:()=>{parsed=true;bParse.disabled=true;accBtns.forEach(b=>b.disabled=false);render();}},'pd.to_datetime(df[\'fecha\'])');
-      ctr.append(bParse);
-      const accBtns=btnGroup(ctr,[
-        {label:'.dt.month',value:'month'},{label:'.dt.day',value:'day'},
-        {label:'.dt.year',value:'year'},{label:'.dt.day_name()',value:'day_name'},
-      ],v=>{acc=v;render();},false);
-      accBtns.forEach(b=>b.disabled=true);
-      render();
-    }
+      const origOrder=[...table.rowEls];
 
-    /* ---------- Tarjeta 2: Timedelta ---------- */
-    {
-      const PED=['2026-03-02','2026-03-15','2026-04-01','2026-04-18'];
-      const ENT=['2026-03-05','2026-03-26','2026-04-02','2026-04-30'];
-      const DIAS=[3,11,1,12]; /* (entrega - pedido).dt.days verificado */
-      const card=el('div',{class:'card'},
-        el('h3',{html:'Restar fechas: <code>Timedelta</code>'}),
-        el('p',{class:'note',html:'Pedido y entrega de 4 despachos. Restar dos columnas de fecha '+
-          'da un <b>Timedelta</b> («3 days») y <code>.dt.days</code> lo convierte en número — '+
-          'así se calculan demoras, atrasos y duraciones.'}));
-      sec.append(card);
-      const ctr=el('div',{class:'controls'});card.append(ctr);
-      const mount=el('div');card.append(mount);
-      const code=codeBox(card);
-      let conDias=false;
-      function render(){
-        mount.textContent='';
-        const cols=['pedido','entrega']; const rows=PED.map((p,i)=>[p,ENT[i]]);
-        if(conDias){cols.push('demora'); rows.forEach((r,i)=>r.push(DIAS[i]));}
-        const t=new DfTable(mount,{columns:cols,index:[0,1,2,3],rows});
-        if(conDias){
-          rows.forEach((_,i)=>t.cell(i,2).classList.add('dnew'));
-          const max=Math.max(...DIAS), maxI=DIAS.indexOf(max);
-          t.cell(maxI,2).classList.add('hl');
-          code.innerHTML="df['demora'] = (df['entrega'] - df['pedido'])<b>.dt.days</b>\ndf['demora'].max()   # "+max+" días — el despacho más lento";
-        }else{
-          code.textContent="df['entrega'] - df['pedido']   # Serie de Timedelta: '3 days', '11 days', …";
-        }
+      let resTable=null;
+      function clearResult(){resMount.textContent='';resTable=null;}
+      function showResult(upTo /* nº de grupos listos */){
+        clearResult();
+        const agg=AGG[selA.value];
+        const rows=KEYS.slice(0,upTo).map(k=>[agg.f(groupsOf(k).map(([r])=>r[2]))]);
+        resTable=new DfTable(resMount,{caption:`resultado (${agg.label})`,columns:['monto'],
+          index:KEYS.slice(0,upTo),rows});
+        rows.forEach((_,ri)=>{
+          resTable.cell(ri,0).classList.add(GCLS[KEYS[ri]]);
+          resTable.rowEls[ri]._idx.classList.add(GCLS[KEYS[ri]]);
+        });
       }
-      btnGroup(ctr,[
-        {label:'restar fechas',value:false},
-        {label:"+ columna demora (.dt.days)",value:true},
-      ],v=>{conDias=v;render();});
-      render();
-    }
-
-    /* ---------- Tarjeta 3: resample (groupby en el tiempo) ---------- */
-    {
-      /* boletas desordenadas, como llegan en la vida real */
-      const ROWS=[['2026-03-03',1200],['2026-04-05',900],['2026-03-18',800],['2026-05-10',700],
-                  ['2026-04-22',1100],['2026-03-29',1500],['2026-05-19',1300],['2026-05-30',600]];
-      const MESCLS={3:'g0',4:'g1',5:'g2'};
-      const MESNOM={3:'marzo',4:'abril',5:'mayo'};
-      const SUMS=[['2026-03-31',3500],['2026-04-30',2000],['2026-05-31',2600]]; /* verificado */
-      const card=el('div',{class:'card'},
-        el('h3',{html:'<code>resample</code>: groupby en el tiempo'}),
-        el('p',{class:'note',html:'Ventas sueltas de la cafetería → total por mes. '+
-          '<code>resample(\'ME\')</code> agrupa por periodo calendario (ME = fin de mes; '+
-          'en versiones antiguas de pandas se escribía <code>\'M\'</code>).'}));
-      sec.append(card);
-      const holder=el('div',{style:'display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start'});
-      card.append(holder);
-      const mLeft=el('div'),mRight=el('div');holder.append(mLeft,mRight);
-      const code=codeBox(card);
-      let t=null;
-      const mes=f=>+f.slice(5,7);
+      function colorRows(){
+        ROWS.forEach((r,ri)=>{
+          table.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]]));
+        });
+      }
       function reset(){
-        mLeft.textContent='';mRight.textContent='';
-        t=new DfTable(mLeft,{caption:'ventas (como llegaron)',columns:['fecha','monto'],
-          index:[...ROWS.keys()],rows:ROWS.map(r=>[...r])});
-        code.textContent="serie = df.set_index('fecha').resample('ME')['monto'].sum()";
+        table.clearMarks();clearResult();
+        origOrder.forEach(r=>table.root.append(r));
+        code.innerHTML=`df.groupby('producto')['monto'].<b>${AGG[selA.value].label}</b>()`;
       }
       const steps=[
-        {d:'<b>Etiquetar.</b> <code>set_index(\'fecha\')</code> + <code>resample(\'ME\')</code> asignan cada boleta '+
-           'a su periodo: un color por mes.',
-         async run(){
-           ROWS.forEach((r,i)=>{
-             t.cell(i,0).classList.add(MESCLS[mes(r[0])]);
-             t.cell(i,1).classList.add(MESCLS[mes(r[0])]);
+        {d:'<b>La llave.</b> <code>groupby(\'producto\')</code> etiqueta cada fila según su valor '+
+           'en la columna <code>producto</code>. Cada color es un grupo: todavía no se movió nada.',
+         async run(){ colorRows(); }},
+        {d:'<b>Split.</b> Conceptualmente, las filas se separan en un mini-DataFrame por grupo '+
+           '(4 boletas de Café, 3 de Té, 2 de Jugo). El orden original deja de importar.',
+         async run(last){
+           colorRows();
+           flipRows(table.root,()=>{
+             KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
            });
+           if(last)await sleep(600);
          }},
-        {d:'<b>Ordenar.</b> El índice temporal ordena cronológicamente — las boletas de cada mes quedan juntas.',
-         async run(){
-           const order=[...ROWS.keys()].sort((a,b)=>ROWS[a][0]<ROWS[b][0]?-1:1);
-           flipRows(t.root,()=>{
-             order.forEach(i=>t.root.append(t.rowEls[i]));
-           });
-           await sleep(650);
+        {d:'<b>Apply.</b> A la columna <code>monto</code> de cada grupo se le aplica la función. '+
+           'Cada grupo completo colapsa en un único valor.',
+         async run(last){
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           for(let g=0;g<KEYS.length;g++){
+             if(last){
+               groupsOf(KEYS[g]).forEach(([,ri])=>table.cell(ri,2).classList.add('hl'));
+               await sleep(420);
+             }
+             showResult(g+1);
+           }
          }},
-        {d:'<b>Colapsar.</b> Cada grupo se reduce a UNA fila con la suma del mes. Ojo: la etiqueta es el '+
-           '<b>fin de mes</b> (2026-03-31), no el inicio.',
+        {d:'<b>Combine.</b> Los tres valores se recombinan en una Serie cuyo <b>índice es la llave</b> '+
+           '(ya no 0…8, sino Café/Té/Jugo). Eso es todo groupby: split → apply → combine.',
          async run(){
-           mRight.textContent='';
-           const tr=new DfTable(mRight,{caption:"resample('ME')['monto'].sum()",
-             columns:['monto'],index:SUMS.map(s=>s[0]),rows:SUMS.map(s=>[s[1]])});
-           SUMS.forEach((s,i)=>tr.cell(i,0).classList.add(MESCLS[mes(s[0])]));
-           code.innerHTML="serie = df.set_index('fecha').resample(<b>'ME'</b>)['monto'].sum()\n# 2026-03-31    3500   ← marzo\n# 2026-04-30    2000   ← abril\n# 2026-05-31    2600   ← mayo";
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           table.rowEls.forEach(r=>r.classList.add('roff'));
+           showResult(3);
+           const agg=AGG[selA.value];
+           const vals=KEYS.map(k=>fmt(agg.f(groupsOf(k).map(([r])=>r[2]))));
+           code.innerHTML=`df.groupby('producto')['monto'].<b>${agg.label}</b>()\n# producto\n`+
+             KEYS.map((k,i)=>`# ${k.padEnd(8)}${vals[i]}`).join('\n')+`\n# Name: monto, dtype: ${agg.label==='mean'?'float64':'int64'}`;
          }},
       ];
+      const st=new Stepper(card,steps,reset,'groupby');
+      selA.onchange=()=>st.go(st.i);
       reset();
-      new Stepper(card,steps,reset,'fechas');
-      card.append(el('p',{class:'note',html:'La agrupación por mes también se logra con '+
-        '<code>df.groupby(df[\'fecha\'].dt.month)</code> — pero resample respeta el calendario '+
-        '(meses sin ventas aparecen con 0) y permite frecuencias como \'W\' o \'D\'.'}));
     }
 
-    /* ---------- Tarjeta 4: date_range ---------- */
+    /* ---------- Tarjeta 2: pivot_table ---------- */
     {
-      const RANGES={ /* pd.date_range('2026-01-01', periods=6, freq=…) verificado */
-        'D':  ['2026-01-01','2026-01-02','2026-01-03','2026-01-04','2026-01-05','2026-01-06'],
-        'W':  ['2026-01-04','2026-01-11','2026-01-18','2026-01-25','2026-02-01','2026-02-08'],
-        'ME': ['2026-01-31','2026-02-28','2026-03-31','2026-04-30','2026-05-31','2026-06-30'],
-        '12h':['01-01 00:00','01-01 12:00','01-02 00:00','01-02 12:00','01-03 00:00','01-03 12:00'],
-      };
-      const NOTAS={
-        'D':'Un día tras otro: la base para construir calendarios completos y detectar días sin datos.',
-        'W':'<b>\'W\' ancla al domingo</b>: la primera fecha no es el 1 de enero sino el primer domingo (2026-01-04).',
-        'ME':'Fin de cada mes — las mismas etiquetas que produce <code>resample(\'ME\')</code>.',
-        '12h':'También hay frecuencias con hora: cada 12 horas, \'6h\', \'30min\'…',
-      };
       const card=el('div',{class:'card'},
-        el('h3',{html:'<code>pd.date_range</code>: fabricar fechas'}),
-        el('p',{class:'note',html:'Genera secuencias regulares de fechas. Sirve para armar el calendario '+
-          'completo y descubrir los días en que no pasó nada (los que faltan en los datos).'}));
+        el('h3',{html:'<code>pivot_table</code>: groupby en dos dimensiones'}),
+        el('p',{class:'note',html:'Un pivote agrupa por <b>dos llaves a la vez</b>: una queda como índice (filas) '+
+          'y la otra se convierte en columnas. La celda (Café, Centro) contiene la agregación de las boletas '+
+          'que cumplen ambas condiciones. El color codifica la magnitud (más oscuro = más alto).'}));
       sec.append(card);
       const ctr=el('div',{class:'controls'});card.append(ctr);
-      const chips=el('div');card.append(chips);
+      const selA=el('select',{},['sum','mean','count'].map(k=>el('option',{value:k},k)));
+      ctr.append(el('label',{},'aggfunc: '),selA);
+      const mount=el('div');card.append(mount);
       const code=codeBox(card);
-      const note=el('p',{class:'note'});card.append(note);
-      function render(freq){
-        chips.textContent='';
-        RANGES[freq].forEach(f=>chips.append(el('span',{class:'chip'},f)));
-        code.innerHTML=`pd.date_range('2026-01-01', periods=6, freq=<b>'${freq}'</b>)`;
-        note.innerHTML=NOTAS[freq];
+      const SUC=['Campus','Centro'];
+      const RAMP=['--seq100','--seq200','--seq300','--seq400','--seq500','--seq600','--seq700'];
+      function render(){
+        mount.textContent='';
+        const agg=AGG[selA.value];
+        const rows=KEYS.map(k=>SUC.map(s=>{
+          const sub=ROWS.filter(r=>r[0]===k&&r[1]===s).map(r=>r[2]);
+          return agg.f(sub);
+        }));
+        const t=new DfTable(mount,{caption:'pivot (producto × sucursal)',columns:SUC,index:KEYS,rows});
+        const flat=rows.flat(),lo=Math.min(...flat),hi=Math.max(...flat);
+        rows.forEach((row,ri)=>row.forEach((v,ci)=>{
+          const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
+          const c=t.cell(ri,ci);
+          c.style.background=`var(${RAMP[k]})`;
+          /* la rampa es fija en ambos temas: la tinta también debe serlo */
+          c.style.color=k>=3?'#fff':'#0b0b0b';
+          c.style.fontWeight='600';
+        }));
+        code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;
       }
-      btnGroup(ctr,[
-        {label:"freq='D' (diaria)",value:'D'},{label:"'W' (semanal)",value:'W'},
-        {label:"'ME' (mensual)",value:'ME'},{label:"'12h'",value:'12h'},
-      ],render);
-      render('D');
+      selA.onchange=render;
+      render();
     }
   }
 });
-})();
 
 </script>
 <script>
@@ -2817,6 +2948,75 @@ const BANCO_PREDICE=[
  opciones:['ValueError','una matriz 5×3 rellena con ceros al final','una matriz 4×3','[[0 1 2 3 4], [5 6 7 8 9], ...]'],correcta:0,
  explica:"5 × 3 = 15 celdas pero el array tiene 12: <code>cannot reshape array of size 12 into shape (5,3)</code>. "+
   "reshape <b>nunca inventa ni bota datos</b>. Prueba el caso 5×3 ✗ en el <a href='#numpy'>módulo Arrays NumPy</a>."},
+
+{id:'p48',tema:'numpy',origen:'Call center',nivel:1,
+ code:"duracion = np.array([3.5, 12.0, 7.8, 1.2, 15.4])\nprint(np.where(duracion >= 10))",
+ opciones:['(array([1, 4]),)','[1, 4]','(array([12.0, 15.4]),)','[False True False False True]'],correcta:0,
+ explica:"Con un solo argumento, <code>np.where(cond)</code> devuelve una <b>tupla de arrays de índices</b> (uno por dimensión), "+
+  "no los valores ni la máscara. En 1D se extrae con <code>[0]</code> — distinto del ternario de tres argumentos, que sí arma "+
+  "un array de valores. Compáralos en el <a href='#numpy'>módulo Arrays NumPy</a>."},
+
+{id:'p49',tema:'numpy',origen:'Notas',nivel:2,
+ code:"notas = np.array([55, 68, 82, 91])\nletra = np.where(notas >= 90, 'A',\n         np.where(notas >= 70, 'B', 'C'))\nprint(letra)",
+ opciones:["['C' 'C' 'B' 'A']","['B' 'B' 'B' 'A']","['A' 'B' 'C' 'C']","['C' 'C' 'C' 'A']"],correcta:0,
+ explica:"Cada <code>np.where</code> evalúa <b>todo el array a la vez</b>: primero separa quién llega a 90 (el 91 → 'A') y el "+
+  "resto cae al <code>where</code> interior, que separa quién llega a 70 (el 82 → 'B') dejando el resto en 'C' (55 y 68). "+
+  "Anidar así arma tramos sin repetir la condición anterior."},
+
+{id:'p50',tema:'numpy',origen:'Mesa de ayuda',nivel:2,
+ code:"tiempos = np.array([48, 12, 95, 30])\ntecnico = np.array(['Ana','Beto','Caro','Dan'])\nidx = np.argsort(tiempos)\nprint(tecnico[idx])",
+ opciones:["['Beto' 'Dan' 'Ana' 'Caro']","['Ana' 'Beto' 'Caro' 'Dan']","[1 3 0 2]","['Caro' 'Ana' 'Dan' 'Beto']"],correcta:0,
+ explica:"<code>argsort</code> no ordena <code>tiempos</code>: entrega los <b>índices</b> que lo ordenarían (menor a mayor). "+
+  "Usar esos mismos índices para indexar <code>tecnico</code> reordena el segundo array <b>en paralelo</b>, sin perder la "+
+  "relación entre ambos."},
+
+{id:'p51',tema:'numpy',origen:'Dólar observado',nivel:1,
+ code:"precio_dolar = np.array([905, 912, 898, 940])\nprint(np.argmin(precio_dolar))",
+ opciones:['2','898','0','3'],correcta:0,
+ explica:"<code>argmin</code> devuelve la <b>posición</b> del valor mínimo (898 está en el índice 2), no el valor mismo. "+
+  "Para el precio real hay que volver a indexar: <code>precio_dolar[np.argmin(precio_dolar)]</code>."},
+
+{id:'p52',tema:'numpy',origen:'Inventario',nivel:1,
+ code:"disponible = np.array([True, False, True])\nbarato = np.array([True, True, False])\nprint(disponible and barato)",
+ opciones:['ValueError','[True, False, False]','True','[True, True, True]'],correcta:0,
+ explica:"<code>and</code> exige reducir el array a un único booleano y no sabe cómo hacerlo con más de un elemento: "+
+  "truena con <i>«the truth value of an array...is ambiguous»</i>. Para combinar máscaras elemento a elemento se usa "+
+  "<code>&amp;</code> — nunca <code>and</code>/<code>or</code> entre arrays."},
+
+{id:'p53',tema:'numpy',origen:'Arrays',nivel:1,
+ code:"a = np.arange(0, 20, 5)\nb = np.linspace(0, 20, num=5)\nprint(a[-1], b[-1])",
+ opciones:['15 20.0','20 20.0','15 16.0','20 16.0'],correcta:0,
+ explica:"<code>arange</code> usa el tercer número como <b>paso</b> y <b>excluye</b> el límite superior (se queda en 15); "+
+  "<code>linspace</code> usa el tercer número como <b>cantidad de valores</b> e <b>incluye</b> ambos extremos por defecto, "+
+  "así que sí llega a 20.0."},
+
+{id:'p54',tema:'numpy',origen:'Turnos',nivel:2,
+ code:"horas = np.array([8, 9, 10, 11, 12, 13, 14, 15, 16])\nprint(horas[7:1:-1])",
+ opciones:['[15 14 13 12 11 10]','[16 15 14 13 12 11 10]','[ 9 10 11 12 13 14]','[16 15 14 13 12 11 10  9  8]'],correcta:0,
+ explica:"Con paso negativo el recorrido va <b>de atrás hacia adelante</b>: parte en el índice 7 (15) y avanza hasta "+
+  "<b>justo después</b> del índice 1 (se detiene en 10, sin incluir el 9). Igual que en positivo, el <code>fin</code> "+
+  "queda excluido."},
+
+{id:'p55',tema:'numpy',origen:'Arrays',nivel:2,
+ code:"a = np.array([[1, 2], [3, 4]])\nb = a.ravel()\nb[0] = 99\nprint(a[0, 0])",
+ opciones:['99','1','TypeError: assignment destination is read-only','2'],correcta:0,
+ explica:"<code>ravel()</code> devuelve, siempre que puede, una <b>vista</b> que comparte memoria con el original: "+
+  "modificar <code>b</code> modifica <code>a</code>. <code>flatten()</code> en cambio <b>siempre copia</b>, así que el "+
+  "mismo truco sobre su resultado dejaría <code>a</code> intacto."},
+
+{id:'p56',tema:'numpy',origen:'Flota vehicular',nivel:2,
+ code:"fallas = np.array([301, 204, 301, 105, 204, 301])\nvalores, conteos = np.unique(fallas, return_counts=True)\nprint(valores[np.argmax(conteos)])",
+ opciones:['301','2','204','105'],correcta:0,
+ explica:"<code>unique(..., return_counts=True)</code> entrega los códigos distintos <b>ordenados</b> junto con cuántas "+
+  "veces aparece cada uno; <code>argmax(conteos)</code> ubica la posición del conteo más alto, que hay que usar para "+
+  "indexar <code>valores</code> (no <code>conteos</code>) y recuperar el código real."},
+
+{id:'p57',tema:'numpy',origen:'Matrices',nivel:1,
+ code:"m = np.array([[1, 2], [3, 4]])\nn = np.array([[2, 0], [1, 3]])\nprint((m @ n)[0, 1])",
+ opciones:['6','0','4','ValueError'],correcta:0,
+ explica:"<code>@</code> es <b>producto matricial</b>: la celda [0,1] sale de la fila 0 de <code>m</code> por la columna "+
+  "1 de <code>n</code> (1×0 + 2×3 = 6). <code>m * n</code> en cambio multiplica <b>elemento a elemento</b> y en esa "+
+  "misma posición daría 0 (2×0)."},
 
 /* ===== DataFrames ===== */
 {id:'p06',tema:'df',origen:'Series',nivel:2,
@@ -3286,6 +3486,47 @@ const BANCO_BUGS=[
  explica:"<code>duplicated()</code> compara la <b>fila completa</b> y el id_viaje distinto hace única "+
   "cada fila. Para buscar patentes repetidas hay que mirar solo esa columna con <code>subset</code>.",
  fix:"repetidos = df.duplicated(subset='patente').sum()   # 1"},
+
+{id:'b13',tema:'numpy',origen:'Inventario',nivel:1,
+ lineas:["disponible = np.array([True, False, True])",
+         "barato = np.array([True, True, False])",
+         "buena_oferta = disponible and barato",
+         "print(buena_oferta)   # ¿cuáles cumplen ambas condiciones?"],
+ bug:2,pista:"¿and reduce el array a un solo booleano, o lo recorre elemento a elemento?",
+ explica:"<code>and</code> necesita <b>un solo valor de verdad</b> y no sabe qué hacer con un array de varios "+
+  "elementos: lanza <i>ValueError: the truth value of an array...is ambiguous</i>. El Y lógico elemento a "+
+  "elemento es <code>&amp;</code>.",
+ fix:"buena_oferta = disponible & barato"},
+
+{id:'b14',tema:'numpy',origen:'Dólar observado',nivel:1,
+ lineas:["precio_dolar = np.array([905, 912, 898, 940])",
+         "fecha = np.array(['02-06','03-06','04-06','05-06'])",
+         "dia_mas_caro = np.argmax(precio_dolar)",
+         "print(f\"El día más caro tuvo un precio de {dia_mas_caro}\")"],
+ bug:3,pista:"¿dia_mas_caro guarda un precio o una posición?",
+ explica:"<code>np.argmax()</code> devuelve el <b>índice</b> del máximo (acá, 3), no el precio. El mensaje "+
+  "imprime «un precio de 3» en vez del valor real: falta volver a indexar <code>precio_dolar</code> con ese índice.",
+ fix:"print(f\"El día más caro tuvo un precio de {precio_dolar[dia_mas_caro]}\")"},
+
+{id:'b15',tema:'numpy',origen:'Arrays',nivel:2,
+ lineas:["datos = np.array([10, 20, 30, 40, 50])",
+         "copia = datos[1:4]",
+         "copia[0] = 999",
+         "print(datos)   # esperaba que datos no cambiara"],
+ bug:1,pista:"¿Un slice de NumPy es una copia independiente o comparte memoria?",
+ explica:"Un slice básico de NumPy es una <b>vista</b>: comparte memoria con el array original. Modificar "+
+  "<code>copia</code> modifica <code>datos</code> en el mismo lugar. Para una copia real hace falta pedirla "+
+  "explícitamente.",
+ fix:"copia = datos[1:4].copy()"},
+
+{id:'b16',tema:'numpy',origen:'Arrays',nivel:1,
+ lineas:["datos = np.arange(10)",
+         "matriz = datos.reshape(3, 4)",
+         "print(matriz)   # ValueError inesperado"],
+ bug:1,pista:"¿3 × 4 coincide con cuántos elementos tiene datos?",
+ explica:"<code>reshape</code> exige que el nuevo <code>shape</code> tenga el <b>mismo total de elementos</b>: "+
+  "3×4 = 12, pero <code>datos</code> tiene 10. reshape nunca inventa ni descarta datos.",
+ fix:"matriz = datos.reshape(2, 5)   # o (5, 2), (10, 1)…"},
 ];
 
 </script>
@@ -3308,9 +3549,9 @@ const BANCO_BUGS=[
    ===================================================================== */
 
 const EX_TEMAS=[
-  ['todos','Todos'],['numpy','NumPy'],['df','DataFrames'],['viz','Visualización'],
-  ['nulos','Nulos'],['outliers','Outliers'],['wrangling','Wrangling'],
-  ['groupby','GroupBy'],['merge','Joins'],['fechas','Fechas'],
+  ['todos','Todos'],['numpy','NumPy'],['df','DataFrames'],['fechas','Fechas'],
+  ['viz','Visualización'],['nulos','Nulos'],['outliers','Outliers'],
+  ['wrangling','Wrangling'],['merge','Joins'],['groupby','GroupBy'],
 ];
 const NIVEL=n=>'●'.repeat(n)+'○'.repeat(3-n);
 
@@ -3677,7 +3918,7 @@ window.qrCanvas=qrCanvas;
 (function(){
 
 const URL_PUB='https://mati3939.github.io/visualizador-numpy-pandas/';
-const TODOS=['numpy','df','viz','nulos','outliers','wrangling','groupby','merge','fechas'];
+const TODOS=['numpy','df','fechas','viz','nulos','outliers','wrangling','merge','groupby'];
 const EVALS=[
  {id:'c1',label:'Ensayo 1 · NumPy',temas:['numpy']},
  {id:'c2',label:'Ensayo 2 · NumPy + Pandas',temas:['numpy','df']},

@@ -4,7 +4,8 @@ registerModule({
   id:'numpy',
   title:'Arrays NumPy',
   lead:'Un array es una grilla de valores del mismo tipo. Aquí puedes ver cómo se mueven '+
-       'las celdas al cambiar la forma, qué recorre realmente el axis y cómo filtra una máscara booleana.',
+       'las celdas al cambiar la forma, qué recorre realmente el axis, cómo filtra una máscara '+
+       'booleana y por qué las funciones arg… devuelven posiciones y no valores.',
   build(sec){
 
     /* ---------- Tarjeta 1: reshape ---------- */
@@ -204,6 +205,136 @@ registerModule({
              {id:'eq',text:'=',r:1,c:offR-0.65,cls:'hd'},
              ...A.flatMap((row,r)=>row.map((v,c)=>({id:`R${r}_${c}`,text:v+b[c],r,c:offR+c,cls:'res'})))]);
            code.innerHTML='A + b\n# array([[11, 22, 33, 44],\n#        [15, 26, 37, 48],\n#        [19, 30, 41, 52]])';
+           await sleep(300);
+         }},
+      ];
+      new Stepper(card,steps,reset,'numpy');
+      reset();
+    }
+
+    /* ---------- Tarjeta 5: np.where ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Buscar y decidir: <code>np.where</code>'}),
+        el('p',{class:'note',html:'Con <b>tres argumentos</b> es un if/else vectorizado: recorre el array y devuelve '+
+          'otro <b>del mismo largo</b>. Con <b>un solo argumento</b> cambia de oficio: devuelve las <b>posiciones</b> '+
+          'donde la condición se cumple, no los valores.'}));
+      sec.append(card);
+      const ctr=el('div');card.append(ctr);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const msg=el('div',{class:'msg'});card.append(msg);
+      const code=codeBox(card);
+      const n=[12,45,8,60,33,5,27,51], L=n.length;
+      const lbl=(id,text,r)=>({id,text,r,c:L+0.35,w:2,cls:'hd'});
+      const filaIdx=()=>[...n.map((v,i)=>({id:'wi'+i,text:i,r:0,c:i,cls:'hd'})),lbl('lw0','posición',0)];
+      const filaVal=cls=>[...n.map((v,i)=>({id:'wn'+i,text:v,r:1,c:i,cls:cls(v)})),lbl('lw1','ventas',1)];
+
+      function ternario(){
+        grid.setCells([...filaIdx(),...filaVal(v=>v>=30?'ok':'off'),
+          ...n.map((v,i)=>({id:'wr'+i,text:v>=30?'alta':'baja',r:2,c:i,cls:'res'})),
+          lbl('lw2','resultado',2)]);
+        msg.className='msg okc';
+        msg.textContent='8 valores entran, 8 salen: np.where no filtra, reemplaza.';
+        code.innerHTML="np.where(ventas >= 30, <b>'alta'</b>, <b>'baja'</b>)\n"+
+          "# array(['baja', 'alta', 'baja', 'alta', 'alta', 'baja', 'baja', 'alta'])";
+      }
+      function posiciones(){
+        const pos=n.map((v,i)=>v>=30?i:null).filter(i=>i!==null);
+        grid.setCells([...filaIdx(),...filaVal(v=>v>=30?'ok':'off'),
+          ...pos.map(i=>({id:'wp'+i,text:i,r:2,c:i,cls:'res'})),
+          lbl('lw2','np.where',2)]);
+        msg.className='msg okc';
+        msg.textContent=`quedaron ${pos.length} posiciones, no ${pos.length} ventas`;
+        code.innerHTML="np.where(ventas >= 30)\n"+
+          `# (array([${pos.join(', ')}]),)   ← <b>índices</b>, y viene dentro de una tupla\n`+
+          `ventas[np.where(ventas >= 30)]   # array([${pos.map(i=>n[i]).join(', ')}])`;
+      }
+      function anidado(){
+        const cat=v=>v>=50?'A':v>=30?'B':'C';
+        const clsCat=v=>v>=50?'hl':v>=30?'ok':'off';
+        grid.setCells([...filaIdx(),...filaVal(clsCat),
+          ...n.map((v,i)=>({id:'wr'+i,text:cat(v),r:2,c:i,cls:'res'})),
+          lbl('lw2','tramo',2)]);
+        msg.className='msg';
+        msg.textContent='El tercer argumento es otro np.where: se evalúa solo donde el primero dio False.';
+        code.innerHTML="np.where(ventas >= 50, 'A',\n"+
+          "         np.where(ventas >= 30, <b>'B'</b>, <b>'C'</b>))\n"+
+          "# el np.where de adentro decide el resto: primero se pregunta por A";
+      }
+      btnGroup(ctr,[
+        {label:'if/else (3 argumentos)',value:ternario},
+        {label:'solo condición → posiciones',value:posiciones},
+        {label:'anidado (3 tramos)',value:anidado},
+      ],f=>f());
+      ternario();
+    }
+
+    /* ---------- Tarjeta 6: argsort, argmin y argmax ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'Ordenar por índices: <code>argsort</code>, <code>argmin</code>, <code>argmax</code>'}),
+        el('p',{class:'note',html:'Las funciones que empiezan con <b>arg</b> no devuelven valores: devuelven '+
+          '<b>posiciones</b>. Por eso sirven para arrastrar otro array — ordenas los tiempos y los nombres '+
+          'los siguen.'}));
+      sec.append(card);
+      const wrap=el('div',{style:'overflow-x:auto'});card.append(wrap);
+      const grid=new CellGrid(wrap);
+      const code=codeBox(card);
+      const nom=['Ana','Beto','Cata','Dani','Eli'], t=[42,35,51,38,47], L=nom.length;
+      const orden=t.map((v,i)=>i).sort((a,b)=>t[a]-t[b]);   // argsort = [1,3,0,4,2]
+      const lbl=(id,text,r)=>({id,text,r,c:L+0.35,w:2,cls:'hd'});
+      const cabecera=()=>[...nom.map((v,i)=>({id:'ai'+i,text:i,r:0,c:i,cls:'hd'})),lbl('la0','posición',0)];
+      /* col(i) = dónde se dibuja el corredor i: orig lo deja en la largada, dest lo lleva al podio */
+      const cuerpo=(col,clsT)=>[
+        ...nom.map((v,i)=>({id:'an'+i,text:v,r:1,c:col(i),cls:'hd'})),
+        ...t.map((v,i)=>({id:'at'+i,text:v,r:2,c:col(i),cls:clsT?clsT(i):''})),
+        lbl('la1','corredor',1),lbl('la2','tiempo',2)];
+      const orig=i=>i, dest=i=>orden.indexOf(i);
+
+      function reset(){
+        grid.setCells([...cabecera(),...cuerpo(orig)]);
+        code.textContent="nombres = np.array(['Ana', 'Beto', 'Cata', 'Dani', 'Eli'])\n"+
+          "tiempos = np.array([42, 35, 51, 38, 47])";
+      }
+      const steps=[
+        {d:'<b>Dos arrays paralelos.</b> La posición 0 es Ana con 42 minutos, la 1 es Beto con 35… '+
+           'El vínculo entre nombre y tiempo es la posición: si ordeno solo los tiempos, lo rompo.',
+         async run(){ reset(); }},
+        {d:'<b><code>np.argsort</code> responde «¿de dónde saco el que va aquí?».</b> En la posición 0 del '+
+           'resultado va un 1: el tiempo más bajo (35) está en la posición 1. Después el 3 (38), el 0 (42)… '+
+           'No es el array ordenado, es la <b>receta</b> para ordenarlo.',
+         async run(){
+           grid.setCells([...cabecera(),...cuerpo(orig),
+             ...orden.map((i,j)=>({id:'ao'+j,text:i,r:3,c:j,cls:'res'})),
+             lbl('la3','argsort',3)]);
+           code.innerHTML="orden = np.argsort(tiempos)\n"+
+             `# array([${orden.join(', ')}])   ← posiciones, no tiempos`;
+           await sleep(400);
+         }},
+        {d:'<b>Indexar con esa receta reordena de verdad.</b> Cada corredor viaja a su lugar en el podio, '+
+           'y como uso los <b>mismos índices</b> en ambos arrays, cada nombre llega con su tiempo.',
+         async run(){
+           grid.setCells([...cabecera(),...cuerpo(dest),
+             ...orden.map((i,j)=>({id:'ao'+j,text:i,r:3,c:j,cls:'res'})),
+             lbl('la3','argsort',3)]);
+           code.innerHTML="tiempos[orden]   # array([35, 38, 42, 47, 51])\n"+
+             "nombres[orden]   # array(['Beto', 'Dani', 'Ana', 'Eli', 'Cata'])";
+           await sleep(600);
+         }},
+        {d:'<b><code>argmin</code> y <code>argmax</code> son los extremos de esa receta:</b> el primero y el '+
+           'último índice del argsort. Ojo con la confusión clásica: <code>min()</code> devuelve el tiempo (35) '+
+           'y <code>argmin()</code> devuelve <b>dónde está</b> (1).',
+         async run(){
+           const mn=orden[0], mx=orden[L-1];
+           grid.setCells([...cabecera(),
+             ...cuerpo(orig,i=>i===mn?'hl':i===mx?'ok':'off'),
+             {id:'ao0',text:mn,r:3,c:0,cls:'res'},{id:'ao'+(L-1),text:mx,r:3,c:L-1,cls:'res'},
+             lbl('la3','argsort',3)]);
+           code.innerHTML="tiempos.min()      # 35   ← el valor\n"+
+             `np.argmin(tiempos) # <b>${mn}</b>    ← la posición de Beto\n`+
+             `np.argmax(tiempos) # <b>${mx}</b>    ← la posición de Cata\n`+
+             "nombres[np.argmin(tiempos)]   # 'Beto'";
            await sleep(300);
          }},
       ];

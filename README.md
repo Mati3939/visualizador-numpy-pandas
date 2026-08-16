@@ -17,19 +17,19 @@ dónde*, no solo el resultado final.
 - **Portada**: el menú es un DataFrame — columnas = temas, filas = contenidos;
   cada celda navega a su tarjeta (y las celdas `NaN` también enseñan algo).
 
-## Módulos (en orden de dificultad)
+## Módulos (en el orden del curso)
 
 | # | Módulo | Qué se visualiza |
 |---|--------|------------------|
-| 2 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting |
+| 2 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting, `np.where`, `argsort`/`argmin`/`argmax` |
 | 3 | DataFrames | anatomía (índice/columnas/Series), `loc` vs `iloc` |
-| 4 | Visualización | qué gráfico usar según la pregunta, anatomía de la figura, `plt` vs `ax` |
-| 5 | Valores perdidos | matriz de nulos estilo missingno, `dropna`, `fillna` |
-| 6 | Outliers | boxplot interactivo, umbral IQR/z-score, media vs mediana |
-| 7 | Data wrangling | duplicados, `replace`/`map`, `pd.cut`, `sort_values` |
-| 8 | GroupBy y pivoteo | split-apply-combine animado, `pivot_table` como heatmap |
+| 4 | Fechas | `to_datetime`, accesor `.dt`, `Timedelta`, `resample`, `date_range` |
+| 5 | Visualización | qué gráfico usar según la pregunta, anatomía de la figura, `plt` vs `ax` |
+| 6 | Valores perdidos | matriz de nulos estilo missingno, `dropna`, `fillna` |
+| 7 | Outliers | boxplot interactivo, umbral IQR/z-score, media vs mediana |
+| 8 | Data wrangling | duplicados, `replace`/`map`, `pd.cut`, `sort_values` |
 | 9 | Joins y concat | `merge` con llaves conectadas, Venn por `how`, `concat` |
-| 0 | Fechas | `to_datetime`, accesor `.dt`, `Timedelta`, `resample`, `date_range` |
+| 0 | GroupBy y pivoteo | split-apply-combine animado, `pivot_table` como heatmap |
 
 El número es la tecla que abre cada módulo (el 1 es la portada). Además hay una
 sección **🎯 Ejercicios** con predice-la-salida, detective de bugs, simulacro

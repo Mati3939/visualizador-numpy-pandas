@@ -5,15 +5,15 @@
 
 /* columnas = temas (módulos); filas = contenidos. null → NaN (no hay contenido ahí) */
 const TEMAS=[
-  {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3]]},
+  {col:'NumPy',     mod:'numpy',    items:[['reshape',0],['axis',1],['máscaras',2],['broadcasting',3],['where / argsort',4]]},
   {col:'DataFrames',mod:'df',       items:[['anatomía',0],['loc vs iloc',1]]},
+  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
   {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['plt vs ax',2]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['boxplot',0],['IQR / z-score',0]]},
   {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
-  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
-  {col:'Fechas',    mod:'fechas',   items:[['to_datetime',0],['accesor .dt',1],['Timedelta',2],['date_range',3]]},
+  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
