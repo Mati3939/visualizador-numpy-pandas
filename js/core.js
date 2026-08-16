@@ -203,7 +203,9 @@ class Stepper{
 }
 
 /* ================= app shell ================= */
-const MODULES=[];   // {id, title, lead, build(section)} — nav principal, teclas 1-9
+const MODULES=[];   // {id, title, lead, build(section)} — nav principal; MODULES[0] es la portada
+/* número que se muestra y tecla que abre cada módulo: la portada no lleva, el décimo es el 0 */
+const teclaDeModulo=i=>i===0?'':(i===10?'0':(i<10?String(i):''));
 const EXERCISES=[]; // ídem, pero viven en el menú «Ejercicios» (estudio sin ruido)
 function registerModule(m){MODULES.push(m);}
 function registerExercise(m){EXERCISES.push(m);}
@@ -233,8 +235,11 @@ function buildShell(){
     main.append(sec);
     m._built=false; m._sec=sec;
   };
+  /* la portada no gasta número: así los 10 módulos de contenido entran justo en 1-9 y 0
+     (con 12 o más módulos habría que buscar otra tecla para el último) */
   MODULES.forEach((m,i)=>{
-    const b=el('button',{onclick:()=>activate(m.id)},`${i+1}. ${m.title}`);
+    const t=teclaDeModulo(i);
+    const b=el('button',{onclick:()=>activate(m.id)}, t?`${t}. ${m.title}`:`🏠 ${m.title}`);
     b.dataset.mod=m.id; nav.append(b);
     mkSection(m);
   });
@@ -359,7 +364,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(e.target.matches('input,select,textarea'))return;
     if(e.key==='ArrowRight'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i+1);e.preventDefault();}
     else if(e.key==='ArrowLeft'&&ACTIVE_STEPPER){ACTIVE_STEPPER.go(ACTIVE_STEPPER.i-1);e.preventDefault();}
-    else if(/^[0-9]$/.test(e.key)){const m=MODULES[e.key==='0'?9:+e.key-1]; if(m)activate(m.id);}
+    else if(/^[0-9]$/.test(e.key)){const m=MODULES[e.key==='0'?10:+e.key]; if(m)activate(m.id);}
+    else if(e.key==='Home'&&MODULES[0]){activate(MODULES[0].id);}
   });
   buildShell();
 });

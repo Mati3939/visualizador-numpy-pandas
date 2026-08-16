@@ -21,8 +21,9 @@ dónde*, no solo el resultado final.
 
 | # | Módulo | Qué se visualiza |
 |---|--------|------------------|
-| 2 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting, `np.where`, `argsort`/`argmin`/`argmax` |
-| 3 | DataFrames | anatomía (índice/columnas/Series), `loc` vs `iloc` |
+| 1 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting, `np.where`, `argsort`/`argmin`/`argmax` |
+| 2 | DataFrames | anatomía (índice/columnas/Series), `loc` vs `iloc` |
+| 3 | Leer archivos | el archivo crudo (csv, excel, json, parquet, html) consumiéndose para armar el df; `sep`, `header`, `index_col`, `skiprows` |
 | 4 | Fechas | `to_datetime`, accesor `.dt`, `Timedelta`, `resample`, `date_range` |
 | 5 | Visualización | qué gráfico usar según la pregunta, anatomía de la figura, `plt` vs `ax` |
 | 6 | Valores perdidos | matriz de nulos estilo missingno, `dropna`, `fillna` |
@@ -31,7 +32,7 @@ dónde*, no solo el resultado final.
 | 9 | Joins y concat | `merge` con llaves conectadas, Venn por `how`, `concat` |
 | 0 | GroupBy y pivoteo | split-apply-combine animado, `pivot_table` como heatmap |
 
-El número es la tecla que abre cada módulo (el 1 es la portada). Además hay una
+El número es la tecla que abre cada módulo; la portada se abre con la tecla `Inicio` o con un clic. Además hay una
 sección **🎯 Ejercicios** con predice-la-salida, detective de bugs, simulacro
 cronometrado, boss final, traductor de errores, Python real y modo en vivo.
 
