@@ -204,8 +204,10 @@ class Stepper{
 
 /* ================= app shell ================= */
 const MODULES=[];   // {id, title, lead, build(section)} — nav principal; MODULES[0] es la portada
-/* número que se muestra y tecla que abre cada módulo: la portada no lleva, el décimo es el 0 */
-const teclaDeModulo=i=>i===0?'':(i===10?'0':(i<10?String(i):''));
+/* número que se muestra en el menú: la portada no lleva (va con 🏠) y el décimo se
+   muestra como 0, que es su tecla. Del undécimo en adelante el número igual se
+   muestra, pero ya no queda tecla libre para el atajo. */
+const teclaDeModulo=i=>i===0?'':(i===10?'0':String(i));
 const EXERCISES=[]; // ídem, pero viven en el menú «Ejercicios» (estudio sin ruido)
 function registerModule(m){MODULES.push(m);}
 function registerExercise(m){EXERCISES.push(m);}
@@ -235,8 +237,9 @@ function buildShell(){
     main.append(sec);
     m._built=false; m._sec=sec;
   };
-  /* la portada no gasta número: así los 10 módulos de contenido entran justo en 1-9 y 0
-     (con 12 o más módulos habría que buscar otra tecla para el último) */
+  /* la portada no gasta número: los diez primeros módulos de contenido entran justo
+     en las teclas 1-9 y 0. Del undécimo en adelante el menú los numera igual, pero
+     solo se abren con clic o por hash. */
   MODULES.forEach((m,i)=>{
     const t=teclaDeModulo(i);
     const b=el('button',{onclick:()=>activate(m.id)}, t?`${t}. ${m.title}`:`🏠 ${m.title}`);
@@ -327,6 +330,20 @@ function dfDiff(mount,before,after,caption){
 }
 /* helpers UI */
 function codeBox(mount){const c=el('pre',{class:'code'});mount.append(c);return c;}
+/* Bloque de código de varias sentencias, una por paso de un Stepper: mark(i)
+   resalta la línea que se está ejecutando y atenúa el resto. mark(null) las
+   devuelve todas a su estado normal (el «inicio» del stepper). */
+function codeSteps(mount,lines){
+  const pre=el('pre',{class:'code steps'});
+  const els=lines.map(t=>el('span',{class:'cline',html:t}));
+  pre.append(...els); mount.append(pre);
+  return {el:pre, mark(i){
+    const activa=(i!=null&&i>=0&&i<els.length);
+    els.forEach(e=>e.classList.remove('on'));
+    pre.classList.toggle('dim',activa);
+    if(activa)els[i].classList.add('on');
+  }};
+}
 function btnGroup(mount,items,onpick,activeFirst=true){
   /* items: [{label,value}] — botones excluyentes; devuelve los botones */
   const wrap=el('div',{class:'controls'});

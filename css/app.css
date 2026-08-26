@@ -191,6 +191,16 @@ input[type=range]{accent-color:var(--s1); vertical-align:middle;}
   line-height:1.55;
 }
 .code b{color:var(--s1); font-weight:700;}
+/* código paso a paso: la línea que corre en este paso queda encendida y el resto se atenúa */
+.code.steps .cline{
+  display:block; padding:.05rem .45rem; margin:0 -.45rem; border-radius:5px;
+  transition:opacity .25s ease, background .25s ease;
+}
+.code.steps.dim .cline{opacity:.32;}
+.code.steps .cline.on{
+  opacity:1; background:color-mix(in srgb, var(--s1) 20%, transparent);
+  box-shadow:inset 3px 0 0 var(--s1);
+}
 .note{color:var(--ink2); font-size:.88rem; max-width:75ch;}
 .note b{color:var(--ink);}
 .msg{font-size:.9rem; font-weight:600; min-height:1.4em; margin:.4rem 0;}

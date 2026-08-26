@@ -198,6 +198,16 @@ input[type=range]{accent-color:var(--s1); vertical-align:middle;}
   line-height:1.55;
 }
 .code b{color:var(--s1); font-weight:700;}
+/* código paso a paso: la línea que corre en este paso queda encendida y el resto se atenúa */
+.code.steps .cline{
+  display:block; padding:.05rem .45rem; margin:0 -.45rem; border-radius:5px;
+  transition:opacity .25s ease, background .25s ease;
+}
+.code.steps.dim .cline{opacity:.32;}
+.code.steps .cline.on{
+  opacity:1; background:color-mix(in srgb, var(--s1) 20%, transparent);
+  box-shadow:inset 3px 0 0 var(--s1);
+}
 .note{color:var(--ink2); font-size:.88rem; max-width:75ch;}
 .note b{color:var(--ink);}
 .msg{font-size:.9rem; font-weight:600; min-height:1.4em; margin:.4rem 0;}
@@ -603,8 +613,10 @@ class Stepper{
 
 /* ================= app shell ================= */
 const MODULES=[];   // {id, title, lead, build(section)} — nav principal; MODULES[0] es la portada
-/* número que se muestra y tecla que abre cada módulo: la portada no lleva, el décimo es el 0 */
-const teclaDeModulo=i=>i===0?'':(i===10?'0':(i<10?String(i):''));
+/* número que se muestra en el menú: la portada no lleva (va con 🏠) y el décimo se
+   muestra como 0, que es su tecla. Del undécimo en adelante el número igual se
+   muestra, pero ya no queda tecla libre para el atajo. */
+const teclaDeModulo=i=>i===0?'':(i===10?'0':String(i));
 const EXERCISES=[]; // ídem, pero viven en el menú «Ejercicios» (estudio sin ruido)
 function registerModule(m){MODULES.push(m);}
 function registerExercise(m){EXERCISES.push(m);}
@@ -634,8 +646,9 @@ function buildShell(){
     main.append(sec);
     m._built=false; m._sec=sec;
   };
-  /* la portada no gasta número: así los 10 módulos de contenido entran justo en 1-9 y 0
-     (con 12 o más módulos habría que buscar otra tecla para el último) */
+  /* la portada no gasta número: los diez primeros módulos de contenido entran justo
+     en las teclas 1-9 y 0. Del undécimo en adelante el menú los numera igual, pero
+     solo se abren con clic o por hash. */
   MODULES.forEach((m,i)=>{
     const t=teclaDeModulo(i);
     const b=el('button',{onclick:()=>activate(m.id)}, t?`${t}. ${m.title}`:`🏠 ${m.title}`);
@@ -726,6 +739,20 @@ function dfDiff(mount,before,after,caption){
 }
 /* helpers UI */
 function codeBox(mount){const c=el('pre',{class:'code'});mount.append(c);return c;}
+/* Bloque de código de varias sentencias, una por paso de un Stepper: mark(i)
+   resalta la línea que se está ejecutando y atenúa el resto. mark(null) las
+   devuelve todas a su estado normal (el «inicio» del stepper). */
+function codeSteps(mount,lines){
+  const pre=el('pre',{class:'code steps'});
+  const els=lines.map(t=>el('span',{class:'cline',html:t}));
+  pre.append(...els); mount.append(pre);
+  return {el:pre, mark(i){
+    const activa=(i!=null&&i>=0&&i<els.length);
+    els.forEach(e=>e.classList.remove('on'));
+    pre.classList.toggle('dim',activa);
+    if(activa)els[i].classList.add('on');
+  }};
+}
 function btnGroup(mount,items,onpick,activeFirst=true){
   /* items: [{label,value}] — botones excluyentes; devuelve los botones */
   const wrap=el('div',{class:'controls'});
@@ -1221,7 +1248,335 @@ registerModule({
 <script>
 'use strict';
 /* =====================================================================
-   Módulo: DataFrames (Semana 3)
+   Módulo: Series — el bloque básico de Pandas
+   Cuatro tarjetas: anatomía, etiqueta vs posición, alineación de índices
+   y fill_value.
+   ===================================================================== */
+(function(){
+
+  /* ventas diarias de una cafetería, en miles de pesos */
+  const DIAS  = ['lunes','martes','miércoles','jueves','viernes'];
+  const VENTAS= [120, 95, 143, 210, 187];
+
+  /* población de comunas del Biobío: nace de un diccionario */
+  const COMUNAS = ['Concepción','Talcahuano','San Pedro de la Paz','Coronel','Chiguayante'];
+  const POBLA   = [223351, 149461, 139625, 118885, 89806];
+
+  /* dos almacenes de barrio con surtidos parcialmente distintos */
+  const NORTE = {pan:45, leche:30, huevos:25, queso:12};
+  const SUR   = {pan:38, leche:22, arroz:18, fideos:27};
+  /* la unión de etiquetas sale ORDENADA, no en el orden original */
+  const UNION = ['arroz','fideos','huevos','leche','pan','queso'];
+
+  registerModule({
+    id:'series',
+    title:'Series',
+    lead:'Una Serie es un array de NumPy con etiquetas. Esa etiqueta es la que manda: '+
+         'decide qué devuelve un recorte y, sobre todo, con qué se suma cada valor '+
+         'cuando operas dos Series entre sí.',
+    build(sec){
+      buildAnatomia(sec);
+      buildLocIloc(sec);
+      buildAlineacion(sec);
+      buildFillValue(sec);
+    }
+  });
+
+  /* ---------------- Tarjeta 1: anatomía de una Serie ---------------- */
+  function buildAnatomia(sec){
+    const card = el('div',{class:'card'}, el('h3',{},'Anatomía de una Serie'));
+    sec.append(card);
+
+    const izq = el('div',{}), der = el('div',{});
+    card.append(el('div',{class:'flexcols'}, izq, der));
+
+    const tVentas = new DfTable(izq,{
+      index:DIAS, columns:['ventas_miles_pesos'],
+      rows:VENTAS.map(v=>[v]),
+      caption:'ventas — construida desde una lista'
+    });
+    const tPobla = new DfTable(der,{
+      index:COMUNAS, columns:['poblacion'],
+      rows:POBLA.map(v=>[v]),
+      caption:'poblacion — construida desde un diccionario'
+    });
+
+    const ITEMS=[
+      {label:'El índice', value:'index'},
+      {label:'Los valores', value:'values'},
+      {label:'.name', value:'name'},
+      {label:'dtype · size · shape', value:'attrs'},
+      {label:'Desde un diccionario', value:'dict'},
+    ];
+    btnGroup(card, ITEMS, pick, true);
+
+    const noteEl = el('div',{class:'note'});
+    card.append(noteEl);
+    const code = codeBox(card);
+
+    const NOTES = {
+      index:'El <b>índice</b> es lo que separa una Serie de un array: cada valor queda etiquetado. '+
+            'No es una columna de datos, vive aparte y es con lo que trabajan <b>.loc</b> y la alineación.',
+      values:'<b>.values</b> devuelve un array de NumPy pelado, sin etiquetas. Por eso todo lo que sabes '+
+             'de arrays sigue sirviendo: la Serie es ese array <i>más</i> el índice.',
+      name:'Una Serie puede tener <b>nombre</b>. Cuando esa Serie pase a ser una columna de un DataFrame, '+
+           'el nombre será el encabezado de la columna.',
+      attrs:'Los mismos atributos que ya usabas en NumPy. Ojo con <b>shape</b>: una Serie es '+
+            'unidimensional, así que su forma es <b>(5,)</b> — un solo eje, igual que un vector.',
+      dict:'Si construyes la Serie desde un <b>diccionario</b>, las llaves se convierten en el índice y '+
+           'los valores en los datos. No hace falta pasar <b>index=</b> por separado.',
+    };
+    const CODES = {
+      index:`ventas.<b>index</b>\n# Index(['lunes', 'martes', 'miércoles', 'jueves', 'viernes'], dtype='object')`,
+      values:`ventas.<b>values</b>\n# array([120,  95, 143, 210, 187])`,
+      name:`ventas.<b>name</b> = 'ventas_miles_pesos'`,
+      attrs:`print(ventas.<b>dtype</b>)   # int64\nprint(ventas.<b>size</b>)    # 5\nprint(ventas.<b>shape</b>)   # (5,)`,
+      dict:`poblacion = pd.Series(<b>{</b>\n    'Concepción': 223351,\n    'Talcahuano': 149461,\n    'San Pedro de la Paz': 139625,\n    'Coronel': 118885,\n    'Chiguayante': 89806\n<b>}</b>)`,
+    };
+
+    function pick(v){
+      tVentas.clearMarks(); tPobla.clearMarks();
+      if(v==='index'){
+        tVentas.rowEls.forEach(r=>r._idx.classList.add('hl'));
+      }else if(v==='values'){
+        tVentas.cellEls.flat().forEach(c=>c.classList.add('sel'));
+      }else if(v==='name'){
+        tVentas.headEls[0].classList.add('sel');
+      }else if(v==='attrs'){
+        tVentas.cellEls.flat().forEach(c=>c.classList.add('hl'));
+      }else if(v==='dict'){
+        tPobla.rowEls.forEach(r=>r._idx.classList.add('hl'));
+        tPobla.cellEls.flat().forEach(c=>c.classList.add('sel'));
+      }
+      noteEl.innerHTML = NOTES[v];
+      code.innerHTML = CODES[v];
+    }
+    pick('index');
+  }
+
+  /* ---------------- Tarjeta 2: etiqueta vs posición ---------------- */
+  function buildLocIloc(sec){
+    const card = el('div',{class:'card'}, el('h3',{},'Etiqueta o posición: .loc y .iloc'));
+    sec.append(card);
+
+    const izq = el('div',{}), der = el('div',{});
+    card.append(el('div',{class:'flexcols'}, izq, der));
+
+    const tLoc = new DfTable(izq,{
+      index:DIAS, columns:['ventas'], rows:VENTAS.map(v=>[v]),
+      caption:'.loc — la misma Serie vista por ETIQUETA'
+    });
+    const tIloc = new DfTable(der,{
+      index:[0,1,2,3,4], columns:['ventas'], rows:VENTAS.map(v=>[v]),
+      caption:'.iloc — la misma Serie vista por POSICIÓN'
+    });
+
+    const PRESETS=[
+      {label:"ventas.loc['jueves']", value:'l1'},
+      {label:'ventas.iloc[3]', value:'i1'},
+      {label:"ventas.loc['martes':'jueves']", value:'l2'},
+      {label:'ventas.iloc[1:3]', value:'i2'},
+      {label:"ventas.loc[['lunes','viernes']]", value:'l3'},
+      {label:'ventas[ventas > 130]', value:'m1'},
+    ];
+    btnGroup(card, PRESETS, pick, false);
+
+    const noteEl = el('div',{class:'note'},'Elige un recorte arriba para ver qué días entrega.');
+    card.append(noteEl);
+    const code = codeBox(card);
+    code.textContent = '# elige un botón arriba ↑';
+
+    /* marca las filas seleccionadas y atenúa el resto de esa tabla */
+    function marcar(t, filas){
+      t.o.index.forEach((_,i)=>{ if(!filas.includes(i)) t.rowEls[i].classList.add('roff'); });
+      filas.forEach(i=>{
+        t.rowEls[i]._idx.classList.add('sel');
+        t.cellEls[i][0].classList.add('sel');
+      });
+    }
+
+    const NOTES = {
+      l1:"Con <b>.loc</b> pides la etiqueta: el día se escribe tal cual. Devuelve un solo número, un escalar.",
+      i1:"Con <b>.iloc</b> pides la posición. El jueves es el <i>cuarto</i> día, pero su posición es <b>3</b>: "+
+         "se cuenta desde cero. Devuelve exactamente el mismo valor que el botón anterior.",
+      l2:"El slice por <b>etiqueta incluye el extremo final</b>: de martes a jueves entrega <b>tres</b> días. "+
+         "Compáralo con el botón de al lado, que es el recorte equivalente por posición.",
+      i2:"El slice por <b>posición excluye el extremo final</b>: 1:3 entrega las posiciones 1 y 2, o sea "+
+         "<b>dos</b> días. Misma idea que en las listas de Python y en los arrays de NumPy.",
+      l3:"Con una <b>lista</b> de etiquetas dentro del accesor puedes pedir días sueltos, en el orden que quieras. "+
+         "Ojo con los dobles corchetes: los de afuera son el accesor, los de adentro la lista.",
+      m1:"Una <b>máscara booleana</b>: la condición se evalúa día por día y solo sobreviven los días donde dio "+
+         "True. El resultado conserva las etiquetas originales, así que sabes <i>cuáles</i> días fueron.",
+    };
+    const CODES = {
+      l1:`ventas.loc[<b>'jueves'</b>]\n# 210`,
+      i1:`ventas.iloc[<b>3</b>]\n# 210`,
+      l2:`ventas.loc[<b>'martes':'jueves'</b>]\n# martes        95\n# miércoles    143\n# jueves       210`,
+      i2:`ventas.iloc[<b>1:3</b>]\n# martes        95\n# miércoles    143`,
+      l3:`ventas.loc[<b>['lunes','viernes']</b>]\n# lunes      120\n# viernes    187`,
+      m1:`ventas[<b>ventas > 130</b>]\n# miércoles    143\n# jueves       210\n# viernes      187`,
+    };
+
+    function pick(v){
+      tLoc.clearMarks(); tIloc.clearMarks();
+      if(v==='l1') marcar(tLoc,[3]);
+      else if(v==='i1') marcar(tIloc,[3]);
+      else if(v==='l2') marcar(tLoc,[1,2,3]);
+      else if(v==='i2') marcar(tIloc,[1,2]);
+      else if(v==='l3') marcar(tLoc,[0,4]);
+      else if(v==='m1') marcar(tLoc,[2,3,4]);
+      noteEl.innerHTML = NOTES[v];
+      code.innerHTML = CODES[v];
+    }
+  }
+
+  /* ---------------- Tarjeta 3: alineación de índices ---------------- */
+  function buildAlineacion(sec){
+    const card = el('div',{class:'card'}, el('h3',{},'Alineación: con qué se suma cada valor'));
+    sec.append(card);
+    card.append(el('div',{class:'note'},
+      'Dos almacenes de barrio venden surtidos parecidos pero no iguales. '+
+      'Al sumar las dos Series, Pandas no aparea posición con posición: aparea ETIQUETA con etiqueta.'));
+
+    const izq = el('div',{}), der = el('div',{});
+    card.append(el('div',{class:'flexcols'}, izq, der));
+
+    const nk = Object.keys(NORTE), sk = Object.keys(SUR);
+    const tN = new DfTable(izq,{index:nk, columns:['norte'], rows:nk.map(k=>[NORTE[k]]),
+                               caption:'almacen_norte'});
+    const tS = new DfTable(der,{index:sk, columns:['sur'], rows:sk.map(k=>[SUR[k]]),
+                                caption:'almacen_sur'});
+
+    const res = el('div',{});
+    card.append(res);
+    const tR = new DfTable(res,{
+      index:UNION, columns:['norte','sur','norte + sur'],
+      rows:UNION.map(()=>['','','']),
+      caption:'resultado'
+    });
+
+    /* escribe una celda respetando cómo clearMarks repinta los NaN */
+    function set(t,r,c,v){
+      const d = t.cellEls[r][c];
+      d._isnan = (v===null);
+      d.textContent = v===null ? 'NaN' : (v===''? '' : fmt(v));
+      d.className = 'dfc' + (v===null?' nan':'');
+    }
+    function vaciar(){
+      UNION.forEach((_,r)=>[0,1,2].forEach(c=>set(tR,r,c,'')));
+    }
+    function reset(){
+      tN.clearMarks(); tS.clearMarks(); tR.clearMarks();
+      vaciar();
+    }
+
+    const pasos = [
+      {d:'Pandas mira primero las <b>etiquetas</b> de las dos Series, no sus posiciones. '+
+          '<b>pan</b> y <b>leche</b> están en las dos; <b>huevos</b> y <b>queso</b> solo en el norte; '+
+          '<b>arroz</b> y <b>fideos</b> solo en el sur.',
+       run(){
+         tN.rowEls.forEach(r=>r._idx.classList.add('hl'));
+         tS.rowEls.forEach(r=>r._idx.classList.add('hl'));
+       }},
+      {d:'Arma la <b>unión</b> de las dos listas de etiquetas — y la deja <b>ordenada alfabéticamente</b>. '+
+          'Por eso el resultado no sale en el orden en que escribiste ninguna de las dos Series.',
+       run(){
+         tR.rowEls.forEach(r=>r._idx.classList.add('hl'));
+       }},
+      {d:'Cada Serie se <b>reindexa</b> a esa unión. Donde una Serie no tenía la etiqueta, '+
+          'aparece <b>NaN</b>: no es un cero, es un hueco.',
+       run(){
+         UNION.forEach((k,r)=>{
+           set(tR,r,0, k in NORTE ? NORTE[k] : null);
+           set(tR,r,1, k in SUR   ? SUR[k]   : null);
+         });
+       }},
+      {d:'Recién ahora suma, fila por fila. <b>NaN + número = NaN</b>, así que solo quedan con valor las dos '+
+          'etiquetas que estaban en ambas Series. Y fíjate en el tipo: el resultado es <b>float64</b>, '+
+          'porque NaN solo existe entre los flotantes.',
+       run(){
+         UNION.forEach((k,r)=>{
+           const hay = (k in NORTE) && (k in SUR);
+           set(tR,r,2, hay ? fmt(NORTE[k]+SUR[k])+',0' : null);
+           if(hay) tR.cellEls[r][2].classList.add('sel');
+         });
+       }},
+    ];
+
+    new Stepper(card, pasos, reset, 'series');
+    const code = codeBox(card);
+    code.innerHTML = `almacen_norte + almacen_sur\n`+
+      `# arroz      NaN\n# fideos     NaN\n# huevos     NaN\n`+
+      `# leche     52.0\n# pan       83.0\n# queso      NaN\n# dtype: float64`;
+    reset();
+  }
+
+  /* ---------------- Tarjeta 4: fill_value ---------------- */
+  function buildFillValue(sec){
+    const card = el('div',{class:'card'}, el('h3',{},'fill_value: rellenar antes de operar'));
+    sec.append(card);
+
+    const tR = new DfTable(card,{
+      index:UNION, columns:['norte','sur','resultado'],
+      rows:UNION.map(k=>[
+        k in NORTE ? NORTE[k] : null,
+        k in SUR   ? SUR[k]   : null,
+        null
+      ]),
+      caption:'almacen_norte y almacen_sur, alineados'
+    });
+
+    const OPTS=[
+      {label:'almacen_norte + almacen_sur', value:'suma'},
+      {label:'almacen_norte.add(almacen_sur, fill_value=0)', value:'add'},
+    ];
+    btnGroup(card, OPTS, pick, true);
+
+    const noteEl = el('div',{class:'note'});
+    card.append(noteEl);
+    const code = codeBox(card);
+
+    function set(t,r,c,v,cls){
+      const d = t.cellEls[r][c];
+      d._isnan = (v===null);
+      d.textContent = v===null ? 'NaN' : fmt(v);
+      d.className = 'dfc' + (v===null?' nan':'') + (cls?' '+cls:'');
+    }
+
+    function pick(v){
+      tR.clearMarks();
+      UNION.forEach((k,r)=>{
+        const n = k in NORTE, s = k in SUR;
+        if(v==='suma'){
+          set(tR,r,2, (n&&s) ? fmt(NORTE[k]+SUR[k])+',0' : null, (n&&s)?'sel':'');
+        }else{
+          const total = (n?NORTE[k]:0) + (s?SUR[k]:0);
+          set(tR,r,2, fmt(total)+',0', (n&&s)?'sel':'fill');
+        }
+      });
+      noteEl.innerHTML = v==='suma'
+        ? 'Con el operador <b>+</b>, una etiqueta que falta en una de las dos Series arrastra el NaN al '+
+          'resultado. De seis productos, solo dos quedan con número.'
+        : 'Con <b>.add(..., fill_value=0)</b> el hueco se rellena con 0 <b>antes</b> de sumar, así que la '+
+          'etiqueta que existía en una sola Serie conserva su valor. Las celdas marcadas son las que se '+
+          'salvaron gracias al relleno. Ojo: si una etiqueta faltara en <i>las dos</i> Series, seguiría '+
+          'siendo NaN — fill_value tapa el hueco de una, no inventa datos.';
+      code.innerHTML = v==='suma'
+        ? `almacen_norte <b>+</b> almacen_sur\n# leche     52.0\n# pan       83.0\n# (el resto, NaN)`
+        : `almacen_norte.<b>add</b>(almacen_sur, <b>fill_value=0</b>)\n`+
+          `# arroz     18.0\n# fideos    27.0\n# huevos    25.0\n`+
+          `# leche     52.0\n# pan       83.0\n# queso     12.0`;
+    }
+    pick('suma');
+  }
+
+})();
+
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   Módulo: DataFrames
    ===================================================================== */
 (function(){
 
@@ -1244,6 +1599,7 @@ registerModule({
     build(section){
       buildAnatomia(section);
       buildLocIloc(section);
+      buildColumnas(section);
     }
   });
 
@@ -1374,6 +1730,108 @@ registerModule({
       noteEl.innerHTML = NOTES[v];
       code.innerHTML = CODES[v];
     }
+  }
+
+  /* ---------------- Tarjeta 3: crear, modificar y eliminar columnas ---------------- */
+  function buildColumnas(section){
+    const card = el('div',{class:'card'}, el('h3',{},'Columnas: crear, modificar y eliminar'));
+    section.append(card);
+    card.append(el('div',{class:'note'},
+      'Catálogo de una tienda de bicicletas. Una columna nueva se crea asignándole algo a un nombre que '+
+      'todavía no existe — y ese algo puede ser una operación entre columnas, una condición o un solo valor.'));
+
+    const IDX  = ['B-01','B-02','B-03','B-04','B-05'];
+    const BASE = [
+      ['Urbana 100', 'urbana',    289990, 15],
+      ['MTB Trail',  'montaña',   549990,  8],
+      ['Ruta Pro',   'ruta',     1199990,  3],
+      ['Plegable X', 'urbana',    349990, 12],
+      ['Eléctrica Z','eléctrica',1590000,  5],
+    ];
+    const COLS = ['modelo','tipo','precio','stock'];
+
+    const tabla = new DfTable(card,{index:IDX, columns:COLS.slice(), rows:BASE.map(r=>r.slice()),
+                                    caption:'bicicletas'});
+
+    /* cada paso reconstruye el estado completo: así rehacer la secuencia
+       desde el principio siempre deja la tabla igual */
+    function pintar(cols, rows, marcas){
+      tabla.o.columns = cols;
+      tabla.o.rows = rows;
+      tabla.render();
+      (marcas||[]).forEach(([c,cls])=>{
+        tabla.headEls[c].classList.add(cls);
+        tabla.rowEls.forEach((_,r)=>tabla.cellEls[r][c].classList.add(cls));
+      });
+    }
+    const base = ()=>BASE.map(r=>r.slice());
+    const stockNuevo = [17,10,5,14,7];
+
+    /* se crea después del Stepper para que quede debajo de la botonera */
+    let cod;
+
+    function reset(){
+      pintar(COLS.slice(), base());
+      if(cod) cod.mark(null);
+    }
+
+    const pasos = [
+      {d:'Una columna nueva a partir de otras dos: se multiplica <b>precio</b> por <b>stock</b> fila a fila. '+
+          'Como el nombre <b>valor_inventario</b> no existía, la columna se crea al final.',
+       run(){
+         const rows = base().map((r,i)=>r.concat([r[2]*r[3]]));
+         pintar(COLS.concat(['valor_inventario']), rows, [[4,'dnew']]);
+         cod.mark(0);
+       }},
+      {d:'Una condición devuelve una columna <b>booleana</b>: un True o un False por fila. '+
+          'Es la misma máscara que usabas para filtrar, pero acá la guardamos como columna.',
+       run(){
+         const rows = base().map(r=>r.concat([r[2]*r[3], r[3]<10 ? 'True':'False']));
+         pintar(COLS.concat(['valor_inventario','bajo_stock']), rows, [[5,'dnew']]);
+         cod.mark(1);
+       }},
+      {d:'Si asignas un <b>solo valor</b>, ese valor se repite en todas las filas. '+
+          'No hace falta escribirlo cinco veces: Pandas lo reparte solo.',
+       run(){
+         const rows = base().map(r=>r.concat([r[2]*r[3], r[3]<10 ? 'True':'False', 'Concepción']));
+         pintar(COLS.concat(['valor_inventario','bajo_stock','sucursal']), rows, [[6,'dnew']]);
+         cod.mark(2);
+       }},
+      {d:'Si el nombre <b>ya existe</b>, la asignación no crea nada: <b>reemplaza</b> la columna. '+
+          'Y acá está la trampa: <b>valor_inventario</b> y <b>bajo_stock</b> NO se recalculan solas. '+
+          'Se calcularon una vez y quedaron congeladas — mira B-02, que ahora tiene stock 10 pero sigue '+
+          'marcada como bajo_stock True.',
+       run(){
+         const rows = base().map((r,i)=>{
+           const rr = r.slice(); rr[3] = stockNuevo[i];
+           return rr.concat([r[2]*r[3], r[3]<10 ? 'True':'False', 'Concepción']);
+         });
+         pintar(COLS.concat(['valor_inventario','bajo_stock','sucursal']), rows,
+                [[3,'dchg'],[4,'hl'],[5,'hl']]);
+         cod.mark(3);
+       }},
+      {d:'<b>drop</b> con <b>columns=</b> saca las columnas auxiliares y devuelve una tabla nueva: '+
+          'salieron <b>bajo_stock</b> y <b>sucursal</b>. Si no reasignas el resultado a una variable, '+
+          'el DataFrame original queda intacto.',
+       run(){
+         const rows = base().map((r,i)=>{
+           const rr = r.slice(); rr[3] = stockNuevo[i];
+           return rr.concat([r[2]*r[3]]);
+         });
+         pintar(COLS.concat(['valor_inventario']), rows);
+         cod.mark(4);
+       }},
+    ];
+
+    new Stepper(card, pasos, reset, 'df');
+    cod = codeSteps(card, [
+      `bicicletas[<b>'valor_inventario'</b>] = bicicletas['precio'] * bicicletas['stock']`,
+      `bicicletas[<b>'bajo_stock'</b>]      = bicicletas['stock'] &lt; 10`,
+      `bicicletas[<b>'sucursal'</b>]        = 'Concepción'`,
+      `bicicletas[<b>'stock'</b>]           = bicicletas['stock'] + 2`,
+      `bicicletas = bicicletas.<b>drop</b>(columns=['bajo_stock', 'sucursal'])`,
+    ]);
+    reset();
   }
 
 })();
@@ -2181,7 +2639,7 @@ registerModule({
 <script>
 'use strict';
 /* =====================================================================
-   Módulo: Valores perdidos (Semana 4)
+   Módulo: Valores perdidos
    dropna() y fillna() sobre un mismo DataFrame de ejemplo (empleados).
    ===================================================================== */
 (function(){
@@ -2660,7 +3118,7 @@ registerModule({
 <script>
 'use strict';
 /* =====================================================================
-   Módulo: Data wrangling (Semanas 9–10)
+   Módulo: Data wrangling
    ===================================================================== */
 (function(){
 
@@ -2971,7 +3429,7 @@ registerModule({
 
     /* ---------- Tarjeta 1: merge ---------- */
     {
-      /* inspirado en estudiantes.csv / carreras.csv de la Semana 12 */
+      /* inspirado en estudiantes.csv / carreras.csv del material del curso */
       const EST=[['Valentina',10],['Matías',20],['Camila',10],['Joaquín',30],['Antonia',99]];
       const CAR=[[10,'ICI'],[20,'IECI'],[30,'IIND'],[40,'Arquitectura']];
       const KEYCLS={10:'g0',20:'g1',30:'g2'};

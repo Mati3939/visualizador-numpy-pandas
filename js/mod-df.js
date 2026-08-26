@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   Módulo: DataFrames (Semana 3)
+   Módulo: DataFrames
    ===================================================================== */
 (function(){
 
@@ -23,6 +23,7 @@
     build(section){
       buildAnatomia(section);
       buildLocIloc(section);
+      buildColumnas(section);
     }
   });
 
@@ -153,6 +154,108 @@
       noteEl.innerHTML = NOTES[v];
       code.innerHTML = CODES[v];
     }
+  }
+
+  /* ---------------- Tarjeta 3: crear, modificar y eliminar columnas ---------------- */
+  function buildColumnas(section){
+    const card = el('div',{class:'card'}, el('h3',{},'Columnas: crear, modificar y eliminar'));
+    section.append(card);
+    card.append(el('div',{class:'note'},
+      'Catálogo de una tienda de bicicletas. Una columna nueva se crea asignándole algo a un nombre que '+
+      'todavía no existe — y ese algo puede ser una operación entre columnas, una condición o un solo valor.'));
+
+    const IDX  = ['B-01','B-02','B-03','B-04','B-05'];
+    const BASE = [
+      ['Urbana 100', 'urbana',    289990, 15],
+      ['MTB Trail',  'montaña',   549990,  8],
+      ['Ruta Pro',   'ruta',     1199990,  3],
+      ['Plegable X', 'urbana',    349990, 12],
+      ['Eléctrica Z','eléctrica',1590000,  5],
+    ];
+    const COLS = ['modelo','tipo','precio','stock'];
+
+    const tabla = new DfTable(card,{index:IDX, columns:COLS.slice(), rows:BASE.map(r=>r.slice()),
+                                    caption:'bicicletas'});
+
+    /* cada paso reconstruye el estado completo: así rehacer la secuencia
+       desde el principio siempre deja la tabla igual */
+    function pintar(cols, rows, marcas){
+      tabla.o.columns = cols;
+      tabla.o.rows = rows;
+      tabla.render();
+      (marcas||[]).forEach(([c,cls])=>{
+        tabla.headEls[c].classList.add(cls);
+        tabla.rowEls.forEach((_,r)=>tabla.cellEls[r][c].classList.add(cls));
+      });
+    }
+    const base = ()=>BASE.map(r=>r.slice());
+    const stockNuevo = [17,10,5,14,7];
+
+    /* se crea después del Stepper para que quede debajo de la botonera */
+    let cod;
+
+    function reset(){
+      pintar(COLS.slice(), base());
+      if(cod) cod.mark(null);
+    }
+
+    const pasos = [
+      {d:'Una columna nueva a partir de otras dos: se multiplica <b>precio</b> por <b>stock</b> fila a fila. '+
+          'Como el nombre <b>valor_inventario</b> no existía, la columna se crea al final.',
+       run(){
+         const rows = base().map((r,i)=>r.concat([r[2]*r[3]]));
+         pintar(COLS.concat(['valor_inventario']), rows, [[4,'dnew']]);
+         cod.mark(0);
+       }},
+      {d:'Una condición devuelve una columna <b>booleana</b>: un True o un False por fila. '+
+          'Es la misma máscara que usabas para filtrar, pero acá la guardamos como columna.',
+       run(){
+         const rows = base().map(r=>r.concat([r[2]*r[3], r[3]<10 ? 'True':'False']));
+         pintar(COLS.concat(['valor_inventario','bajo_stock']), rows, [[5,'dnew']]);
+         cod.mark(1);
+       }},
+      {d:'Si asignas un <b>solo valor</b>, ese valor se repite en todas las filas. '+
+          'No hace falta escribirlo cinco veces: Pandas lo reparte solo.',
+       run(){
+         const rows = base().map(r=>r.concat([r[2]*r[3], r[3]<10 ? 'True':'False', 'Concepción']));
+         pintar(COLS.concat(['valor_inventario','bajo_stock','sucursal']), rows, [[6,'dnew']]);
+         cod.mark(2);
+       }},
+      {d:'Si el nombre <b>ya existe</b>, la asignación no crea nada: <b>reemplaza</b> la columna. '+
+          'Y acá está la trampa: <b>valor_inventario</b> y <b>bajo_stock</b> NO se recalculan solas. '+
+          'Se calcularon una vez y quedaron congeladas — mira B-02, que ahora tiene stock 10 pero sigue '+
+          'marcada como bajo_stock True.',
+       run(){
+         const rows = base().map((r,i)=>{
+           const rr = r.slice(); rr[3] = stockNuevo[i];
+           return rr.concat([r[2]*r[3], r[3]<10 ? 'True':'False', 'Concepción']);
+         });
+         pintar(COLS.concat(['valor_inventario','bajo_stock','sucursal']), rows,
+                [[3,'dchg'],[4,'hl'],[5,'hl']]);
+         cod.mark(3);
+       }},
+      {d:'<b>drop</b> con <b>columns=</b> saca las columnas auxiliares y devuelve una tabla nueva: '+
+          'salieron <b>bajo_stock</b> y <b>sucursal</b>. Si no reasignas el resultado a una variable, '+
+          'el DataFrame original queda intacto.',
+       run(){
+         const rows = base().map((r,i)=>{
+           const rr = r.slice(); rr[3] = stockNuevo[i];
+           return rr.concat([r[2]*r[3]]);
+         });
+         pintar(COLS.concat(['valor_inventario']), rows);
+         cod.mark(4);
+       }},
+    ];
+
+    new Stepper(card, pasos, reset, 'df');
+    cod = codeSteps(card, [
+      `bicicletas[<b>'valor_inventario'</b>] = bicicletas['precio'] * bicicletas['stock']`,
+      `bicicletas[<b>'bajo_stock'</b>]      = bicicletas['stock'] &lt; 10`,
+      `bicicletas[<b>'sucursal'</b>]        = 'Concepción'`,
+      `bicicletas[<b>'stock'</b>]           = bicicletas['stock'] + 2`,
+      `bicicletas = bicicletas.<b>drop</b>(columns=['bajo_stock', 'sucursal'])`,
+    ]);
+    reset();
   }
 
 })();

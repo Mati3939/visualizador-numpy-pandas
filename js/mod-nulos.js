@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   Módulo: Valores perdidos (Semana 4)
+   Módulo: Valores perdidos
    dropna() y fillna() sobre un mismo DataFrame de ejemplo (empleados).
    ===================================================================== */
 (function(){

@@ -12,7 +12,7 @@ registerModule({
 
     /* ---------- Tarjeta 1: merge ---------- */
     {
-      /* inspirado en estudiantes.csv / carreras.csv de la Semana 12 */
+      /* inspirado en estudiantes.csv / carreras.csv del material del curso */
       const EST=[['Valentina',10],['Matías',20],['Camila',10],['Joaquín',30],['Antonia',99]];
       const CAR=[[10,'ICI'],[20,'IECI'],[30,'IIND'],[40,'Arquitectura']];
       const KEYCLS={10:'g0',20:'g1',30:'g2'};
