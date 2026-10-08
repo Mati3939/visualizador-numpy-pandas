@@ -2674,13 +2674,15 @@ function colStats(c){
    thresh cuenta valores NO nulos; la referencia es siempre la dimensión "cruzada":
    al tirar filas (axis=0) se compara contra las 5 columnas; al tirar columnas
    (axis=1) se compara contra las 8 filas. */
-function computeDropna(axis, how, thresh){
+function computeDropna(axis, how, thresh, subset){
   const nrows = NULOS_ROWS.length, ncols = NULOS_COLS.length;
   const flags = [];
   if(axis===0){
+    /* subset: solo se miran esas columnas (y thresh se cuenta dentro de ellas) */
+    const cols = subset && subset.length ? subset : NULOS_COLS.map((_,i)=>i);
     for(const row of NULOS_ROWS){
-      const nn = row.filter(v=>v!==null).length;
-      flags.push(thresh!=null ? nn<thresh : (how==='all' ? nn===0 : nn<ncols));
+      const nn = cols.filter(c=>row[c]!==null).length;
+      flags.push(thresh!=null ? nn<thresh : (how==='all' ? nn===0 : nn<cols.length));
     }
   } else {
     for(let c=0;c<ncols;c++){
@@ -2691,8 +2693,10 @@ function computeDropna(axis, how, thresh){
   }
   return flags;
 }
-function dropnaCode(axis, how, thresh){
+function dropnaCode(axis, how, thresh, subset){
   const parts=[];
+  if(axis===0 && subset && subset.length)
+    parts.push(`<b>subset=[${subset.map(c=>"'"+NULOS_COLS[c]+"'").join(', ')}]</b>`);
   if(thresh!=null){
     parts.push(`<b>thresh=${thresh}</b>`);
     if(axis===1) parts.push('<b>axis=1</b>');
@@ -2714,6 +2718,10 @@ function computeFillPlan(strategy){
     const stats={}; for(const c of cols) stats[c]=colStats(c);
     for(const c of cols) for(let r=0;r<NULOS_ROWS.length;r++)
       if(NULOS_ROWS[r][c]===null) plan.push({r,c,val: strategy==='mean'?stats[c].mean:stats[c].median});
+  } else if(strategy==='moda' || strategy==='sininfo'){
+    /* ciudad: Concepción y Talcahuano empatan con 2; mode()[0] toma la primera (orden alfabético) */
+    for(let r=0;r<NULOS_ROWS.length;r++)
+      if(NULOS_ROWS[r][3]===null) plan.push({r,c:3,val: strategy==='moda'?'Concepción':'Sin información'});
   } else if(strategy==='ffill'){
     for(const c of cols){
       let last=null;
@@ -2746,8 +2754,10 @@ function fillnaCode(strategy){
   if(strategy==='zero') return 'df.fillna(0)';
   if(strategy==='mean') return 'df.fillna(df.mean(numeric_only=True))';
   if(strategy==='median') return 'df.fillna(df.median(numeric_only=True))';
-  if(strategy==='ffill') return "df.ffill()  # equivalente: df.fillna(method='ffill')";
-  if(strategy==='bfill') return "df.bfill()  # equivalente: df.fillna(method='bfill')";
+  if(strategy==='moda') return "moda = df['ciudad'].mode()[0]   # mode() devuelve una Serie: puede haber empate\ndf['ciudad'] = df['ciudad'].fillna(moda)";
+  if(strategy==='sininfo') return "df['ciudad'] = df['ciudad'].fillna('Sin información')";
+  if(strategy==='ffill') return "df.ffill()   # fillna(method='ffill') ya no existe en pandas 3";
+  if(strategy==='bfill') return "df.bfill()   # fillna(method='bfill') ya no existe en pandas 3";
   return 'df.fillna(...)';
 }
 
@@ -2769,7 +2779,10 @@ function build(section){
   const isnaCounts = NULOS_COLS.map((_,i)=> NULOS_ROWS.filter(r=>r[i]===null).length);
   const maxLen = Math.max(...NULOS_COLS.map(c=>c.length));
   const isnaLines = NULOS_COLS.map((c,i)=> c.padEnd(maxLen+4)+isnaCounts[i]);
-  codeBox(c1).textContent = 'df.isna().sum()\n\n'+isnaLines.join('\n')+'\ndtype: int64';
+  const conNulo = NULOS_ROWS.filter(r=>r.some(v=>v===null)).length;
+  codeBox(c1).textContent = 'df.isna().sum()\n\n'+isnaLines.join('\n')+'\ndtype: int64\n\n'+
+    'df.isna().any(axis=1).sum()     # filas con al menos un NaN\n'+conNulo+'\n'+
+    '(~df.isna().any(axis=1)).sum()  # filas completas\n'+(NULOS_ROWS.length-conNulo);
 
   c1.append(el('div',{class:'note'},
     el('p',{style:'margin:.35rem 0'}, el('b',{},'MCAR'),
@@ -2781,22 +2794,115 @@ function build(section){
   ));
   section.append(c1);
 
+  /* ===================== Tarjeta: nulos disfrazados ===================== */
+  const FICHAS_COLS = ['estudiante','nota_c1','colegio'];
+  const FICHAS_ROWS = [['Antonia',5.8,'Particular'],['Bruno',999,'-'],['Catalina',6.1,'Subvencionado'],
+    ['Diego',4.4,'sin dato'],['Emilia',-1,'Municipal'],['Felipe',5.2,'Subvencionado']];
+  const DISFRACES = [999,-1,'-','sin dato'];
+  const cD = el('div',{class:'card'});
+  cD.append(el('h3',{},'Nulos disfrazados'));
+  cD.append(el('p',{class:'note',html:'No todos los faltantes llegan como <code>NaN</code>. Un <code>999</code>, un <code>-1</code>, '+
+    'un <code>\'-\'</code> o un <code>\'sin dato\'</code> son valores válidos para pandas: <code>isna()</code> no los ve y se cuelan en los cálculos.'}));
+  const tD = new DfTable(cD, {columns:FICHAS_COLS, index:[0,1,2,3,4,5], rows:FICHAS_ROWS.map(r=>r.slice()),
+    caption:'fichas — notas del Control 1'});
+  const cbD = el('pre',{class:'code'});
+  const msgD = el('div',{class:'msg'});
+  const notaD = el('div',{class:'note',html:'Si los datos vienen de un archivo, se resuelve al leer: '+
+    '<code>pd.read_csv(\'fichas.csv\', na_values=[\'-\', \'sin dato\', 999, -1])</code>. '+
+    '<b>Regla de oro:</b> antes de analizar una columna, mira sus extremos con <code>describe()</code> y sus categorías con '+
+    '<code>unique()</code> o <code>value_counts()</code>; ahí aparecen los disfraces.'});
+  section.append(cD);
+
+  const disfrazadas = ()=> FICHAS_ROWS.flatMap((row,r)=>row.map((v,c)=>({r,c,v})))
+    .filter(({c,v})=>c>0 && DISFRACES.includes(v));
+  function estadoD(paso){
+    if(paso===0){
+      cbD.textContent = "fichas['nota_c1'].mean().round(2)\n169.92      # ¿un promedio de notas sobre 7?\n\n"+
+        "fichas.isna().sum().sum()\n0           # pandas no ve ningún nulo";
+      msgD.className='msg'; msgD.textContent='';
+    } else if(paso===1){
+      cbD.textContent = "fichas['nota_c1'].describe()   # min -1 y max 999: imposibles para una nota\n"+
+        "fichas['colegio'].unique()\n<ArrowStringArray>\n['Particular', '-', 'Subvencionado', 'sin dato', 'Municipal']\nLength: 5, dtype: str";
+      msgD.className='msg err'; msgD.textContent='4 disfraces: 999 y -1 ("no rindió"), \'-\' y \'sin dato\'.';
+    } else {
+      cbD.textContent = "fichas.loc[fichas['nota_c1'].isin([999, -1]), 'nota_c1'] = np.nan\n"+
+        "fichas.loc[fichas['colegio'].isin(['-', 'sin dato']), 'colegio'] = np.nan\n\n"+
+        "fichas['nota_c1'].mean().round(2)\n5.37        # ahora sí: promedio de las 4 notas reales";
+      msgD.className='msg okc'; msgD.textContent='Ahora isna() los cuenta y mean() los ignora.';
+    }
+  }
+  btnGroup(cD, [
+    {label:'Como llegó', value:0},
+    {label:'Buscar disfraces', value:1},
+    {label:'Convertir a NaN', value:2}
+  ], paso=>{
+    tD.render();
+    for(const {r,c} of disfrazadas()){
+      const cell = tD.cellEls[r][c];
+      if(paso===1) cell.classList.add('out8');
+      if(paso===2){ cell.textContent='NaN'; cell._isnan=true; cell.className='dfc nan'; }
+    }
+    estadoD(paso);
+  });
+  cD.append(cbD, msgD, notaD);
+  estadoD(0);
+
+  /* ===================== Tarjeta: ¿qué hacen los métodos con los NaN? ===================== */
+  const cM = el('div',{class:'card'});
+  cM.append(el('h3',{},'¿Qué hacen los métodos con los NaN?'));
+  cM.append(el('p',{class:'note',html:'Las agregaciones (<code>count</code>, <code>mean</code>, <code>sum</code>…) <b>se saltan</b> los NaN. '+
+    'Las operaciones fila a fila (<code>+</code>, <code>/</code>…) los <b>propagan</b>: con un NaN de por medio, el resultado es NaN.'}));
+  const tM = new DfTable(cM, {columns:NULOS_COLS, index:NULOS_IDX, rows:nulosData(),
+    caption:'df — empleados (Biobío)'});
+  const cbM = el('pre',{class:'code'});
+  const SUELDO=2, EDAD=1;
+  const METODOS = {
+    len:{c:'len(df)\n8', d:'Cuenta filas, tengan o no nulos.',
+      mark(){ tM.rowEls.forEach(r=>r._idx.classList.add('hl')); }},
+    count:{c:"df['sueldo'].count()\n4", d:'count() cuenta solo los valores presentes: 4 de 8.',
+      mark(){ NULOS_ROWS.forEach((r,i)=>{ if(r[SUELDO]!==null) tM.cellEls[i][SUELDO].classList.add('sel'); }); }},
+    mean:{c:"df['sueldo'].mean()\n892.5       # (950 + 780 + 640 + 1200) / 4",
+      d:'mean() divide por los 4 presentes, no por 8. Es skipna=True, el valor por defecto.',
+      mark(){ NULOS_ROWS.forEach((r,i)=>{ if(r[SUELDO]!==null) tM.cellEls[i][SUELDO].classList.add('sel'); }); }},
+    skip:{c:"df['sueldo'].mean(skipna=False)\nnan", d:'Con skipna=False basta un NaN para que el resultado sea NaN.',
+      mark(){ NULOS_ROWS.forEach((r,i)=>{ if(r[SUELDO]===null) tM.cellEls[i][SUELDO].classList.add('out8'); }); }},
+    div:{c:"(df['sueldo'] / df['edad']).round(2)\n0    27.94\n1      NaN\n2      NaN\n3    22.07\n4      NaN\n5      NaN\n6    23.08\n7      NaN\ndtype: float64",
+      d:'Fila a fila: si falta el sueldo o la edad, esa fila da NaN. Solo 3 de 8 filas tienen resultado.',
+      mark(){ NULOS_ROWS.forEach((r,i)=>{ for(const c of [EDAD,SUELDO])
+        tM.cellEls[i][c].classList.add(r[EDAD]!==null&&r[SUELDO]!==null?'sel':(r[c]===null?'out8':'hl')); }); }}
+  };
+  const msgM = el('div',{class:'msg'});
+  btnGroup(cM, [
+    {label:'len(df)',value:'len'},{label:'.count()',value:'count'},{label:'.mean()',value:'mean'},
+    {label:'.mean(skipna=False)',value:'skip'},{label:'sueldo / edad',value:'div'}
+  ], k=>{ tM.clearMarks(); METODOS[k].mark(); cbM.textContent=METODOS[k].c; msgM.textContent=METODOS[k].d; });
+  cM.append(cbM, msgM);
+  cbM.textContent=METODOS.len.c; msgM.textContent=METODOS.len.d;
+  section.append(cM);
+  METODOS.len.mark();
+
   /* ===================== Tarjeta 2: dropna() ===================== */
   const c2 = el('div',{class:'card'});
   c2.append(el('h3',{},el('code',{},'dropna()'),' — eliminar filas o columnas con nulos'));
   const t2 = new DfTable(c2, {columns:NULOS_COLS, index:NULOS_IDX, rows:nulosData(),
     caption:'df — empleados (Biobío)'});
 
-  const axisSel = el('select',{onchange:()=>updateCode2()},
+  const axisSel = el('select',{onchange:()=>{ subsetSel.disabled = axisSel.value==='1'; updateCode2(); }},
     el('option',{value:'0'},'0 — filas'), el('option',{value:'1'},'1 — columnas'));
   const howSel = el('select',{onchange:()=>updateCode2()},
     el('option',{value:'any'},'any'), el('option',{value:'all'},'all'));
+  const SUBSETS = {'':[], edad:[1], sueldo:[2], edad_sueldo:[1,2], ciudad:[3]};
+  const subsetSel = el('select',{onchange:()=>updateCode2()},
+    el('option',{value:''},'— (todas)'), el('option',{value:'edad'},"['edad']"),
+    el('option',{value:'sueldo'},"['sueldo']"), el('option',{value:'edad_sueldo'},"['edad', 'sueldo']"),
+    el('option',{value:'ciudad'},"['ciudad']"));
   const threshInput = el('input',{type:'number',min:'0',max:'5',placeholder:'—',oninput:()=>updateCode2()});
   const msg2 = el('div',{class:'msg'});
 
   c2.append(el('div',{class:'controls'},
     el('label',{},'axis'), axisSel,
     el('label',{},'how'), howSel,
+    el('label',{},'subset'), subsetSel,
     el('label',{},'thresh (mínimo de valores NO nulos)'), threshInput,
     el('button',{class:'btn primary',onclick:()=>onAplicarDropna()},'Aplicar dropna()'),
     el('button',{class:'btn',onclick:()=>onRestaurarDropna()},'Restaurar')
@@ -2804,9 +2910,11 @@ function build(section){
   c2.append(msg2);
   const cb2 = codeBox(c2);
   c2.append(el('div',{class:'note'},
-    'Si defines ', el('b',{},'thresh'), ', pandas ', el('b',{},'ignora how'),
-    ': en dropna(), thresh y how son mutuamente excluyentes. thresh cuenta valores NO nulos: al eliminar filas (axis=0) se compara contra las 5 columnas; al eliminar columnas (axis=1) se compara contra las 8 filas — la referencia cambia según el eje, aunque el control de abajo esté limitado a 0-5.'
-  ));
+    el('b',{},'thresh'), ' y ', el('b',{},'how'), ' no se pueden usar juntos: pasar ambos da ',
+    el('code',{},'TypeError'), ' (por eso, si defines thresh, el código omite how). thresh cuenta valores NO nulos: al eliminar filas (axis=0) se compara contra las 5 columnas; al eliminar columnas (axis=1) se compara contra las 8 filas — la referencia cambia según el eje, aunque el control de abajo esté limitado a 0-5.'
+  ), el('div',{class:'note',style:'margin-top:.5rem',html:'<b>subset</b> mira solo esas columnas: <code>df.dropna(subset=[\'sueldo\'])</code> '+
+    'bota las filas sin sueldo y no le importa que falte la ciudad. Es lo sensato cuando el nulo impide el análisis '+
+    '(por ejemplo, falta la variable que quieres estudiar); un <code>dropna()</code> a ciegas aquí deja 1 fila de 8.'}));
   section.append(c2);
 
   /* token de corrida: Restaurar aborta la animación en vuelo en vez de ignorarse */
@@ -2814,11 +2922,12 @@ function build(section){
   function readDropnaParams(){
     const axis=Number(axisSel.value), how=howSel.value;
     const raw=threshInput.value, thresh = raw===''? null : Number(raw);
-    return {axis,how,thresh};
+    const subset = axis===0 ? SUBSETS[subsetSel.value] : [];
+    return {axis,how,thresh,subset};
   }
   function updateCode2(){
-    const {axis,how,thresh}=readDropnaParams();
-    cb2.innerHTML = dropnaCode(axis,how,thresh);
+    const {axis,how,thresh,subset}=readDropnaParams();
+    cb2.innerHTML = dropnaCode(axis,how,thresh,subset);
   }
   function resetCard2(){
     t2.clearMarks();
@@ -2829,8 +2938,8 @@ function build(section){
   async function onAplicarDropna(){
     const t = ++run2;
     resetCard2(); // por si venía una corrida anterior sin restaurar: nunca se apilan marcas
-    const {axis,how,thresh}=readDropnaParams();
-    const flags = computeDropna(axis,how,thresh);
+    const {axis,how,thresh,subset}=readDropnaParams();
+    const flags = computeDropna(axis,how,thresh,subset);
     const dropIdx = flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
     for(const i of dropIdx){
       if(axis===0){
@@ -2861,6 +2970,8 @@ function build(section){
     el('option',{value:'zero'},'0 (constante)'),
     el('option',{value:'mean'},'media de la columna'),
     el('option',{value:'median'},'mediana de la columna'),
+    el('option',{value:'moda'},'moda (ciudad)'),
+    el('option',{value:'sininfo'},"'Sin información' (ciudad)"),
     el('option',{value:'ffill'},'ffill (anterior)'),
     el('option',{value:'bfill'},'bfill (siguiente)'));
 
@@ -2878,7 +2989,11 @@ function build(section){
     el('p',{style:'margin:.35rem 0'}, el('b',{},'Media: '),
       'conserva el promedio original, pero reduce artificialmente la varianza — la columna queda "más pareja" de lo que en realidad es.'),
     el('p',{style:'margin:.35rem 0'}, el('b',{},'Mediana: '),
-      'parecida a la media pero robusta ante outliers; suele ser una opción por defecto razonable para columnas numéricas.'),
+      'parecida a la media pero robusta ante outliers y colas largas (precios, sueldos, superficies): ahí la media se va hacia arriba y la mediana no.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},'Moda: '),
+      'para texto no hay media ni mediana. Ojo con dos cosas: mode() devuelve una Serie (puede haber empate, por eso el [0]) e infla la categoría más común.'),
+    el('p',{style:'margin:.35rem 0'}, el('b',{},"'Sin información': "),
+      'una categoría nueva no inventa datos y deja analizar después si los que no respondieron son distintos. Suele ser la opción más honesta.'),
     el('p',{style:'margin:.35rem 0'}, el('b',{},'ffill: '),
       'arrastra el valor de la fila de arriba — solo tiene sentido cuando el orden de las filas es real (series de tiempo, mediciones consecutivas).'),
     el('p',{style:'margin:.35rem 0'}, el('b',{},'bfill: '),
@@ -2895,6 +3010,10 @@ function build(section){
       txt = `media(edad)=${fmt(colStats(1).mean)} · media(sueldo)=${fmt(colStats(2).mean)} · media(evaluación)=${fmt(colStats(4).mean)}  (nombre y ciudad no son numéricas, quedan igual)`;
     } else if(strategy==='median'){
       txt = `mediana(edad)=${fmt(colStats(1).median)} · mediana(sueldo)=${fmt(colStats(2).median)} · mediana(evaluación)=${fmt(colStats(4).median)}  (nombre y ciudad no son numéricas, quedan igual)`;
+    } else if(strategy==='moda'){
+      txt = "Concepción y Talcahuano empatan con 2 apariciones: mode() devuelve las dos y [0] toma Concepción. Los 3 NaN de ciudad pasan a ser Concepción.";
+    } else if(strategy==='sininfo'){
+      txt = "Los 3 NaN de ciudad pasan a una categoría propia. value_counts() la mostrará como una ciudad más.";
     } else if(strategy==='ffill'){
       txt = 'Cada NaN se reemplaza por el valor anterior de su columna (fila de arriba).';
     } else if(strategy==='bfill'){
@@ -2930,12 +3049,167 @@ function build(section){
     updateCode3(stratSel.value);
   }
   updateCode3('zero');
+
+  /* ===================== Tarjeta: imputar por grupo y marcar lo imputado ===================== */
+  const ARR_COLS = ['comuna','arriendo','arriendo_imputado'];
+  const ARR_ROWS = [['Concepción',520],['San Pedro',640],['Talcahuano',380],['Concepción',null],['San Pedro',600],
+    ['Talcahuano',350],['Concepción',470],['San Pedro',null],['Talcahuano',null],['Concepción',560]];
+  const COMUNAS = ['Concepción','San Pedro','Talcahuano'];
+  const mediana = xs=>{ const s=[...xs].sort((a,b)=>a-b), m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+  const presentes = com=>ARR_ROWS.filter(r=>(com==null||r[0]===com)&&r[1]!==null).map(r=>r[1]);
+  const MED_GENERAL = mediana(presentes());
+  const MED_GRUPO = Object.fromEntries(COMUNAS.map(c=>[c, mediana(presentes(c))]));
+  const ARR=1, MARCA=2;
+
+  const cG = el('div',{class:'card'});
+  cG.append(el('h3',{},'Imputar por grupo y marcar lo imputado'));
+  cG.append(el('p',{class:'note',html:'Una mediana <b>general</b> trata igual a todas las filas. Pero un arriendo sin dato en Talcahuano '+
+    'se parece más a los otros de Talcahuano que al resto del Gran Concepción: conviene imputar con la <b>mediana de su grupo</b>. '+
+    'Y antes de rellenar, se guarda en una columna <b>qué valores fueron inventados</b>.'}));
+  const tG = new DfTable(cG, {columns:ARR_COLS, index:ARR_ROWS.map((_,i)=>i),
+    rows:ARR_ROWS.map(r=>[r[0], r[1], '']), caption:'df — arriendos (miles de $)'});
+  const cbG = codeSteps(cG, [
+    "df['arriendo_imputado'] = df['arriendo'].isna()   # marcar ANTES de rellenar",
+    "for comuna in df['comuna'].unique():",
+    "    grupo = df['comuna'] == comuna",
+    "    mediana_grupo = df.loc[grupo, 'arriendo'].median()",
+    "    df.loc[grupo &amp; df['arriendo'].isna(), 'arriendo'] = mediana_grupo"
+  ]);
+  const pasosG = [
+    {d:'Primero se <b>marca</b>: <code>isna()</code> deja True donde falta el arriendo. Si se rellena antes, ya no hay cómo saber cuáles eran inventados.',
+     async run(){ cbG.mark(0);
+       ARR_ROWS.forEach((r,i)=>{ const c=tG.cellEls[i][MARCA]; c.textContent = r[ARR]===null?'True':'False';
+         if(r[ARR]===null) c.classList.add('hl'); }); }},
+    ...COMUNAS.map((com,g)=>({
+      d:`Grupo <b>${com}</b>: la mediana de sus arriendos con dato es <b>${MED_GRUPO[com]}</b>. Solo sus NaN la reciben.`,
+      async run(){ cbG.mark(4);
+        ARR_ROWS.forEach((r,i)=>{ if(r[0]!==com) return;
+          tG.cellEls[i][0].classList.add('g'+g);
+          if(r[ARR]===null){ const c=tG.cellEls[i][ARR]; c.textContent=fmt(MED_GRUPO[com]); c._isnan=false; c.className='dfc fill'; } }); }})),
+    {d:`Con la mediana <b>general</b> (${MED_GENERAL}) los tres NaN habrían recibido lo mismo: la fila 8 de Talcahuano quedaría en ${MED_GENERAL} `+
+       `y no en ${MED_GRUPO['Talcahuano']}, más que cualquier arriendo real de su comuna. `+
+       'Gracias a <code>arriendo_imputado</code>, <code>df[df[\'arriendo_imputado\']]</code> muestra lo inventado para revisarlo.',
+     async run(ultimo){ if(ultimo) cbG.mark(null); }}
+  ];
+  const resetG = ()=>{ tG.render(); ARR_ROWS.forEach((_,i)=>{ tG.cellEls[i][MARCA].textContent=''; }); cbG.mark(null); };
+  new Stepper(cG, pasosG, resetG, 'nulos');
+  cG.append(el('div',{class:'note',html:'Con <code>groupby</code> (lo verás más adelante) el bucle cabe en una línea: '+
+    '<code>df[\'arriendo\'].fillna(df.groupby(\'comuna\')[\'arriendo\'].transform(\'median\'))</code>.'}));
+  section.append(cG);
+  resetG();
+
+  /* ===================== Tarjeta: series de tiempo — ffill, bfill, interpolate ===================== */
+  const HORAS = Array.from({length:12},(_,i)=>String(6+i).padStart(2,'0')+':00');
+  const REAL = [9.8,9.5,10.2,11.6,13.4,15.3,17.1,18.6,19.7,20.3,20.1,19.2];
+  const CORTES = [2,5,6,7];
+  const SENSOR = REAL.map((v,i)=>CORTES.includes(i)?null:v);
+  /* misma lógica que pandas: limit cuenta desde el borde del corte en la dirección de relleno */
+  function rellenar(metodo, limit){
+    const out = SENSOR.slice(), n=out.length;
+    if(metodo==='ffill' || metodo==='bfill'){
+      const idx = metodo==='ffill' ? [...out.keys()] : [...out.keys()].reverse();
+      let ult=null, racha=0;
+      for(const i of idx){
+        if(SENSOR[i]!==null){ ult=SENSOR[i]; racha=0; continue; }
+        racha++;
+        if(ult!==null && (limit==null || racha<=limit)) out[i]=ult;
+      }
+    } else if(metodo==='interp'){
+      for(let i=0;i<n;i++){
+        if(SENSOR[i]!==null) continue;
+        let a=i-1; while(a>=0 && SENSOR[a]===null) a--;
+        let b=i+1; while(b<n && SENSOR[b]===null) b++;
+        if(a<0 || b>=n) continue;
+        if(limit!=null && i-a>limit) continue;
+        out[i] = SENSOR[a] + (SENSOR[b]-SENSOR[a])*(i-a)/(b-a);
+      }
+    }
+    return out;
+  }
+  const cT = el('div',{class:'card'});
+  cT.append(el('h3',{},'Series de tiempo: ',el('code',{},'ffill'),', ',el('code',{},'bfill'),' e ',el('code',{},'interpolate')));
+  cT.append(el('p',{class:'note',html:'El sensor de un invernadero en Chillán perdió conexión a las 08:00 y entre las 11:00 y las 13:00. '+
+    'En datos ordenados en el tiempo, la mejor pista de un valor faltante es <b>lo que pasó justo antes y justo después</b>. '+
+    'La línea gris gruesa es la temperatura real, que en la práctica no conoces.'}));
+  const NS='http://www.w3.org/2000/svg';
+  const sv=(tag,attrs={},text)=>{ const n=document.createElementNS(NS,tag);
+    for(const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); if(text!=null) n.textContent=text; return n; };
+  const W=640, H=250, L=40, R=14, T=12, B=30, YMIN=8, YMAX=22;
+  const px=i=>L+(W-L-R)*i/(HORAS.length-1), py=v=>T+(H-T-B)*(1-(v-YMIN)/(YMAX-YMIN));
+  const svgT=sv('svg',{viewBox:`0 0 ${W} ${H}`,style:'width:100%;max-width:720px;min-width:420px;display:block',
+    role:'img','aria-label':'Temperatura por hora: valores reales, datos disponibles y valores rellenados'});
+  for(let v=10; v<=22; v+=4){
+    svgT.append(sv('line',{x1:L,x2:W-R,y1:py(v),y2:py(v),class:'gridline'}),
+      sv('text',{x:L-6,y:py(v)+4,'text-anchor':'end'},v+'°'));
+  }
+  HORAS.forEach((h,i)=>{ if(i%2===0) svgT.append(sv('text',{x:px(i),y:H-10,'text-anchor':'middle'},h)); });
+  svgT.append(sv('line',{x1:L,x2:W-R,y1:H-B,y2:H-B,class:'axisline'}));
+  svgT.append(sv('path',{d:REAL.map((v,i)=>(i?'L':'M')+px(i)+','+py(v)).join(' '),fill:'none',
+    stroke:'var(--muted)','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.3}));
+  const gT=sv('g');
+  svgT.append(gT);
+  cT.append(el('div',{style:'overflow-x:auto'}, svgT));
+  cT.append(el('div',{class:'note',html:'<span style="color:var(--ink)">●</span> dato disponible · '+
+    '<span style="color:var(--s6)">○</span> valor rellenado · <span style="color:var(--muted);opacity:.6">━</span> temperatura real'}));
+
+  let metodoT='nada';
+  const btnsT = btnGroup(cT, [
+    {label:'Con huecos',value:'nada'},{label:'ffill()',value:'ffill'},
+    {label:'bfill()',value:'bfill'},{label:'interpolate()',value:'interp'}
+  ], m=>{ metodoT=m; dibujarT(); });
+  const limSel = el('select',{onchange:()=>dibujarT()},
+    el('option',{value:''},'sin límite'), el('option',{value:'1'},'limit=1'));
+  btnsT[0].parentNode.append(el('label',{},'límite'), limSel);
+  const cbT = el('pre',{class:'code'});
+  const msgT = el('div',{class:'msg'});
+  cT.append(cbT, msgT, el('div',{class:'note',html:'<b>Ningún método adivina</b> lo que pasó en un corte largo. '+
+    'Con <code>limit</code> solo se rellenan los primeros N valores de cada corte y el resto queda NaN: el tramo dudoso sigue a la vista. '+
+    '<b>Ojo:</b> los tres métodos suponen filas <b>ordenadas en el tiempo</b>; si no lo están, primero <code>sort_index()</code> o <code>sort_values()</code>.'}));
+  section.append(cT);
+
+  function dibujarT(){
+    const limit = limSel.value==='' ? null : Number(limSel.value);
+    const vals = metodoT==='nada' ? SENSOR : rellenar(metodoT, limit);
+    gT.textContent='';
+    let d='';  /* la línea del método une solo tramos consecutivos con valor */
+    vals.forEach((v,i)=>{ if(v===null) return; d += (i>0 && vals[i-1]!==null ? 'L':'M')+px(i)+','+py(v)+' '; });
+    gT.append(sv('path',{d,fill:'none',stroke:'var(--s1)','stroke-width':2,
+      'stroke-dasharray': metodoT==='nada'?'none':'5 4'}));
+    vals.forEach((v,i)=>{
+      if(v===null){ gT.append(sv('text',{x:px(i),y:H-B-6,'text-anchor':'middle',style:'fill:var(--s8);font-weight:600'},'NaN')); return; }
+      const relleno = SENSOR[i]===null;
+      gT.append(sv('circle',{cx:px(i),cy:py(v),r:relleno?5:3.5,
+        fill:relleno?'var(--surface)':'var(--ink)', stroke:relleno?'var(--s6)':'none','stroke-width':2.5}));
+    });
+    const lim = limit==null ? '' : `limit=${limit}`;
+    const llamada = {ffill:`sensor.ffill(${lim})`, bfill:`sensor.bfill(${lim})`, interp:`sensor.interpolate(${lim})`}[metodoT];
+    const r3 = x=>String(Math.round(x*1000)/1000);
+    cbT.textContent = metodoT==='nada'
+      ? "sensor.isna().sum()\n4"
+      : llamada + (metodoT==='interp' && !lim ? "      # con índice de fechas: interpolate(method='time')" : '') +
+        '\n# valores en las horas que faltaban:\n' +
+        CORTES.map(i=>`${HORAS[i]}  →  ${vals[i]===null?'NaN':r3(vals[i])}`).join('\n');
+    if(metodoT==='nada'){
+      msgT.className='msg'; msgT.textContent='4 lecturas perdidas: una suelta (08:00) y un corte de 3 horas (11:00 a 13:00).';
+      return;
+    }
+    const rellenos = CORTES.filter(i=>vals[i]!==null);
+    const err = rellenos.reduce((a,i)=>a+Math.abs(vals[i]-REAL[i]),0)/rellenos.length;
+    const faltan = CORTES.length - rellenos.length;
+    msgT.className = 'msg '+(err<1?'okc':'err');
+    msgT.textContent = `Error promedio en los ${rellenos.length} valores rellenados: ${err.toFixed(2).replace('.',',')} °C`+
+      (faltan ? ` · quedan ${faltan} NaN por el límite` : '') +
+      ({ffill:' · ffill repite el último valor: queda un escalón plano mientras la temperatura subía.',
+        bfill:' · bfill adelanta el valor siguiente: el escalón queda arriba.',
+        interp:' · interpolate traza una recta entre el valor anterior y el siguiente.'}[metodoT]);
+  }
+  dibujarT();
 }
 
 registerModule({
   id:'nulos',
   title:'Valores perdidos',
-  lead:'Los datos reales llegan con huecos. Antes de modelar hay que decidir: ¿dónde están los NaN, los elimino o los relleno? Cada decisión cambia lo que tus datos dicen.',
+  lead:'Los datos reales llegan con huecos, y a veces disfrazados. Hay que encontrarlos, decidir si se eliminan o se rellenan y con qué: cada decisión cambia lo que tus datos dicen.',
   build
 });
 
@@ -4180,6 +4454,37 @@ const BANCO_PREDICE=[
  explica:"<code>how='all'</code> solo bota filas <b>completamente vacías</b> (la del medio); el default "+
   "<code>how='any'</code> bota cualquier fila con al menos un NaN (quedan 1). Misma función, dos filosofías."},
 
+{id:'p58',tema:'nulos',origen:'Sensor',nivel:1,
+ code:"s = pd.Series([1.0, None, None, 4.0])\nprint(s.interpolate().tolist())",
+ opciones:['[1.0, 2.0, 3.0, 4.0]','[1.0, 1.0, 1.0, 4.0]','[1.0, 4.0, 4.0, 4.0]','[1.0, 2.5, 2.5, 4.0]'],correcta:0,
+ explica:"<code>interpolate()</code> traza una <b>recta</b> entre el valor anterior (1) y el siguiente (4): "+
+  "los dos huecos quedan en 2 y 3. ffill daría [1, 1, 1, 4] y bfill [1, 4, 4, 4]. Compáralos en el "+
+  "<a href='#nulos'>módulo Valores perdidos</a>."},
+
+{id:'p59',tema:'nulos',origen:'Encuesta',nivel:2,
+ code:"s = pd.Series(['Sí', 'No', None, 'No', 'Sí'])\nprint(s.fillna(s.mode()[0]).value_counts()['No'])",
+ opciones:['3','2','1','TypeError'],correcta:0,
+ explica:"'Sí' y 'No' empatan con 2, así que <code>mode()</code> devuelve <b>una Serie con las dos</b>, ordenada: "+
+  "['No', 'Sí']. El <code>[0]</code> toma 'No' y el NaN pasa a ser 'No': quedan 3. Por eso la moda infla la categoría elegida."},
+
+{id:'p60',tema:'nulos',origen:'Arriendos',nivel:1,
+ code:"df = pd.DataFrame({'m2': [50, None, 80, None]})\nprint(len(df), df['m2'].count())",
+ opciones:['4 2','2 2','4 4','2 4'],correcta:0,
+ explica:"<code>len</code> cuenta filas, tengan o no nulos. <code>count()</code> cuenta solo los valores "+
+  "<b>presentes</b>. La diferencia entre ambos es justo la cantidad de NaN."},
+
+{id:'p61',tema:'nulos',origen:'Nulos disfrazados',nivel:2,
+ code:"nota = pd.Series([5.5, 999, 6.0, -1])\nnota[nota.isin([999, -1])] = np.nan\nprint(nota.mean())",
+ opciones:['5.75','252.375','nan','3.0'],correcta:0,
+ explica:"<code>isin</code> marca los códigos de «no rindió» y se reemplazan por NaN reales. Ahora <code>mean()</code> "+
+  "los ignora: (5.5 + 6.0) / 2 = 5.75. Sin ese paso el promedio habría sido 252.375."},
+
+{id:'p62',tema:'nulos',origen:'Sensor',nivel:2,
+ code:"s = pd.Series([None, 3.0, None])\nprint(s.ffill().tolist())",
+ opciones:['[nan, 3.0, 3.0]','[3.0, 3.0, 3.0]','[0.0, 3.0, 3.0]','[nan, 3.0, nan]'],correcta:0,
+ explica:"<code>ffill</code> copia el <b>último valor conocido hacia adelante</b>. El primer NaN no tiene nada antes, "+
+  "así que se queda NaN. Para ese borde se usa <code>bfill()</code> después, o se acepta el NaN."},
+
 {id:'p47',tema:'merge',origen:'Ventas',nivel:2,
  code:"ventas = pd.DataFrame({'id_cli': [1, 2, 2, 3],\n                       'monto': [10, 20, 30, 40]})\nclientes = pd.DataFrame({'id_cli': [1, 2, 4],\n                         'nombre': ['Ana','Beto','Dani']})\nprint(len(pd.merge(ventas, clientes,\n                   on='id_cli', how='outer')))",
  opciones:['5','7','4','3'],correcta:0,
@@ -4756,11 +5061,11 @@ const TODOS=['numpy','df','fechas','viz','nulos','outliers','wrangling','merge',
 const EVALS=[
  {id:'c1',label:'Ensayo 1 · NumPy',temas:['numpy']},
  {id:'c2',label:'Ensayo 2 · NumPy + Pandas',temas:['numpy','df']},
- {id:'c3',label:'Ensayo 3 · Valores faltantes',temas:['nulos','df']},
- {id:'c4',label:'Ensayo 4 · Data wrangling',temas:['wrangling','outliers']},
- {id:'c5',label:'Ensayo 5 · EDA completo',temas:['viz','fechas','groupby']},
- {id:'cert1',label:'Ensayo integral · NumPy, Pandas y visualización',temas:['numpy','df','viz']},
- {id:'cert2',label:'Ensayo integral · de nulos a fechas',temas:['nulos','outliers','wrangling','groupby','merge','fechas']},
+ {id:'c3',label:'Ensayo 3 · Fechas',temas:['fechas','df']},
+ {id:'c4',label:'Ensayo 4 · Nulos, outliers y gráficos',temas:['nulos','outliers','viz']},
+ {id:'c5',label:'Ensayo 5 · Wrangling y joins',temas:['wrangling','merge']},
+ {id:'cert1',label:'Ensayo integral · NumPy y Pandas',temas:['numpy','df']},
+ {id:'cert2',label:'Ensayo integral · de fechas a joins',temas:['fechas','viz','nulos','outliers','wrangling','merge']},
  {id:'examen',label:'Ensayo completo · todos los temas',temas:TODOS},
 ];
 const NOMBRE_TEMA={numpy:'NumPy',df:'DataFrames',viz:'Visualización',nulos:'Nulos',
