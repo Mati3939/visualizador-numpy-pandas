@@ -442,6 +442,37 @@ const BANCO_PREDICE=[
  explica:"<code>how='all'</code> solo bota filas <b>completamente vacías</b> (la del medio); el default "+
   "<code>how='any'</code> bota cualquier fila con al menos un NaN (quedan 1). Misma función, dos filosofías."},
 
+{id:'p58',tema:'nulos',origen:'Sensor',nivel:1,
+ code:"s = pd.Series([1.0, None, None, 4.0])\nprint(s.interpolate().tolist())",
+ opciones:['[1.0, 2.0, 3.0, 4.0]','[1.0, 1.0, 1.0, 4.0]','[1.0, 4.0, 4.0, 4.0]','[1.0, 2.5, 2.5, 4.0]'],correcta:0,
+ explica:"<code>interpolate()</code> traza una <b>recta</b> entre el valor anterior (1) y el siguiente (4): "+
+  "los dos huecos quedan en 2 y 3. ffill daría [1, 1, 1, 4] y bfill [1, 4, 4, 4]. Compáralos en el "+
+  "<a href='#nulos'>módulo Valores perdidos</a>."},
+
+{id:'p59',tema:'nulos',origen:'Encuesta',nivel:2,
+ code:"s = pd.Series(['Sí', 'No', None, 'No', 'Sí'])\nprint(s.fillna(s.mode()[0]).value_counts()['No'])",
+ opciones:['3','2','1','TypeError'],correcta:0,
+ explica:"'Sí' y 'No' empatan con 2, así que <code>mode()</code> devuelve <b>una Serie con las dos</b>, ordenada: "+
+  "['No', 'Sí']. El <code>[0]</code> toma 'No' y el NaN pasa a ser 'No': quedan 3. Por eso la moda infla la categoría elegida."},
+
+{id:'p60',tema:'nulos',origen:'Arriendos',nivel:1,
+ code:"df = pd.DataFrame({'m2': [50, None, 80, None]})\nprint(len(df), df['m2'].count())",
+ opciones:['4 2','2 2','4 4','2 4'],correcta:0,
+ explica:"<code>len</code> cuenta filas, tengan o no nulos. <code>count()</code> cuenta solo los valores "+
+  "<b>presentes</b>. La diferencia entre ambos es justo la cantidad de NaN."},
+
+{id:'p61',tema:'nulos',origen:'Nulos disfrazados',nivel:2,
+ code:"nota = pd.Series([5.5, 999, 6.0, -1])\nnota[nota.isin([999, -1])] = np.nan\nprint(nota.mean())",
+ opciones:['5.75','252.375','nan','3.0'],correcta:0,
+ explica:"<code>isin</code> marca los códigos de «no rindió» y se reemplazan por NaN reales. Ahora <code>mean()</code> "+
+  "los ignora: (5.5 + 6.0) / 2 = 5.75. Sin ese paso el promedio habría sido 252.375."},
+
+{id:'p62',tema:'nulos',origen:'Sensor',nivel:2,
+ code:"s = pd.Series([None, 3.0, None])\nprint(s.ffill().tolist())",
+ opciones:['[nan, 3.0, 3.0]','[3.0, 3.0, 3.0]','[0.0, 3.0, 3.0]','[nan, 3.0, nan]'],correcta:0,
+ explica:"<code>ffill</code> copia el <b>último valor conocido hacia adelante</b>. El primer NaN no tiene nada antes, "+
+  "así que se queda NaN. Para ese borde se usa <code>bfill()</code> después, o se acepta el NaN."},
+
 {id:'p47',tema:'merge',origen:'Ventas',nivel:2,
  code:"ventas = pd.DataFrame({'id_cli': [1, 2, 2, 3],\n                       'monto': [10, 20, 30, 40]})\nclientes = pd.DataFrame({'id_cli': [1, 2, 4],\n                         'nombre': ['Ana','Beto','Dani']})\nprint(len(pd.merge(ventas, clientes,\n                   on='id_cli', how='outer')))",
  opciones:['5','7','4','3'],correcta:0,
