@@ -9,7 +9,7 @@ const EVALS=[
  {id:'c1',label:'Ensayo 1 · NumPy',temas:['numpy']},
  {id:'c2',label:'Ensayo 2 · NumPy + Pandas',temas:['numpy','df']},
  {id:'c3',label:'Ensayo 3 · Fechas',temas:['fechas','df']},
- {id:'c4',label:'Ensayo 4 · Nulos, outliers y gráficos',temas:['nulos','outliers','viz']},
+ {id:'c4',label:'Ensayo 4 · Nulos y gráficos',temas:['nulos','viz']},
  {id:'c5',label:'Ensayo 5 · Wrangling y joins',temas:['wrangling','merge']},
  {id:'cert1',label:'Ensayo integral · NumPy y Pandas',temas:['numpy','df']},
  {id:'cert2',label:'Ensayo integral · de fechas a joins',temas:['fechas','viz','nulos','outliers','wrangling','merge']},

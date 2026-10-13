@@ -24,10 +24,10 @@ dónde*, no solo el resultado final.
 | 1 | Arrays NumPy | `reshape` animado, `axis=0/1` paso a paso, máscaras booleanas, broadcasting, `np.where`, `argsort`/`argmin`/`argmax` |
 | 2 | DataFrames | anatomía (índice/columnas/Series), `loc` vs `iloc` |
 | 3 | Leer archivos | el archivo crudo (csv, excel, json, parquet, html) consumiéndose para armar el df; `sep`, `header`, `index_col`, `skiprows` |
-| 4 | Fechas | `to_datetime`, accesor `.dt`, `Timedelta`, `resample`, `date_range` |
-| 5 | Visualización | qué gráfico usar según la pregunta, anatomía de la figura, `plt` vs `ax` |
+| 4 | Fechas | `to_datetime` (y `errors='coerce'`), accesor `.dt` y `strftime`, `Timedelta`, `resample`, `date_range` |
+| 5 | Visualización | qué gráfico usar según la pregunta (matplotlib y seaborn), anatomía de la figura, `plt` vs `ax` y subplots, seaborn con `hue`, `barplot` vs `countplot`, escala honesta y `bar_label` |
 | 6 | Valores perdidos | matriz de nulos estilo missingno, `dropna`, `fillna` |
-| 7 | Outliers | boxplot interactivo, umbral IQR/z-score, media vs mediana |
+| 7 | Outliers | error vs valor real, detección con regla de negocio/IQR/z-score/percentiles, tratamiento (eliminar, corregir, NaN + imputar, `clip`), outliers por grupo y en dos variables |
 | 8 | Data wrangling | duplicados, `replace`/`map`, `pd.cut`, `sort_values` |
 | 9 | Joins y concat | `merge` con llaves conectadas, Venn por `how`, `concat` |
 | 0 | GroupBy y pivoteo | split-apply-combine animado, `pivot_table` como heatmap |

@@ -190,11 +190,33 @@ const BANCO_PREDICE=[
  opciones:['0','1','2','5'],correcta:0,
  explica:"El 95 salta a la vista, pero para cruzar el umbral tendría que alejarse 3 × 15.6 = <b>46.8</b> "+
   "de la media, y solo se aleja 27.8 → su z es 1.78. <b>El propio outlier infló la desviación y se "+
-  "escondió detrás de ella.</b> Por eso conviene el IQR o el MAD, que se apoyan en la mediana y no se "+
-  "dejan mover por un dato extremo.",
+  "escondió detrás de ella.</b> Por eso, ante la duda, IQR: se apoya en cuartiles y no se "+
+  "deja mover por un dato extremo.",
  visual(m){const t=new DfTable(m,{caption:"z de cada nota — ninguna supera 3",columns:['nota','z'],
    index:[0,1,2,3,4],rows:[[60,'-0.46'],[62,'-0.33'],[58,'-0.59'],[61,'-0.40'],[95,'1.78']]});
    t.cell(4,1).classList.add('sel');}},
+
+{id:'p63',tema:'outliers',origen:'Delivery',nivel:1,
+ code:"s = pd.Series([2, 15, 7, -4, 30])\nprint(s.clip(lower=0, upper=20).tolist())",
+ opciones:['[2, 15, 7, 0, 20]','[2, 15, 7]','[2, 15, 7, nan, nan]','[0, 15, 7, 0, 20]'],correcta:0,
+ explica:"<code>clip</code> <b>acota</b>, no elimina: lo que está bajo 0 pasa a valer 0 y lo que supera 20 pasa a valer 20. "+
+  "El largo no cambia. Es el tratamiento intermedio entre conservar y eliminar — lo ves en el "+
+  "<a href='#outliers'>módulo Outliers</a> (tarjeta «Tratar»)."},
+
+{id:'p64',tema:'outliers',origen:'Percentiles',nivel:2,
+ code:"s = pd.Series(range(1, 101))    # 1, 2, …, 100: sin outliers\np1, p99 = s.quantile(0.01), s.quantile(0.99)\nprint((~s.between(p1, p99)).sum())",
+ opciones:['2','0','1','100'],correcta:0,
+ explica:"Los percentiles 1 y 99 son 1.99 y 99.01, así que el 1 y el 100 quedan afuera: <b>2</b>. "+
+  "El criterio de percentiles <b>siempre marca algo</b>, haya o no outliers de verdad. Sirve para controlar "+
+  "cuántos datos tocas (por ejemplo, el tope de un <code>clip</code>), no para decidir si hay atípicos."},
+
+{id:'p65',tema:'outliers',origen:'Maratón',nivel:2,
+ code:"df = pd.DataFrame({'edad': [25, 31, 250, None]})\n# 250: error de digitación\ndf['edad'] = df['edad'].fillna(df['edad'].mean())\nprint(df['edad'].iloc[3])",
+ opciones:['102.0','28.0','31.0','nan'],correcta:0,
+ explica:"La media incluye el 250: (25 + 31 + 250) / 3 = <b>102.0</b>, una edad absurda para imputar. "+
+  "Por eso el orden importa: primero convertir los <b>errores imposibles</b> en NaN "+
+  "(<code>df.loc[~df['edad'].between(18, 100), 'edad'] = np.nan</code>) y recién después imputar — "+
+  "así la media sería 28.0."},
 
 {id:'p15',tema:'wrangling',origen:'Flota vehicular',nivel:1,
  code:"df = pd.DataFrame({'patente':\n  ['AA11','BB22','AA11','CC33','AA11']})\nprint(df.duplicated().sum())",
@@ -384,6 +406,21 @@ const BANCO_PREDICE=[
  explica:"<code>plt.title</code> actúa sobre «los ejes actuales», que aquí son los mismos <code>ax</code> — "+
   "funciona, pero mezclar interfaces se rompe apenas hay varios subplots. Regla simple: si partiste con "+
   "<code>fig, ax</code>, todo va por <code>ax.set_*</code>."},
+
+{id:'p66',tema:'viz',origen:'Bicicletas',nivel:2,
+ code:"df = pd.DataFrame({'dia': ['hábil', 'hábil', 'hábil', 'finde'],\n                   'viajes': [10, 20, 30, 100]})\nsns.barplot(data=df, x='dia', y='viajes', errorbar=None)\n# ¿qué altura tiene la barra 'hábil'?",
+ opciones:['20','60','3','30'],correcta:0,
+ explica:"<code>sns.barplot</code> <b>resume solo</b>: agrupa por <code>x</code> y dibuja el <b>promedio</b> de <code>y</code> "+
+  "→ (10 + 20 + 30) / 3 = 20. Si quisieras contar filas (3) sería <code>sns.countplot(data=df, x='dia')</code>. "+
+  "Compáralos en el <a href='#viz'>módulo Visualización</a>."},
+
+{id:'p67',tema:'viz',origen:'Matplotlib',nivel:2,
+ code:"fig, axes = plt.subplots(2, 2)\naxes[1].set_title('Ventas')",
+ opciones:["AttributeError: 'numpy.ndarray' object has no attribute 'set_title'",
+  'titula el gráfico de arriba a la derecha','titula los dos gráficos de la fila de abajo','IndexError'],correcta:0,
+ explica:"Con <code>subplots(2, 2)</code>, <code>axes</code> es una matriz 2×2: <code>axes[1]</code> es la <b>fila</b> "+
+  "de abajo completa (un array con dos ejes), y un array no tiene <code>set_title</code>. Se indexa con dos "+
+  "posiciones: <code>axes[1, 0]</code>. Con <code>subplots(1, 2)</code>, en cambio, basta <code>axes[1]</code>."},
 
 {id:'p38',tema:'groupby',origen:'Cafetería',nivel:2,
  code:"df = pd.DataFrame({'suc': ['C','C','SP'],\n                   'total': [100, 200, 50]})\nr = df.groupby('suc')['total'].agg(['sum','mean'])\nprint(r.loc['C'].tolist())",
