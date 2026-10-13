@@ -20,6 +20,7 @@ registerModule({
         day:{col:'dia',vals:[2,15,1,18,5],code:".dt.day"},
         year:{col:'año',vals:[2026,2026,2026,2026,2026],code:".dt.year"},
         day_name:{col:'dia_sem',vals:['Monday','Sunday','Wednesday','Saturday','Tuesday'],code:".dt.day_name()"},
+        strftime:{col:'fecha_txt',vals:['02-03-2026','15-03-2026','01-04-2026','18-04-2026','05-05-2026'],code:".dt.strftime('%d-%m-%Y')"},
       };
       const card=el('div',{class:'card'},
         el('h3',{html:'<code>pd.to_datetime</code> y el accesor <code>.dt</code>'}),
@@ -51,6 +52,9 @@ registerModule({
           note.innerHTML=acc==='day_name'
             ?'<b>day_name() habla inglés</b> por defecto — el clásico «¿por qué me salió Monday?». '+
              'Para español: <code>day_name(locale=\'es_CL\')</code> (si el sistema lo tiene instalado).'
+            :acc==='strftime'
+            ?'<code>strftime</code> <b>vuelve a texto</b> con el formato que pidas (<code>%d</code> día, <code>%m</code> mes, <code>%Y</code> año). '+
+             'Úsalo solo para <b>mostrar</b>: para filtrar, ordenar o restar se usa la columna datetime.'
             :'La columna nueva (azul) es numérica: sirve para filtrar y agrupar por periodo.';
         }
       }
@@ -59,9 +63,56 @@ registerModule({
       const accBtns=btnGroup(ctr,[
         {label:'.dt.month',value:'month'},{label:'.dt.day',value:'day'},
         {label:'.dt.year',value:'year'},{label:'.dt.day_name()',value:'day_name'},
+        {label:".dt.strftime('%d-%m-%Y')",value:'strftime'},
       ],v=>{acc=v;render();},false);
       accBtns.forEach(b=>b.disabled=true);
       render();
+    }
+
+    /* ---------- Tarjeta 1b: fechas sucias y errors='coerce' ---------- */
+    {
+      const RAW=['2026-03-02','2026-02-30','sin dato','2026-04-01','15/04/2026'];
+      /* pd.to_datetime(raw, errors='coerce') verificado con pandas */
+      const COER=['2026-03-02',null,null,'2026-04-01',null];
+      const card=el('div',{class:'card'},
+        el('h3',{html:"Fechas sucias: <code>errors='coerce'</code>"}),
+        el('p',{class:'note',html:'Una planilla digitada a mano trae de todo: un 30 de febrero, un «sin dato» y una fecha '+
+          'con otro formato. Por defecto <code>to_datetime</code> se detiene en el primer valor que no entiende.'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const mount=el('div');card.append(mount);
+      const msg=el('div',{class:'msg'});card.append(msg);
+      const code=codeBox(card);
+      const note=el('p',{class:'note'});card.append(note);
+      function render(modo){
+        mount.textContent='';msg.className='msg';msg.textContent='';
+        const conv=modo==='coerce';
+        const t=new DfTable(mount,{caption:conv?'df — fecha: datetime64 ✓':'df — fecha: object (texto)',
+          columns:['fecha'],index:[0,1,2,3,4],rows:RAW.map((r,i)=>[conv?(COER[i]??'NaT'):r])});
+        if(conv)COER.forEach((v,i)=>t.cell(i,0).classList.add(v?'sel':'nan'));
+        if(modo==='raw'){
+          code.textContent="df['fecha'] = pd.to_datetime(df['fecha'])";
+          msg.className='msg err';
+          msg.textContent='ValueError: day 30 must be in range 1..28 for month 2 in year 2026';
+          note.innerHTML='Una sola fecha imposible y <b>no se convierte ninguna</b>. El error avisa del 30 de febrero, '+
+            'pero detrás vienen más problemas.';
+        }else if(conv){
+          code.innerHTML="df['fecha'] = pd.to_datetime(df['fecha'], <b>errors='coerce'</b>)\n"+
+            "df['fecha'].isna().sum()   # 3 fechas no se pudieron leer";
+          note.innerHTML='Lo que no se puede leer queda como <b>NaT</b> (<i>Not a Time</i>, el NaN de las fechas) y el resto se convierte. '+
+            'Después se tratan como cualquier nulo: <code>isna()</code>, <code>dropna()</code>… (ver <a href="#nulos">Valores perdidos</a>). '+
+            'Ojo: «15/04/2026» también quedó NaT por venir en otro formato; revisa cuántos NaT aparecieron antes de seguir.';
+        }else{
+          code.textContent="df['fecha'].dtype   # object";
+          note.innerHTML='Prueba convertir con y sin <code>errors=\'coerce\'</code>.';
+        }
+      }
+      btnGroup(ctr,[{label:'datos originales',value:'orig'},{label:'pd.to_datetime(...)',value:'raw'},
+        {label:"pd.to_datetime(..., errors='coerce')",value:'coerce'}],render);
+      render('orig');
+      card.append(el('p',{class:'note',html:'Al leer un archivo, <code>pd.read_csv(\'ventas.csv\', parse_dates=[\'fecha\'])</code> '+
+        'hace la conversión de una vez. Y con fechas de verdad se filtra por rango: '+
+        '<code>df[df[\'fecha\'].between(\'2026-03-01\', \'2026-03-31\')]</code>.'}));
     }
 
     /* ---------- Tarjeta 2: Timedelta ---------- */
