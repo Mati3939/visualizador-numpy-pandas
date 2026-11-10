@@ -12,9 +12,9 @@ const TEMAS=[
   {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['subplots',2],['seaborn / hue',3],['escala honesta',4]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['¿error o real?',0],['IQR / z / percentiles',1],['tratar / clip',2],['por grupo / 2D',3]]},
-  {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
+  {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['cut / qcut',2],['.str',3],['sort / rank',4]]},
+  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['transform / filter',1],['agg con nombre',2],['pivot_table',3]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
-  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
