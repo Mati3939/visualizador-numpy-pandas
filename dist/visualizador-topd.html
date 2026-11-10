@@ -292,6 +292,7 @@ svg .gridline{stroke:var(--grid);}
 }
 
 footer{max-width:1150px; margin:0 auto; padding:0 1.2rem 2rem; color:var(--muted); font-size:.8rem;}
+footer .autor{margin-top:1rem; padding-top:.8rem; border-top:1px solid var(--border); text-align:center; color:var(--ink2); font-weight:600; letter-spacing:.02em;}
 kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:0 .35em; font-size:.85em; background:var(--surface);}
 
 /* ============ Móvil ============ */
@@ -405,6 +406,7 @@ kbd{border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; 
   <kbd>←</kbd>/<kbd>→</kbd> avanzan pasos en las animaciones · <kbd>1</kbd>–<kbd>9</kbd> y <kbd>0</kbd> cambian de módulo
   (<kbd>Inicio</kbd> vuelve a la portada) ·
   los ejercicios viven en el botón «🎯 Ejercicios» · «Presentar» agranda todo para el proyector.</span>
+  <div class="autor">Desarrollado por Matías Pino</div>
 </footer>
 <script>
 'use strict';
@@ -812,9 +814,9 @@ const TEMAS=[
   {col:'Visualización',mod:'viz',   items:[['qué gráfico usar',0],['anatomía de la figura',1],['subplots',2],['seaborn / hue',3],['escala honesta',4]]},
   {col:'Nulos',     mod:'nulos',    items:[['matriz de nulos',0],['dropna',1],['fillna',2]]},
   {col:'Outliers',  mod:'outliers', items:[['¿error o real?',0],['IQR / z / percentiles',1],['tratar / clip',2],['por grupo / 2D',3]]},
-  {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['pd.cut',2],['sort_values',3]]},
+  {col:'Wrangling', mod:'wrangling',items:[['duplicados',0],['replace / map',1],['cut / qcut',2],['.str',3],['sort / rank',4]]},
+  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['transform / filter',1],['agg con nombre',2],['pivot_table',3]]},
   {col:'Joins',     mod:'merge',    items:[['merge',0],["how='...'",0],['concat',1]]},
-  {col:'GroupBy',   mod:'groupby',  items:[['split-apply-combine',0],['pivot_table',1]]},
 ];
 const NFILAS=Math.max(...TEMAS.map(t=>t.items.length));
 const mqMovil=window.matchMedia('(max-width:700px)');
@@ -3870,11 +3872,12 @@ registerModule({
   registerModule({
     id:'wrangling',
     title:'Data wrangling',
-    lead:'Limpiar y transformar: duplicados, reemplazos, discretización y ordenamiento.',
+    lead:'Limpiar y transformar: duplicados, reemplazos, tramos con cut y qcut, texto con .str, ordenamiento y ranking.',
     build(section){
       buildDuplicados(section);
       buildReemplazo(section);
       buildCut(section);
+      buildTexto(section);
       buildOrden(section);
     }
   });
@@ -4041,7 +4044,7 @@ registerModule({
     }
   }
 
-  /* ---------------- Tarjeta 3: Discretización con pd.cut ---------------- */
+  /* ---------------- Tarjeta 3: Discretización con pd.cut y pd.qcut ---------------- */
   function buildCut(section){
     const NOMBRES = ['Sofía','Benjamín','Pedro','Elena','Rosa','Manuel','Diego','Emilia'];
     const EDADES  = [15,22,34,45,61,70,28,8];
@@ -4053,50 +4056,118 @@ registerModule({
     const BINS = [0,18,40,65,120];
     const LABELS = ['niñez','adulto joven','adulto','mayor'];
     const GCLS = ['g0','g1','g2','g3'];
-    function binIndex(age){
-      for(let i=0;i<BINS.length-1;i++){ if(age>BINS[i] && age<=BINS[i+1]) return i; }
+    function binIndex(age,bins){
+      for(let i=0;i<bins.length-1;i++){
+        if((age>bins[i] || (i===0 && age===bins[0])) && age<=bins[i+1]) return i;
+      }
       return -1;
     }
+    /* cuantiles como pandas (interpolación lineal) para los bordes de qcut */
+    function cuantil(sorted,q){
+      const pos=(sorted.length-1)*q, lo=Math.floor(pos), hi=Math.ceil(pos);
+      return sorted[lo]+(sorted[hi]-sorted[lo])*(pos-lo);
+    }
+    const ORD=[...EDADES].sort((a,b)=>a-b);
+    const QBINS=[0,.25,.5,.75,1].map(q=>cuantil(ORD,q));
+    const fmtB=x=>String(Math.round(x*100)/100);
 
-    const card = el('div',{class:'card'}, el('h3',{},'Discretización con pd.cut'));
+    const card = el('div',{class:'card'}, el('h3',{},'Discretización: pd.cut y pd.qcut'));
     section.append(card);
     const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — personas'});
 
     const controls = el('div',{class:'controls'},
-      el('button',{class:'btn',onclick:()=>aplicar()},'Aplicar pd.cut(bins=[0,18,40,65,120])'),
+      el('button',{class:'btn',onclick:()=>aplicar('cut')},'pd.cut(bins=[0,18,40,65,120])'),
+      el('button',{class:'btn',onclick:()=>aplicar('qcut')},'pd.qcut(q=4)'),
       el('button',{class:'btn',onclick:()=>restaurar()},'Restaurar'),
     );
     card.append(controls);
-
-    const legend = el('div',{class:'legend'},
-      el('span',{}, el('span',{class:'sw',style:'background:var(--s1)'}),'niñez  (0, 18]'),
-      el('span',{}, el('span',{class:'sw',style:'background:var(--s2)'}),'adulto joven  (18, 40]'),
-      el('span',{}, el('span',{class:'sw',style:'background:var(--s3)'}),'adulto  (40, 65]'),
-      el('span',{}, el('span',{class:'sw',style:'background:var(--s4)'}),'mayor  (65, 120]'),
-    );
+    const legend = el('div',{class:'legend'});
     card.append(legend);
-
-    const note = el('div',{class:'note',html:'Los intervalos de pd.cut son <b>(a, b]</b>: abiertos a la izquierda, cerrados a la derecha. Por eso alguien de exactamente 18 años cae en «niñez», no en «adulto joven».'});
+    const note = el('div',{class:'note'});
     card.append(note);
-
     const code = codeBox(card);
-    code.innerHTML = `pd.cut(df['edad'],\n       bins=<b>[0, 18, 40, 65, 120]</b>,\n       labels=<b>['niñez', 'adulto joven', 'adulto', 'mayor']</b>)`;
 
-    async function aplicar(){
+    const MODOS={
+      cut:{bins:BINS,labels:LABELS,
+        tramos:LABELS.map((l,i)=>`${l}  (${BINS[i]}, ${BINS[i+1]}]`),
+        nota:'<b>cut usa los bordes que tú defines.</b> Los intervalos son <b>(a, b]</b>: abiertos a la izquierda, '+
+          'cerrados a la derecha, así que alguien de exactamente 18 años cae en «niñez». Los tramos quedan con '+
+          'cantidades distintas de personas.',
+        code:`pd.cut(df['edad'],\n       bins=<b>[0, 18, 40, 65, 120]</b>,\n       labels=<b>['niñez', 'adulto joven', 'adulto', 'mayor']</b>)`},
+      qcut:{bins:QBINS,labels:['Q1','Q2','Q3','Q4'],
+        tramos:['Q1','Q2','Q3','Q4'].map((l,i)=>`${l}  (${fmtB(QBINS[i])}, ${fmtB(QBINS[i+1])}]`),
+        nota:'<b>qcut usa cuantiles:</b> los bordes salen de los datos para que cada tramo tenga la '+
+          '<b>misma cantidad</b> de personas (aquí, 2 por tramo). Úsalo cuando quieres grupos parejos; '+
+          'usa cut cuando los tramos tienen significado propio (edades legales, notas).',
+        code:`pd.qcut(df['edad'], <b>q=4</b>,\n        labels=<b>['Q1', 'Q2', 'Q3', 'Q4']</b>)\n# bordes: ${QBINS.map(fmtB).join(', ')}`},
+    };
+
+    let run=0;
+    async function aplicar(modo){
+      const t=++run, m=MODOS[modo];
+      table.render();
+      legend.textContent='';
+      m.tramos.forEach((txt,i)=>legend.append(el('span',{},
+        el('span',{class:'sw',style:`background:var(--s${i+1})`}),txt)));
+      note.innerHTML=m.nota; code.innerHTML=m.code;
       for(let i=0;i<DATA.rows.length;i++){
         const cell = table.cellEls[i][2];
         cell.classList.add('hl');
-        await sleep(300);
-        const bi = binIndex(DATA.rows[i][1]);
+        await sleep(300); if(t!==run) return;
+        const bi = binIndex(DATA.rows[i][1],m.bins);
         cell.classList.remove('hl');
-        cell.textContent = LABELS[bi];
+        cell.textContent = m.labels[bi];
         cell.classList.add(GCLS[bi]);
       }
     }
-    function restaurar(){ table.render(); }
+    function restaurar(){
+      run++;
+      table.render();
+      legend.textContent='';
+      note.innerHTML='Elige <b>cut</b> (bordes fijos) o <b>qcut</b> (cuantiles) para llenar la columna «grupo».';
+      code.textContent='# elige un botón arriba ↑';
+    }
+    restaurar();
   }
 
-  /* ---------------- Tarjeta 4: Ordenamiento ---------------- */
+  /* ---------------- Tarjeta 4: Texto con .str ---------------- */
+  function buildTexto(section){
+    const CRUDO=[' CONCEPCIÓN','concepción ','Concepción','san pedro','San Pedro ','LOTA'];
+    const card = el('div',{class:'card'}, el('h3',{html:'Limpiar texto con <code>.str</code>'}));
+    section.append(card);
+    card.append(el('p',{class:'note',html:'Estación de cada reclamo, escrita a mano. Para <code>groupby</code> o '+
+      '<code>value_counts</code>, <code>" CONCEPCIÓN"</code> y <code>"Concepción"</code> son <b>dos estaciones distintas</b>. '+
+      'Activa los métodos y mira cuántos valores distintos quedan. Los espacios se marcan con ·.'}));
+    const chkStrip=el('input',{type:'checkbox',id:'wr-strip'});
+    const selCase=el('select',{},['(nada)','lower','upper','title'].map(v=>el('option',{value:v},v)));
+    card.append(el('div',{class:'controls'},
+      chkStrip,el('label',{for:'wr-strip',html:' <code>.str.strip()</code>'}),
+      el('label',{html:'&nbsp; mayúsculas: '}),selCase));
+    const mount=el('div');card.append(mount);
+    const note=el('p',{class:'note'});card.append(note);
+    const code=codeBox(card);
+    const CASE={lower:s=>s.toLowerCase(),upper:s=>s.toUpperCase(),
+      title:s=>s.toLowerCase().replace(/(^|[^\p{L}])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase())};
+    function render(){
+      const f=s=>{ let r=chkStrip.checked?s.trim():s; if(CASE[selCase.value])r=CASE[selCase.value](r); return r; };
+      const vals=CRUDO.map(f);
+      const n=new Set(vals).size;
+      mount.textContent='';
+      new DfTable(mount,{caption:'df[\'estacion\']',columns:['estacion'],index:CRUDO.map((_,i)=>i),
+        rows:vals.map(v=>[`"${v.replace(/ /g,'·')}"`])});
+      note.innerHTML=`<b>${n} valores distintos</b> (deberían ser 3). `+(n===3
+        ?'Listo: hacía falta <b>las dos cosas</b>, sacar los espacios y unificar las mayúsculas.'
+        :'Con un solo método no alcanza: <code>strip</code> no toca las mayúsculas y <code>title</code> no saca los espacios.');
+      const chain=(chkStrip.checked?'.str.strip()':'')+(CASE[selCase.value]?`.str.${selCase.value}()`:'');
+      code.innerHTML=`df['estacion'] = df['estacion']<b>${chain||''}</b>\ndf['estacion'].nunique()   # ${n}`+
+        (chain.includes(').str')?'\n# cada método lleva su propio .str':'');
+      relayout();
+    }
+    chkStrip.onchange=render; selCase.onchange=render;
+    render();
+  }
+
+  /* ---------------- Tarjeta 5: Ordenamiento y ranking ---------------- */
   function buildOrden(section){
     const DATA = {
       index:['E01','E02','E03','E04','E05'],
@@ -4106,11 +4177,11 @@ registerModule({
         ['Matías','IECI',5.4,2024],
         ['Camila','ICI',4.9,2022],
         ['Joaquín','IIND',6.5,2023],
-        ['Antonia','IECI',5.8,2024],
+        ['Antonia','IECI',6.1,2024],
       ]
     };
 
-    const card = el('div',{class:'card'}, el('h3',{},'Ordenamiento'));
+    const card = el('div',{class:'card'}, el('h3',{},'Ordenamiento y ranking'));
     section.append(card);
     const table = new DfTable(card,{index:DATA.index,columns:DATA.columns,rows:DATA.rows,caption:'df — estudiantes'});
 
@@ -4132,6 +4203,44 @@ registerModule({
     card.append(controls);
     const code = codeBox(card);
     code.innerHTML = `df.sort_values(by=<b>'promedio'</b>, ascending=<b>True</b>)`;
+
+    /* ranking con rank: qué hace cada method con el empate en 6,1 */
+    const selMet = el('select',{},['min','first','dense','average'].map(m=>el('option',{value:m},`'${m}'`)));
+    card.append(el('div',{class:'controls'},
+      el('label',{html:'<code>rank(ascending=False, method=</code>'}), selMet, el('label',{html:'<code>)</code>'})));
+    const rankMount = el('div'); card.append(rankMount);
+    const rankNote = el('p',{class:'note'}); card.append(rankNote);
+    const rankCode = codeBox(card);
+    const NOTA_MET = {
+      min:"<b>'min'</b>: los empatados reciben el lugar más bajo del empate (2 y 2) y el siguiente salta al 4, como en un podio.",
+      first:"<b>'first'</b>: desempata por orden de aparición: Valentina (E01) va antes que Antonia (E05).",
+      dense:"<b>'dense'</b>: empatados en 2 y el siguiente es 3, sin saltos.",
+      average:"<b>'average'</b> (por defecto): los empatados se reparten los lugares 2 y 3 y reciben 2,5.",
+    };
+    function rankear(){
+      const col = DATA.columns.indexOf('promedio');
+      const vals = DATA.rows.map(r=>r[col]);
+      const desc = vals.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]||a[1]-b[1]);
+      const pos = new Array(vals.length);
+      desc.forEach(([,i],k)=>{ pos[i]=k+1; });
+      const distintos = [...new Set(vals)].sort((a,b)=>b-a);
+      const lugar = vals.map((v,i)=>{
+        const emp = desc.map(([w],k)=>w===v?k+1:null).filter(x=>x!=null);
+        const m = selMet.value;
+        if(m==='min') return Math.min(...emp);
+        if(m==='first') return pos[i];
+        if(m==='dense') return distintos.indexOf(v)+1;
+        return emp.reduce((a,b)=>a+b,0)/emp.length;
+      });
+      rankMount.textContent='';
+      new DfTable(rankMount,{caption:"df['lugar']",columns:['promedio','lugar'],index:DATA.index,
+        rows:vals.map((v,i)=>[v,lugar[i]])});
+      rankNote.innerHTML = NOTA_MET[selMet.value];
+      rankCode.innerHTML = `df['lugar'] = df['promedio'].rank(ascending=False, method=<b>'${selMet.value}'</b>)`;
+      relayout();
+    }
+    selMet.onchange = rankear;
+    rankear();
 
     function doSort(){
       const col = selCol.value;
@@ -4157,6 +4266,263 @@ registerModule({
   }
 
 })();
+
+</script>
+<script>
+'use strict';
+/* Módulo: GroupBy y pivoteo — split-apply-combine animado y pivot_table como heatmap */
+registerModule({
+  id:'groupby',
+  title:'GroupBy y pivoteo',
+  lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
+       'a cada grupo y recombinar los resultados. agg resume, transform devuelve un valor por fila '+
+       'y filter se queda con grupos enteros.',
+  build(sec){
+    /* ventas de una cafetería universitaria */
+    const COLS=['producto','sucursal','monto'];
+    const ROWS=[
+      ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
+      ['Jugo','Centro',2200],['Té','Centro',1900],['Café','Centro',2400],
+      ['Jugo','Campus',2100],['Té','Campus',1700],['Café','Campus',2700]];
+    const KEYS=['Café','Jugo','Té'];               // groupby ordena las llaves alfabéticamente (sort=True)
+    const GCLS={ 'Café':'g0','Té':'g1','Jugo':'g2' };
+    const AGG={
+      sum:  {label:'sum',  f:a=>a.reduce((x,y)=>x+y,0)},
+      mean: {label:'mean', f:a=>a.reduce((x,y)=>x+y,0)/a.length},
+      count:{label:'count',f:a=>a.length},
+      max:  {label:'max',  f:a=>Math.max(...a)},
+    };
+    const groupsOf=key=>ROWS.map((r,i)=>[r,i]).filter(([r])=>r[0]===key);
+
+    /* ---------- Tarjeta 1: split-apply-combine ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>groupby</code> paso a paso'}),
+        el('p',{class:'note',html:'9 boletas de una cafetería. Vamos a calcular el total vendido por producto: '+
+          '<code>df.groupby(\'producto\')[\'monto\'].sum()</code>'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selA=el('select',{},Object.keys(AGG).map(k=>el('option',{value:k},AGG[k].label)));
+      ctr.append(el('label',{},'función de agregación: '),selA);
+      const cols=el('div',{class:'flexcols'});card.append(cols);
+      const left=el('div'),right=el('div');cols.append(left,right);
+      const table=new DfTable(left,{caption:'df (boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
+      const resMount=el('div');right.append(resMount);
+      const code=codeBox(card);
+      const origOrder=[...table.rowEls];
+
+      let resTable=null;
+      function clearResult(){resMount.textContent='';resTable=null;}
+      function showResult(upTo /* nº de grupos listos */){
+        clearResult();
+        const agg=AGG[selA.value];
+        const rows=KEYS.slice(0,upTo).map(k=>[agg.f(groupsOf(k).map(([r])=>r[2]))]);
+        resTable=new DfTable(resMount,{caption:`resultado (${agg.label})`,columns:['monto'],
+          index:KEYS.slice(0,upTo),rows});
+        rows.forEach((_,ri)=>{
+          resTable.cell(ri,0).classList.add(GCLS[KEYS[ri]]);
+          resTable.rowEls[ri]._idx.classList.add(GCLS[KEYS[ri]]);
+        });
+      }
+      function colorRows(){
+        ROWS.forEach((r,ri)=>{
+          table.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]]));
+        });
+      }
+      function reset(){
+        table.clearMarks();clearResult();
+        origOrder.forEach(r=>table.root.append(r));
+        code.innerHTML=`df.groupby('producto')['monto'].<b>${AGG[selA.value].label}</b>()`;
+      }
+      const steps=[
+        {d:'<b>La llave.</b> <code>groupby(\'producto\')</code> etiqueta cada fila según su valor '+
+           'en la columna <code>producto</code>. Cada color es un grupo: todavía no se movió nada.',
+         async run(){ colorRows(); }},
+        {d:'<b>Split.</b> Conceptualmente, las filas se separan en un mini-DataFrame por grupo '+
+           '(4 boletas de Café, 2 de Jugo, 3 de Té). El orden original deja de importar.',
+         async run(last){
+           colorRows();
+           flipRows(table.root,()=>{
+             KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           });
+           if(last)await sleep(600);
+         }},
+        {d:'<b>Apply.</b> A la columna <code>monto</code> de cada grupo se le aplica la función. '+
+           'Cada grupo completo colapsa en un único valor.',
+         async run(last){
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           for(let g=0;g<KEYS.length;g++){
+             if(last){
+               groupsOf(KEYS[g]).forEach(([,ri])=>table.cell(ri,2).classList.add('hl'));
+               await sleep(420);
+             }
+             showResult(g+1);
+           }
+         }},
+        {d:'<b>Combine.</b> Los tres valores se recombinan en una Serie cuyo <b>índice es la llave</b> '+
+           '(ya no 0…8, sino Café/Jugo/Té, en orden alfabético). Eso es todo groupby: split → apply → combine.',
+         async run(){
+           colorRows();
+           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
+           table.rowEls.forEach(r=>r.classList.add('roff'));
+           showResult(3);
+           const agg=AGG[selA.value];
+           const vals=KEYS.map(k=>fmt(agg.f(groupsOf(k).map(([r])=>r[2]))));
+           code.innerHTML=`df.groupby('producto')['monto'].<b>${agg.label}</b>()\n# producto\n`+
+             KEYS.map((k,i)=>`# ${k.padEnd(8)}${vals[i]}`).join('\n')+`\n# Name: monto, dtype: ${agg.label==='mean'?'float64':'int64'}`;
+         }},
+      ];
+      const st=new Stepper(card,steps,reset,'groupby');
+      selA.onchange=()=>st.go(st.i);
+      reset();
+    }
+
+    buildQueDevuelve(sec,COLS,ROWS,GCLS);
+    buildConNombre(sec);
+
+    /* ---------- Tarjeta 4: pivot_table ---------- */
+    {
+      const card=el('div',{class:'card'},
+        el('h3',{html:'<code>pivot_table</code>: groupby en dos dimensiones'}),
+        el('p',{class:'note',html:'Un pivote agrupa por <b>dos llaves a la vez</b>: una queda como índice (filas) '+
+          'y la otra se convierte en columnas. La celda (Café, Centro) contiene la agregación de las boletas '+
+          'que cumplen ambas condiciones. El color codifica la magnitud (más oscuro = más alto).'}));
+      sec.append(card);
+      const ctr=el('div',{class:'controls'});card.append(ctr);
+      const selA=el('select',{},['sum','mean','count'].map(k=>el('option',{value:k},k)));
+      ctr.append(el('label',{},'aggfunc: '),selA);
+      const mount=el('div');card.append(mount);
+      const code=codeBox(card);
+      const SUC=['Campus','Centro'];
+      const RAMP=['--seq100','--seq200','--seq300','--seq400','--seq500','--seq600','--seq700'];
+      function render(){
+        mount.textContent='';
+        const agg=AGG[selA.value];
+        const rows=KEYS.map(k=>SUC.map(s=>{
+          const sub=ROWS.filter(r=>r[0]===k&&r[1]===s).map(r=>r[2]);
+          return agg.f(sub);
+        }));
+        const t=new DfTable(mount,{caption:'pivot (producto × sucursal)',columns:SUC,index:KEYS,rows});
+        const flat=rows.flat(),lo=Math.min(...flat),hi=Math.max(...flat);
+        rows.forEach((row,ri)=>row.forEach((v,ci)=>{
+          const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
+          const c=t.cell(ri,ci);
+          c.style.background=`var(${RAMP[k]})`;
+          /* la rampa es fija en ambos temas: la tinta también debe serlo */
+          c.style.color=k>=3?'#fff':'#0b0b0b';
+          c.style.fontWeight='600';
+        }));
+        code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;
+      }
+      selA.onchange=render;
+      render();
+    }
+  }
+});
+
+/* ---------- Tarjeta 2: agg, transform, filter y head — ¿qué devuelve cada uno? ---------- */
+function buildQueDevuelve(sec,COLS,ROWS,GCLS){
+  const card=el('div',{class:'card'},
+    el('h3',{html:'<code>agg</code>, <code>transform</code>, <code>filter</code> y <code>head</code>: ¿qué devuelve cada uno?'}),
+    el('p',{class:'note',html:'Las cuatro parten del mismo <code>groupby(\'producto\')</code>. La diferencia está en el '+
+      '<b>largo</b> del resultado: una fila por grupo, una por fila original, o algunas filas originales.'}));
+  sec.append(card);
+  const prom={}, n={};
+  ROWS.forEach(r=>{prom[r[0]]=(prom[r[0]]||0)+r[2]; n[r[0]]=(n[r[0]]||0)+1;});
+  Object.keys(prom).forEach(k=>{prom[k]/=n[k];});
+  const llaves=Object.keys(prom).sort((a,b)=>a.localeCompare(b,'es'));
+  const OPS={
+    agg:{code:"df.groupby('producto')['monto'].<b>mean()</b>",
+      nota:'<b>Resume:</b> una fila por grupo (3), con la llave como índice. Las 9 boletas desaparecen.',
+      tabla:()=>({caption:'resultado — 3 filas',columns:['monto'],index:llaves,
+        rows:llaves.map(k=>[prom[k]]),grupo:i=>llaves[i]})},
+    transform:{code:"df['prom_producto'] = df.groupby('producto')['monto'].<b>transform('mean')</b>",
+      nota:'<b>Un valor por fila:</b> el promedio de su producto, repetido en cada boleta (9 filas, el mismo largo de '+
+        '<code>df</code>). Por eso se puede guardar como columna, restar (<code>monto - prom_producto</code>) o usar en '+
+        '<code>fillna</code> para imputar por grupo.',
+      tabla:()=>({caption:'df con la columna nueva — 9 filas',columns:[...COLS,'prom_producto'],index:[...ROWS.keys()],
+        rows:ROWS.map(r=>[...r,prom[r[0]]]),grupo:i=>ROWS[i][0],nueva:3})},
+    filter:{code:"df.groupby('producto').<b>filter(lambda g: len(g) >= 3)</b>",
+      nota:'<b>Grupos enteros:</b> la función recibe cada grupo completo (<code>g</code> es un DataFrame) y devuelve '+
+        'True o False. Quedan <b>todas las filas</b> de los grupos que cumplen: Café (4) y Té (3). Jugo (2) sale entero.',
+      tabla:()=>{
+        const ix=[...ROWS.keys()].filter(i=>n[ROWS[i][0]]>=3);
+        return {caption:`filas que quedan — ${ix.length} de 9`,columns:COLS,index:ix,
+          rows:ix.map(i=>ROWS[i]),grupo:j=>ROWS[ix[j]][0]};
+      }},
+    head:{code:"df.sort_values('monto', ascending=False)\n  .groupby('producto').<b>head(1)</b>",
+      nota:'<b>Las primeras de cada grupo</b>, en el orden en que vienen. Como antes se ordenó de mayor a menor, '+
+        'es la boleta más alta de cada producto. Sin ordenar antes, saldría la primera boleta de cada uno.',
+      tabla:()=>{
+        const ord=[...ROWS.keys()].sort((a,b)=>ROWS[b][2]-ROWS[a][2]);
+        const vistos=new Set();
+        const ix=ord.filter(i=>{ if(vistos.has(ROWS[i][0]))return false; vistos.add(ROWS[i][0]); return true; });
+        return {caption:'la boleta más alta de cada producto — 3 filas',columns:COLS,index:ix,
+          rows:ix.map(i=>ROWS[i]),grupo:j=>ROWS[ix[j]][0]};
+      }},
+  };
+  btnGroup(card,[{label:'agg',value:'agg'},{label:'transform',value:'transform'},
+    {label:'filter',value:'filter'},{label:'head',value:'head'}],v=>render(v));
+  const cols=el('div',{class:'flexcols'});card.append(cols);
+  const left=el('div'),right=el('div');cols.append(left,right);
+  const orig=new DfTable(left,{caption:'df (9 boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
+  ROWS.forEach((r,ri)=>orig.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]])));
+  const nota=el('p',{class:'note'});card.append(nota);
+  const code=codeBox(card);
+  function render(op){
+    right.textContent='';
+    const o=OPS[op], t=o.tabla();
+    const tab=new DfTable(right,t);
+    t.rows.forEach((row,ri)=>row.forEach((_,ci)=>{
+      const c=tab.cell(ri,ci);
+      c.classList.add(GCLS[t.grupo(ri)]);
+      if(ci===t.nueva)c.classList.add('dnew');
+    }));
+    nota.innerHTML=o.nota; code.innerHTML=o.code;
+    relayout();
+  }
+  render('agg');
+}
+
+/* ---------- Tarjeta 3: agregaciones con nombre, size vs count y as_index ---------- */
+function buildConNombre(sec){
+  const COLS=['estacion','monto'];
+  const ROWS=[['Lota',1700],['Coronel',null],['Lota',2400],['Coronel',3100],['Lota',null],['Coronel',null]];
+  const card=el('div',{class:'card'},
+    el('h3',{html:'Agregaciones con nombre: <code>size</code>, <code>count</code> y <code>as_index</code>'}),
+    el('p',{class:'note',html:'Reembolsos de reclamos: solo algunos reclamos tienen monto. '+
+      '<code>nombre=(\'columna\', \'función\')</code> junta varias agregaciones en una sola tabla y elige el nombre de cada columna.'}));
+  sec.append(card);
+  const chk=el('input',{type:'checkbox',id:'gb-asindex'});
+  card.append(el('div',{class:'controls'},chk,el('label',{for:'gb-asindex',html:' <code>as_index=False</code>'})));
+  const cols=el('div',{class:'flexcols'});card.append(cols);
+  const left=el('div'),right=el('div');cols.append(left,right);
+  new DfTable(left,{caption:'df (6 reclamos)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
+  card.append(el('p',{class:'note',html:'<b>size cuenta filas, count cuenta datos:</b> Coronel tiene 3 reclamos pero un solo '+
+    'monto. <code>sum</code> también ignora los NaN. Con <code>as_index=False</code> la estación queda como columna '+
+    'y el índice vuelve a ser 0, 1, 2…'}));
+  const code=codeBox(card);
+  const llaves=[...new Set(ROWS.map(r=>r[0]))].sort((a,b)=>a.localeCompare(b,'es'));
+  const fila=k=>{
+    const g=ROWS.filter(r=>r[0]===k), m=g.map(r=>r[1]).filter(v=>v!=null);
+    return [g.length,m.length,m.reduce((a,b)=>a+b,0)];
+  };
+  function render(){
+    right.textContent='';
+    const noIdx=chk.checked;
+    new DfTable(right,noIdx
+      ?{caption:'resultado — la estación es una columna',columns:['estacion','reclamos','con_monto','total'],
+        index:llaves.map((_,i)=>i),rows:llaves.map(k=>[k,...fila(k)])}
+      :{caption:'resultado — la estación es el índice',columns:['reclamos','con_monto','total'],
+        index:llaves,rows:llaves.map(fila)});
+    code.innerHTML=`df.groupby('estacion'${noIdx?', <b>as_index=False</b>':''}).agg(\n`+
+      `    reclamos=('monto', 'size'),\n    con_monto=('monto', 'count'),\n    total=('monto', 'sum'),\n)`;
+    relayout();
+  }
+  chk.onchange=render;
+  render();
+}
 
 </script>
 <script>
@@ -4324,156 +4690,6 @@ registerModule({
         tB.cellEls.forEach(row=>row.forEach(c=>c.classList.add('g1')));
       }
       selAx.onchange=render;chk.onchange=render;
-      render();
-    }
-  }
-});
-
-</script>
-<script>
-'use strict';
-/* Módulo: GroupBy y pivoteo — split-apply-combine animado y pivot_table como heatmap */
-registerModule({
-  id:'groupby',
-  title:'GroupBy y pivoteo',
-  lead:'groupby es split-apply-combine: separar las filas por una llave, aplicar una función '+
-       'a cada grupo y recombinar los resultados en una tabla indexada por la llave.',
-  build(sec){
-    /* ventas de una cafetería universitaria */
-    const COLS=['producto','sucursal','monto'];
-    const ROWS=[
-      ['Café','Centro',2500],['Té','Campus',1800],['Café','Campus',2600],
-      ['Jugo','Centro',2200],['Té','Centro',1900],['Café','Centro',2400],
-      ['Jugo','Campus',2100],['Té','Campus',1700],['Café','Campus',2700]];
-    const KEYS=['Café','Té','Jugo'];               // orden de aparición → orden de grupos
-    const GCLS={ 'Café':'g0','Té':'g1','Jugo':'g2' };
-    const AGG={
-      sum:  {label:'sum',  f:a=>a.reduce((x,y)=>x+y,0)},
-      mean: {label:'mean', f:a=>a.reduce((x,y)=>x+y,0)/a.length},
-      count:{label:'count',f:a=>a.length},
-      max:  {label:'max',  f:a=>Math.max(...a)},
-    };
-    const groupsOf=key=>ROWS.map((r,i)=>[r,i]).filter(([r])=>r[0]===key);
-
-    /* ---------- Tarjeta 1: split-apply-combine ---------- */
-    {
-      const card=el('div',{class:'card'},
-        el('h3',{html:'<code>groupby</code> paso a paso'}),
-        el('p',{class:'note',html:'9 boletas de una cafetería. Vamos a calcular el total vendido por producto: '+
-          '<code>df.groupby(\'producto\')[\'monto\'].sum()</code>'}));
-      sec.append(card);
-      const ctr=el('div',{class:'controls'});card.append(ctr);
-      const selA=el('select',{},Object.keys(AGG).map(k=>el('option',{value:k},AGG[k].label)));
-      ctr.append(el('label',{},'función de agregación: '),selA);
-      const cols=el('div',{class:'flexcols'});card.append(cols);
-      const left=el('div'),right=el('div');cols.append(left,right);
-      const table=new DfTable(left,{caption:'df (boletas)',columns:COLS,index:[...ROWS.keys()],rows:ROWS});
-      const resMount=el('div');right.append(resMount);
-      const code=codeBox(card);
-      const origOrder=[...table.rowEls];
-
-      let resTable=null;
-      function clearResult(){resMount.textContent='';resTable=null;}
-      function showResult(upTo /* nº de grupos listos */){
-        clearResult();
-        const agg=AGG[selA.value];
-        const rows=KEYS.slice(0,upTo).map(k=>[agg.f(groupsOf(k).map(([r])=>r[2]))]);
-        resTable=new DfTable(resMount,{caption:`resultado (${agg.label})`,columns:['monto'],
-          index:KEYS.slice(0,upTo),rows});
-        rows.forEach((_,ri)=>{
-          resTable.cell(ri,0).classList.add(GCLS[KEYS[ri]]);
-          resTable.rowEls[ri]._idx.classList.add(GCLS[KEYS[ri]]);
-        });
-      }
-      function colorRows(){
-        ROWS.forEach((r,ri)=>{
-          table.rowEls[ri].querySelectorAll('.dfc').forEach(c=>c.classList.add(GCLS[r[0]]));
-        });
-      }
-      function reset(){
-        table.clearMarks();clearResult();
-        origOrder.forEach(r=>table.root.append(r));
-        code.innerHTML=`df.groupby('producto')['monto'].<b>${AGG[selA.value].label}</b>()`;
-      }
-      const steps=[
-        {d:'<b>La llave.</b> <code>groupby(\'producto\')</code> etiqueta cada fila según su valor '+
-           'en la columna <code>producto</code>. Cada color es un grupo: todavía no se movió nada.',
-         async run(){ colorRows(); }},
-        {d:'<b>Split.</b> Conceptualmente, las filas se separan en un mini-DataFrame por grupo '+
-           '(4 boletas de Café, 3 de Té, 2 de Jugo). El orden original deja de importar.',
-         async run(last){
-           colorRows();
-           flipRows(table.root,()=>{
-             KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           });
-           if(last)await sleep(600);
-         }},
-        {d:'<b>Apply.</b> A la columna <code>monto</code> de cada grupo se le aplica la función. '+
-           'Cada grupo completo colapsa en un único valor.',
-         async run(last){
-           colorRows();
-           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           for(let g=0;g<KEYS.length;g++){
-             if(last){
-               groupsOf(KEYS[g]).forEach(([,ri])=>table.cell(ri,2).classList.add('hl'));
-               await sleep(420);
-             }
-             showResult(g+1);
-           }
-         }},
-        {d:'<b>Combine.</b> Los tres valores se recombinan en una Serie cuyo <b>índice es la llave</b> '+
-           '(ya no 0…8, sino Café/Té/Jugo). Eso es todo groupby: split → apply → combine.',
-         async run(){
-           colorRows();
-           KEYS.forEach(k=>groupsOf(k).forEach(([,ri])=>table.root.append(table.rowEls[ri])));
-           table.rowEls.forEach(r=>r.classList.add('roff'));
-           showResult(3);
-           const agg=AGG[selA.value];
-           const vals=KEYS.map(k=>fmt(agg.f(groupsOf(k).map(([r])=>r[2]))));
-           code.innerHTML=`df.groupby('producto')['monto'].<b>${agg.label}</b>()\n# producto\n`+
-             KEYS.map((k,i)=>`# ${k.padEnd(8)}${vals[i]}`).join('\n')+`\n# Name: monto, dtype: ${agg.label==='mean'?'float64':'int64'}`;
-         }},
-      ];
-      const st=new Stepper(card,steps,reset,'groupby');
-      selA.onchange=()=>st.go(st.i);
-      reset();
-    }
-
-    /* ---------- Tarjeta 2: pivot_table ---------- */
-    {
-      const card=el('div',{class:'card'},
-        el('h3',{html:'<code>pivot_table</code>: groupby en dos dimensiones'}),
-        el('p',{class:'note',html:'Un pivote agrupa por <b>dos llaves a la vez</b>: una queda como índice (filas) '+
-          'y la otra se convierte en columnas. La celda (Café, Centro) contiene la agregación de las boletas '+
-          'que cumplen ambas condiciones. El color codifica la magnitud (más oscuro = más alto).'}));
-      sec.append(card);
-      const ctr=el('div',{class:'controls'});card.append(ctr);
-      const selA=el('select',{},['sum','mean','count'].map(k=>el('option',{value:k},k)));
-      ctr.append(el('label',{},'aggfunc: '),selA);
-      const mount=el('div');card.append(mount);
-      const code=codeBox(card);
-      const SUC=['Campus','Centro'];
-      const RAMP=['--seq100','--seq200','--seq300','--seq400','--seq500','--seq600','--seq700'];
-      function render(){
-        mount.textContent='';
-        const agg=AGG[selA.value];
-        const rows=KEYS.map(k=>SUC.map(s=>{
-          const sub=ROWS.filter(r=>r[0]===k&&r[1]===s).map(r=>r[2]);
-          return agg.f(sub);
-        }));
-        const t=new DfTable(mount,{caption:'pivot (producto × sucursal)',columns:SUC,index:KEYS,rows});
-        const flat=rows.flat(),lo=Math.min(...flat),hi=Math.max(...flat);
-        rows.forEach((row,ri)=>row.forEach((v,ci)=>{
-          const k=hi===lo?3:Math.round((v-lo)/(hi-lo)*6);
-          const c=t.cell(ri,ci);
-          c.style.background=`var(${RAMP[k]})`;
-          /* la rampa es fija en ambos temas: la tinta también debe serlo */
-          c.style.color=k>=3?'#fff':'#0b0b0b';
-          c.style.fontWeight='600';
-        }));
-        code.innerHTML=`pd.pivot_table(df, values='monto',\n               index='producto', columns='sucursal',\n               aggfunc=<b>'${selA.value}'</b>)`;
-      }
-      selA.onchange=render;
       render();
     }
   }
@@ -4922,6 +5138,27 @@ const BANCO_PREDICE=[
  opciones:["MultiIndex","Index","RangeIndex","tuple"],correcta:0,
  explica:"Agrupar por DOS llaves deja un índice <b>jerárquico</b> (MultiIndex) de pares (suc, cat). "+
   "Por eso <code>idxmax()</code> devuelve tuplas — y <code>reset_index()</code> lo aplana a columnas normales."},
+
+{id:'p68',tema:'groupby',origen:'Cafetería',nivel:2,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP'],\n                   'total': [100, 200, 50]})\nt = df.groupby('suc')['total'].transform('mean')\nprint(len(t), t.tolist())",
+ opciones:['3 [150.0, 150.0, 50.0]','2 [150.0, 50.0]','3 [150.0, 50.0, 50.0]','1 [116.67]'],correcta:0,
+ explica:"<code>transform</code> no resume: devuelve <b>un valor por fila</b>, el de su grupo, con el mismo largo que "+
+  "<code>df</code>. Por eso sirve para crear una columna o para <code>fillna</code> por grupo. "+
+  "<code>mean()</code> a secas daría 2 valores, uno por sucursal. Compáralos en el <a href='#groupby'>módulo GroupBy</a>."},
+
+{id:'p69',tema:'groupby',origen:'Cafetería',nivel:2,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP'],\n                   'total': [100, 200, 50]})\nr = df.groupby('suc').filter(lambda g: len(g) >= 2)\nprint(len(r))",
+ opciones:['2','1','3',"['C']"],correcta:0,
+ explica:"<code>filter</code> evalúa la condición sobre <b>cada grupo entero</b> y devuelve sus <b>filas originales</b>, "+
+  "no un resumen: C tiene 2 filas y pasa completo; SP (1 fila) sale. Si quisieras solo los nombres, "+
+  "filtrarías el resultado de <code>size()</code>."},
+
+{id:'p70',tema:'groupby',origen:'Cafetería',nivel:3,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP','SP'],\n                   'total': [100, 300, 50, 80]})\nprint(df.groupby('suc').head(1)['total'].tolist())",
+ opciones:['[100, 50]','[300, 80]','[100]','[300, 50]'],correcta:0,
+ explica:"<code>head(1)</code> toma la primera fila de cada grupo <b>en el orden en que vienen</b>, no la mayor. "+
+  "Para la venta más alta de cada sucursal hay que ordenar antes: "+
+  "<code>df.sort_values('total', ascending=False).groupby('suc').head(1)</code> → [300, 80]."},
 
 {id:'p41',tema:'fechas',origen:'Fechas',nivel:1,
  code:"f = pd.to_datetime(pd.Series(['2026-03-15']))\nprint(f.dt.year[0])",
@@ -5573,7 +5810,7 @@ const EVALS=[
  {id:'c4',label:'Ensayo 4 · Nulos y gráficos',temas:['nulos','viz']},
  {id:'c5',label:'Ensayo 5 · Wrangling y joins',temas:['wrangling','merge']},
  {id:'cert1',label:'Ensayo integral · NumPy y Pandas',temas:['numpy','df']},
- {id:'cert2',label:'Ensayo integral · de fechas a joins',temas:['fechas','viz','nulos','outliers','wrangling','merge']},
+ {id:'cert2',label:'Ensayo integral · de fechas a groupby',temas:['fechas','viz','nulos','outliers','wrangling','groupby']},
  {id:'examen',label:'Ensayo completo · todos los temas',temas:TODOS},
 ];
 const NOMBRE_TEMA={numpy:'NumPy',df:'DataFrames',viz:'Visualización',nulos:'Nulos',
