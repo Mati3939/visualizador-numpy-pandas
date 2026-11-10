@@ -440,6 +440,27 @@ const BANCO_PREDICE=[
  explica:"Agrupar por DOS llaves deja un índice <b>jerárquico</b> (MultiIndex) de pares (suc, cat). "+
   "Por eso <code>idxmax()</code> devuelve tuplas — y <code>reset_index()</code> lo aplana a columnas normales."},
 
+{id:'p68',tema:'groupby',origen:'Cafetería',nivel:2,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP'],\n                   'total': [100, 200, 50]})\nt = df.groupby('suc')['total'].transform('mean')\nprint(len(t), t.tolist())",
+ opciones:['3 [150.0, 150.0, 50.0]','2 [150.0, 50.0]','3 [150.0, 50.0, 50.0]','1 [116.67]'],correcta:0,
+ explica:"<code>transform</code> no resume: devuelve <b>un valor por fila</b>, el de su grupo, con el mismo largo que "+
+  "<code>df</code>. Por eso sirve para crear una columna o para <code>fillna</code> por grupo. "+
+  "<code>mean()</code> a secas daría 2 valores, uno por sucursal. Compáralos en el <a href='#groupby'>módulo GroupBy</a>."},
+
+{id:'p69',tema:'groupby',origen:'Cafetería',nivel:2,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP'],\n                   'total': [100, 200, 50]})\nr = df.groupby('suc').filter(lambda g: len(g) >= 2)\nprint(len(r))",
+ opciones:['2','1','3',"['C']"],correcta:0,
+ explica:"<code>filter</code> evalúa la condición sobre <b>cada grupo entero</b> y devuelve sus <b>filas originales</b>, "+
+  "no un resumen: C tiene 2 filas y pasa completo; SP (1 fila) sale. Si quisieras solo los nombres, "+
+  "filtrarías el resultado de <code>size()</code>."},
+
+{id:'p70',tema:'groupby',origen:'Cafetería',nivel:3,
+ code:"df = pd.DataFrame({'suc': ['C','C','SP','SP'],\n                   'total': [100, 300, 50, 80]})\nprint(df.groupby('suc').head(1)['total'].tolist())",
+ opciones:['[100, 50]','[300, 80]','[100]','[300, 50]'],correcta:0,
+ explica:"<code>head(1)</code> toma la primera fila de cada grupo <b>en el orden en que vienen</b>, no la mayor. "+
+  "Para la venta más alta de cada sucursal hay que ordenar antes: "+
+  "<code>df.sort_values('total', ascending=False).groupby('suc').head(1)</code> → [300, 80]."},
+
 {id:'p41',tema:'fechas',origen:'Fechas',nivel:1,
  code:"f = pd.to_datetime(pd.Series(['2026-03-15']))\nprint(f.dt.year[0])",
  opciones:['2026',"'2026'",'26','AttributeError'],correcta:0,

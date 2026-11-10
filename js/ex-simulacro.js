@@ -12,7 +12,7 @@ const EVALS=[
  {id:'c4',label:'Ensayo 4 · Nulos y gráficos',temas:['nulos','viz']},
  {id:'c5',label:'Ensayo 5 · Wrangling y joins',temas:['wrangling','merge']},
  {id:'cert1',label:'Ensayo integral · NumPy y Pandas',temas:['numpy','df']},
- {id:'cert2',label:'Ensayo integral · de fechas a joins',temas:['fechas','viz','nulos','outliers','wrangling','merge']},
+ {id:'cert2',label:'Ensayo integral · de fechas a groupby',temas:['fechas','viz','nulos','outliers','wrangling','groupby']},
  {id:'examen',label:'Ensayo completo · todos los temas',temas:TODOS},
 ];
 const NOMBRE_TEMA={numpy:'NumPy',df:'DataFrames',viz:'Visualización',nulos:'Nulos',
